@@ -94,8 +94,8 @@ func TestInputReader_ReadInteractive(t *testing.T) {
 		t.Error("ReadInteractive() should contain 'line 2'")
 	}
 
-	// Output should contain prompt
-	if !strings.Contains(out.String(), "请输入待分析的材料") {
+	// Output should contain prompt elements
+	if !strings.Contains(out.String(), "INPUT") && !strings.Contains(out.String(), "material") {
 		t.Error("ReadInteractive() should print prompt")
 	}
 }

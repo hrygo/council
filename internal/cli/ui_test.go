@@ -38,11 +38,12 @@ func TestUI_PrintBanner(t *testing.T) {
 	ui.PrintBanner()
 
 	output := out.String()
-	if !strings.Contains(output, "Dialecta") {
-		t.Error("PrintBanner() should contain 'Dialecta'")
+	// Check for banner elements (ASCII art uses block characters)
+	if !strings.Contains(output, "██") {
+		t.Error("PrintBanner() should contain ASCII art block characters")
 	}
-	if !strings.Contains(output, "🎭") {
-		t.Error("PrintBanner() should contain emoji")
+	if !strings.Contains(output, "Multi-Persona") && !strings.Contains(output, "AI") {
+		t.Error("PrintBanner() should contain 'Multi-Persona' or 'AI'")
 	}
 }
 
@@ -54,17 +55,15 @@ func TestUI_PrintConfig(t *testing.T) {
 	ui.PrintConfig(cfg)
 
 	output := out.String()
-	if !strings.Contains(output, "配置信息") {
-		t.Error("PrintConfig() should contain '配置信息'")
+	// Check for configuration elements
+	if !strings.Contains(output, "PRO") && !strings.Contains(output, "正方") {
+		t.Error("PrintConfig() should contain 'PRO' or '正方'")
 	}
-	if !strings.Contains(output, "正方") {
-		t.Error("PrintConfig() should contain '正方'")
+	if !strings.Contains(output, "CON") && !strings.Contains(output, "反方") {
+		t.Error("PrintConfig() should contain 'CON' or '反方'")
 	}
-	if !strings.Contains(output, "反方") {
-		t.Error("PrintConfig() should contain '反方'")
-	}
-	if !strings.Contains(output, "裁决") {
-		t.Error("PrintConfig() should contain '裁决'")
+	if !strings.Contains(output, "ADJ") && !strings.Contains(output, "裁决") {
+		t.Error("PrintConfig() should contain 'ADJ' or '裁决'")
 	}
 }
 
@@ -75,8 +74,9 @@ func TestUI_PrintDebating(t *testing.T) {
 	ui.PrintDebating()
 
 	output := out.String()
-	if !strings.Contains(output, "正反方并行辩论中") {
-		t.Error("PrintDebating() should contain status message")
+	// Check for debating status indicators
+	if !strings.Contains(output, "DEBATE") && !strings.Contains(output, "正方") {
+		t.Error("PrintDebating() should contain debating status")
 	}
 }
 
@@ -87,7 +87,7 @@ func TestUI_PrintComplete(t *testing.T) {
 	ui.PrintComplete()
 
 	output := out.String()
-	if !strings.Contains(output, "辩论完成") {
+	if !strings.Contains(output, "COMPLETE") && !strings.Contains(output, "完成") {
 		t.Error("PrintComplete() should contain completion message")
 	}
 }
@@ -102,8 +102,8 @@ func TestUI_PrintError(t *testing.T) {
 	if !strings.Contains(output, "test error") {
 		t.Error("PrintError() should contain the error message")
 	}
-	if !strings.Contains(output, "❌") {
-		t.Error("PrintError() should contain error icon")
+	if !strings.Contains(output, "ERROR") && !strings.Contains(output, "⚠") {
+		t.Error("PrintError() should contain error indicator")
 	}
 }
 
@@ -116,9 +116,6 @@ func TestUI_PrintWarning(t *testing.T) {
 	output := errOut.String()
 	if !strings.Contains(output, "test warning") {
 		t.Error("PrintWarning() should contain the warning message")
-	}
-	if !strings.Contains(output, "⚠️") {
-		t.Error("PrintWarning() should contain warning icon")
 	}
 }
 
@@ -135,7 +132,7 @@ func TestUI_PrintSectionHeader(t *testing.T) {
 	if !strings.Contains(output, "🔵") {
 		t.Error("PrintSectionHeader() should contain the icon")
 	}
-	if !strings.Contains(output, "─") {
+	if !strings.Contains(output, "━") {
 		t.Error("PrintSectionHeader() should contain separator line")
 	}
 }
@@ -147,7 +144,7 @@ func TestUI_PrintProHeader(t *testing.T) {
 	ui.PrintProHeader()
 
 	output := out.String()
-	if !strings.Contains(output, "正方论述") {
+	if !strings.Contains(output, "AFFIRMATIVE") && !strings.Contains(output, "正方") {
 		t.Error("PrintProHeader() should contain pro title")
 	}
 	if !strings.Contains(output, "🟢") {
@@ -162,7 +159,7 @@ func TestUI_PrintConHeader(t *testing.T) {
 	ui.PrintConHeader()
 
 	output := out.String()
-	if !strings.Contains(output, "反方论述") {
+	if !strings.Contains(output, "NEGATIVE") && !strings.Contains(output, "反方") {
 		t.Error("PrintConHeader() should contain con title")
 	}
 	if !strings.Contains(output, "🔴") {
@@ -177,10 +174,10 @@ func TestUI_PrintJudgeHeader(t *testing.T) {
 	ui.PrintJudgeHeader()
 
 	output := out.String()
-	if !strings.Contains(output, "裁决方报告") {
+	if !strings.Contains(output, "ADJUDICATOR") && !strings.Contains(output, "裁决") {
 		t.Error("PrintJudgeHeader() should contain judge title")
 	}
-	if !strings.Contains(output, "⚖️") {
+	if !strings.Contains(output, "⚖") {
 		t.Error("PrintJudgeHeader() should contain judge icon")
 	}
 }
@@ -231,6 +228,63 @@ func TestUI_Println(t *testing.T) {
 	}
 }
 
+func TestUI_PrintDivider(t *testing.T) {
+	var out bytes.Buffer
+	ui := NewUI(&out, &bytes.Buffer{})
+
+	ui.PrintDivider()
+
+	output := out.String()
+	if !strings.Contains(output, "─") {
+		t.Error("PrintDivider() should contain divider character")
+	}
+}
+
+func TestUI_PrintInfo(t *testing.T) {
+	var out bytes.Buffer
+	ui := NewUI(&out, &bytes.Buffer{})
+
+	ui.PrintInfo("info message")
+
+	output := out.String()
+	if !strings.Contains(output, "info message") {
+		t.Error("PrintInfo() should contain the message")
+	}
+	if !strings.Contains(output, "◈") {
+		t.Error("PrintInfo() should contain info icon")
+	}
+}
+
+func TestUI_PrintSuccess(t *testing.T) {
+	var out bytes.Buffer
+	ui := NewUI(&out, &bytes.Buffer{})
+
+	ui.PrintSuccess("success message")
+
+	output := out.String()
+	if !strings.Contains(output, "success message") {
+		t.Error("PrintSuccess() should contain the message")
+	}
+	if !strings.Contains(output, "✓") {
+		t.Error("PrintSuccess() should contain success icon")
+	}
+}
+
+func TestUI_PrintThinking(t *testing.T) {
+	var out bytes.Buffer
+	ui := NewUI(&out, &bytes.Buffer{})
+
+	ui.PrintThinking("TestAgent")
+
+	output := out.String()
+	if !strings.Contains(output, "TestAgent") {
+		t.Error("PrintThinking() should contain agent name")
+	}
+	if !strings.Contains(output, "processing") {
+		t.Error("PrintThinking() should contain processing message")
+	}
+}
+
 func TestColorConstants(t *testing.T) {
 	// Verify color constants are defined
 	if ColorReset == "" {
@@ -253,5 +307,12 @@ func TestColorConstants(t *testing.T) {
 	}
 	if ColorBold == "" {
 		t.Error("ColorBold should not be empty")
+	}
+	// Test new color constants
+	if ColorBrightCyan == "" {
+		t.Error("ColorBrightCyan should not be empty")
+	}
+	if ColorDim == "" {
+		t.Error("ColorDim should not be empty")
 	}
 }

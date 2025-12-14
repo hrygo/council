@@ -36,27 +36,47 @@ func ParseFlags() *Options {
 	flag.BoolVar(&opts.Interactive, "interactive", false, "Interactive mode - enter material via stdin")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `%sDialecta - Multi-Persona Debate System%s
+		fmt.Fprintf(os.Stderr, `
+%s%s╭──────────────────────────────────────────────────────────────╮%s
+%s%s│             DIALECTA - AI Debate Engine                      │%s
+%s%s╰──────────────────────────────────────────────────────────────╯%s
 
-Usage:
-  dialecta [options] <file>       Analyze material from file
-  dialecta [options] -            Read material from stdin (pipe)
-  dialecta --interactive          Interactive mode
+%s%sUSAGE%s
+  dialecta [options] <file>       %s▸ Analyze material from file%s
+  dialecta [options] -            %s▸ Read from stdin (pipe)%s
+  dialecta --interactive          %s▸ Interactive input mode%s
 
-Providers:
-  deepseek   - DeepSeek API (DEEPSEEK_API_KEY)
-  gemini     - Google Gemini (GEMINI_API_KEY or GOOGLE_API_KEY)
-  dashscope  - Alibaba DashScope/Qwen (DASHSCOPE_API_KEY)
+%s%sAI PROVIDERS%s
+  %s◈ deepseek%s   DeepSeek API       %s→ DEEPSEEK_API_KEY%s
+  %s◈ gemini%s     Google Gemini      %s→ GEMINI_API_KEY / GOOGLE_API_KEY%s
+  %s◈ dashscope%s  Alibaba Qwen       %s→ DASHSCOPE_API_KEY%s
 
-Examples:
-  dialecta proposal.md
-  cat plan.txt | dialecta -
-  echo "我们应该启动AI创业项目" | dialecta -
-  dialecta --judge-provider deepseek --judge-model deepseek-chat proposal.md
+%s%sEXAMPLES%s
+  %s$%s dialecta proposal.md
+  %s$%s cat plan.txt | dialecta -
+  %s$%s echo "我们应该启动AI创业项目" | dialecta -
+  %s$%s dialecta --judge-provider deepseek --judge-model deepseek-chat doc.md
 
-Options:
-`, ColorBold, ColorReset)
+%s%sOPTIONS%s
+`, ColorBrightCyan, ColorBold, ColorReset,
+			ColorBrightCyan, ColorBold, ColorReset,
+			ColorBrightCyan, ColorBold, ColorReset,
+			ColorBrightWhite, ColorBold, ColorReset,
+			ColorDim, ColorReset,
+			ColorDim, ColorReset,
+			ColorDim, ColorReset,
+			ColorBrightWhite, ColorBold, ColorReset,
+			ColorBrightGreen, ColorReset, ColorDim, ColorReset,
+			ColorBrightMagenta, ColorReset, ColorDim, ColorReset,
+			ColorBrightYellow, ColorReset, ColorDim, ColorReset,
+			ColorBrightWhite, ColorBold, ColorReset,
+			ColorBrightCyan, ColorReset,
+			ColorBrightCyan, ColorReset,
+			ColorBrightCyan, ColorReset,
+			ColorBrightCyan, ColorReset,
+			ColorBrightWhite, ColorBold, ColorReset)
 		flag.PrintDefaults()
+		fmt.Fprintln(os.Stderr)
 	}
 
 	flag.Parse()

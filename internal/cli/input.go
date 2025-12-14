@@ -48,12 +48,17 @@ func (r *InputReader) ReadStdin() (string, error) {
 // ReadInteractive reads material interactively from the user
 // The user can finish input by entering two consecutive empty lines
 func (r *InputReader) ReadInteractive() (string, error) {
-	fmt.Fprintf(r.out, "%s📝 请输入待分析的材料（输入两个空行结束）:%s\n", ColorCyan, ColorReset)
-	fmt.Fprintln(r.out, strings.Repeat("─", 40))
+	fmt.Fprintln(r.out)
+	fmt.Fprintf(r.out, "%s%s┌─ 📝 INPUT MODE ──────────────────────────────────────────────┐%s\n", ColorBrightCyan, ColorBold, ColorReset)
+	fmt.Fprintf(r.out, "%s│%s  Enter your material for analysis.                           %s│%s\n", ColorBrightCyan, ColorReset, ColorBrightCyan, ColorReset)
+	fmt.Fprintf(r.out, "%s│%s  Press %sENTER twice%s to submit.                                %s│%s\n", ColorBrightCyan, ColorReset, ColorBold, ColorReset, ColorBrightCyan, ColorReset)
+	fmt.Fprintf(r.out, "%s%s└──────────────────────────────────────────────────────────────┘%s\n", ColorBrightCyan, ColorBold, ColorReset)
+	fmt.Fprintf(r.out, "%s%s▸ %s", ColorBrightGreen, ColorBold, ColorReset)
 
 	var lines []string
 	scanner := bufio.NewScanner(r.stdin)
 	emptyCount := 0
+	lineNum := 1
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -66,6 +71,11 @@ func (r *InputReader) ReadInteractive() (string, error) {
 			emptyCount = 0
 		}
 		lines = append(lines, line)
+		lineNum++
+		// Print line number prompt for next line
+		if emptyCount < 2 {
+			fmt.Fprintf(r.out, "%s%s▸ %s", ColorBrightGreen, ColorBold, ColorReset)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -76,6 +86,8 @@ func (r *InputReader) ReadInteractive() (string, error) {
 	for len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
+
+	fmt.Fprintf(r.out, "\n%s%s✓ Input received (%d lines)%s\n\n", ColorBrightGreen, ColorBold, len(lines), ColorReset)
 
 	return strings.Join(lines, "\n"), nil
 }

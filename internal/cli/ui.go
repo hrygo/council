@@ -9,21 +9,56 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/hrygo/dialecta/internal/config"
 	"github.com/hrygo/dialecta/internal/debate"
 )
 
-// ANSI color codes for terminal output
+// ANSI color and style codes for terminal output
 const (
-	ColorReset  = "\033[0m"
-	ColorGreen  = "\033[32m"
-	ColorRed    = "\033[31m"
-	ColorYellow = "\033[33m"
-	ColorBlue   = "\033[34m"
-	ColorCyan   = "\033[36m"
-	ColorBold   = "\033[1m"
+	// Reset
+	ColorReset = "\033[0m"
+
+	// Regular colors
+	ColorBlack   = "\033[30m"
+	ColorRed     = "\033[31m"
+	ColorGreen   = "\033[32m"
+	ColorYellow  = "\033[33m"
+	ColorBlue    = "\033[34m"
+	ColorMagenta = "\033[35m"
+	ColorCyan    = "\033[36m"
+	ColorWhite   = "\033[37m"
+
+	// Bright/Bold colors
+	ColorBrightBlack   = "\033[90m"
+	ColorBrightRed     = "\033[91m"
+	ColorBrightGreen   = "\033[92m"
+	ColorBrightYellow  = "\033[93m"
+	ColorBrightBlue    = "\033[94m"
+	ColorBrightMagenta = "\033[95m"
+	ColorBrightCyan    = "\033[96m"
+	ColorBrightWhite   = "\033[97m"
+
+	// Styles
+	ColorBold      = "\033[1m"
+	ColorDim       = "\033[2m"
+	ColorItalic    = "\033[3m"
+	ColorUnderline = "\033[4m"
+
+	// Background colors
+	BgBlack   = "\033[40m"
+	BgRed     = "\033[41m"
+	BgGreen   = "\033[42m"
+	BgYellow  = "\033[43m"
+	BgBlue    = "\033[44m"
+	BgMagenta = "\033[45m"
+	BgCyan    = "\033[46m"
+	BgWhite   = "\033[47m"
 )
+
+// Gradient characters for visual effects
+var gradientChars = []string{"░", "▒", "▓", "█"}
 
 // UI handles all user interface output for the CLI
 type UI struct {
@@ -44,60 +79,112 @@ func DefaultUI() *UI {
 	return NewUI(os.Stdout, os.Stderr)
 }
 
-// PrintBanner prints the application banner
+// PrintBanner prints a futuristic AI-themed application banner
 func (u *UI) PrintBanner() {
-	fmt.Fprintf(u.out, "\n%s╔══════════════════════════════════════════════════════════════╗%s\n", ColorCyan, ColorReset)
-	fmt.Fprintf(u.out, "%s║           🎭 Dialecta - 多角色辩论系统                        ║%s\n", ColorCyan, ColorReset)
-	fmt.Fprintf(u.out, "%s╚══════════════════════════════════════════════════════════════╝%s\n\n", ColorCyan, ColorReset)
+	fmt.Fprintln(u.out)
+
+	// Top border with gradient effect
+	fmt.Fprintf(u.out, "%s%s", ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  ╭──────────────────────────────────────────────────────────────╮\n")
+	fmt.Fprintf(u.out, "  │%s%s                                                              %s%s│\n", ColorReset, BgBlack, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s%s   ██████╗ ██╗ █████╗ ██╗     ███████╗ ██████╗████████╗ █████╗%s%s│\n", ColorBrightMagenta, ColorBold, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s%s   ██╔══██╗██║██╔══██╗██║     ██╔════╝██╔════╝╚══██╔══╝██╔══██╗%s%s│\n", ColorBrightMagenta, ColorBold, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s%s   ██║  ██║██║███████║██║     █████╗  ██║        ██║   ███████║%s%s│\n", ColorBrightCyan, ColorBold, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s%s   ██║  ██║██║██╔══██║██║     ██╔══╝  ██║        ██║   ██╔══██║%s%s│\n", ColorBrightCyan, ColorBold, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s%s   ██████╔╝██║██║  ██║███████╗███████╗╚██████╗   ██║   ██║  ██║%s%s│\n", ColorBrightBlue, ColorBold, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s%s   ╚═════╝ ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝%s%s│\n", ColorBrightBlue, ColorBold, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s%s                                                              %s%s│\n", ColorReset, BgBlack, ColorBrightCyan, ColorBold)
+	fmt.Fprintf(u.out, "  │%s  %s◈ Multi-Persona AI Debate System%s            %s▸ v1.0.0%s  │\n", ColorBrightWhite, ColorBold, ColorReset, ColorDim, ColorBrightCyan)
+	fmt.Fprintf(u.out, "  │%s  %s◈ Powered by DeepSeek × Gemini × Qwen%s                     %s│\n", ColorBrightYellow, ColorDim, ColorReset, ColorBrightCyan)
+	fmt.Fprintf(u.out, "  ╰──────────────────────────────────────────────────────────────╯%s\n\n", ColorReset)
 }
 
-// PrintConfig prints the configuration info
+// PrintConfig prints the configuration info with a modern card-style layout
 func (u *UI) PrintConfig(cfg *config.Config) {
-	fmt.Fprintf(u.out, "%s📋 配置信息%s\n", ColorBold, ColorReset)
-	fmt.Fprintf(u.out, "   正方: %s/%s\n", cfg.ProRole.Provider, cfg.ProRole.Model)
-	fmt.Fprintf(u.out, "   反方: %s/%s\n", cfg.ConRole.Provider, cfg.ConRole.Model)
-	fmt.Fprintf(u.out, "   裁决: %s/%s\n\n", cfg.JudgeRole.Provider, cfg.JudgeRole.Model)
+	fmt.Fprintf(u.out, "%s%s┌─ 🧠 AI Configuration ─────────────────────────────────────────┐%s\n", ColorBrightBlue, ColorBold, ColorReset)
+
+	// Pro role
+	fmt.Fprintf(u.out, "%s│%s  %s▹ PRO%s  %s%-12s%s │ %s%s%s\n",
+		ColorBrightBlue, ColorReset,
+		ColorBrightGreen, ColorReset,
+		ColorBold, cfg.ProRole.Provider, ColorReset,
+		ColorDim, cfg.ProRole.Model, ColorReset)
+
+	// Con role
+	fmt.Fprintf(u.out, "%s│%s  %s▹ CON%s  %s%-12s%s │ %s%s%s\n",
+		ColorBrightBlue, ColorReset,
+		ColorBrightRed, ColorReset,
+		ColorBold, cfg.ConRole.Provider, ColorReset,
+		ColorDim, cfg.ConRole.Model, ColorReset)
+
+	// Judge role
+	fmt.Fprintf(u.out, "%s│%s  %s▹ ADJ%s  %s%-12s%s │ %s%s%s\n",
+		ColorBrightBlue, ColorReset,
+		ColorBrightYellow, ColorReset,
+		ColorBold, cfg.JudgeRole.Provider, ColorReset,
+		ColorDim, cfg.JudgeRole.Model, ColorReset)
+
+	fmt.Fprintf(u.out, "%s%s└───────────────────────────────────────────────────────────────┘%s\n\n", ColorBrightBlue, ColorBold, ColorReset)
 }
 
-// PrintDebating prints the debating status message
+// PrintDebating prints the debating status with animated-style indicators
 func (u *UI) PrintDebating() {
-	fmt.Fprintf(u.out, "%s⏳ 正反方并行辩论中...%s\n\n", ColorYellow, ColorReset)
+	fmt.Fprintf(u.out, "%s%s◉ INITIATING PARALLEL DEBATE SEQUENCE...%s\n", ColorBrightYellow, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s  ├─ 🟢 正方 Agent: Generating affirmative arguments...%s\n", ColorDim, ColorReset)
+	fmt.Fprintf(u.out, "%s  └─ 🔴 反方 Agent: Generating counter-arguments...%s\n\n", ColorDim, ColorReset)
 }
 
-// PrintComplete prints the completion message
+// PrintComplete prints the completion message with a success indicator
 func (u *UI) PrintComplete() {
-	fmt.Fprintf(u.out, "\n%s✅ 辩论完成%s\n", ColorGreen, ColorReset)
+	fmt.Fprintln(u.out)
+	fmt.Fprintf(u.out, "%s%s╔══════════════════════════════════════════════════════════════╗%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s║                    ✓ DEBATE COMPLETE                          ║%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s╚══════════════════════════════════════════════════════════════╝%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%sSession ended at %s%s\n", ColorDim, time.Now().Format("2006-01-02 15:04:05"), ColorReset)
 }
 
-// PrintError prints an error message
+// PrintError prints an error message with a distinctive style
 func (u *UI) PrintError(message string) {
-	fmt.Fprintf(u.err, "%s❌ %s%s\n", ColorRed, message, ColorReset)
+	fmt.Fprintf(u.err, "\n%s%s┌─ ⚠ ERROR ─────────────────────────────────────────────────────┐%s\n", ColorBrightRed, ColorBold, ColorReset)
+	fmt.Fprintf(u.err, "%s│%s %s%s\n", ColorBrightRed, ColorReset, message, ColorReset)
+	fmt.Fprintf(u.err, "%s%s└───────────────────────────────────────────────────────────────┘%s\n\n", ColorBrightRed, ColorBold, ColorReset)
 }
 
 // PrintWarning prints a warning message
 func (u *UI) PrintWarning(message string) {
-	fmt.Fprintf(u.err, "\n%s⚠️ %s%s\n", ColorYellow, message, ColorReset)
+	fmt.Fprintf(u.err, "\n%s%s⚡ %s%s\n", ColorBrightYellow, ColorBold, message, ColorReset)
 }
 
 // PrintSectionHeader prints a section header with the given title, icon and color
 func (u *UI) PrintSectionHeader(title, icon, color string) {
-	fmt.Fprintf(u.out, "\n%s%s%s %s%s\n", ColorBold, color, icon, title, ColorReset)
-	fmt.Fprintln(u.out, strings.Repeat("─", 60))
+	fmt.Fprintln(u.out)
+	fmt.Fprintf(u.out, "%s%s%s ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ %s%s\n", color, ColorBold, icon, icon, ColorReset)
+	fmt.Fprintf(u.out, "%s%s  %s%s\n", color, ColorBold, title, ColorReset)
+	fmt.Fprintf(u.out, "%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", color, ColorReset)
 }
 
 // PrintProHeader prints the affirmative (pro) section header
 func (u *UI) PrintProHeader() {
-	u.PrintSectionHeader("正方论述 (The Affirmative)", "🟢", ColorGreen)
+	fmt.Fprintln(u.out)
+	fmt.Fprintf(u.out, "%s%s🟢 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🟢%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s   AFFIRMATIVE ARGUMENT │ 正方论述%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorGreen, ColorReset)
 }
 
 // PrintConHeader prints the negative (con) section header
 func (u *UI) PrintConHeader() {
-	u.PrintSectionHeader("反方论述 (The Negative)", "🔴", ColorRed)
+	fmt.Fprintln(u.out)
+	fmt.Fprintf(u.out, "%s%s🔴 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🔴%s\n", ColorBrightRed, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s   NEGATIVE ARGUMENT │ 反方论述%s\n", ColorBrightRed, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorRed, ColorReset)
 }
 
 // PrintJudgeHeader prints the adjudicator (judge) section header
 func (u *UI) PrintJudgeHeader() {
-	u.PrintSectionHeader("裁决方报告 (The Adjudicator)", "⚖️", ColorBlue)
+	fmt.Fprintln(u.out)
+	fmt.Fprintf(u.out, "%s%s⚖️  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ⚖️%s\n", ColorBrightYellow, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s   ADJUDICATOR'S VERDICT │ 裁决报告%s\n", ColorBrightYellow, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorYellow, ColorReset)
 }
 
 // PrintResult prints the complete debate result (non-streaming mode)
@@ -120,4 +207,24 @@ func (u *UI) Print(content string) {
 // Println writes content to the output with a newline
 func (u *UI) Println(content string) {
 	fmt.Fprintln(u.out, content)
+}
+
+// PrintDivider prints a subtle divider line
+func (u *UI) PrintDivider() {
+	fmt.Fprintf(u.out, "%s%s%s\n", ColorDim, strings.Repeat("─", 66), ColorReset)
+}
+
+// PrintInfo prints an info message
+func (u *UI) PrintInfo(message string) {
+	fmt.Fprintf(u.out, "%s%s◈ %s%s\n", ColorBrightCyan, ColorBold, message, ColorReset)
+}
+
+// PrintSuccess prints a success message
+func (u *UI) PrintSuccess(message string) {
+	fmt.Fprintf(u.out, "%s%s✓ %s%s\n", ColorBrightGreen, ColorBold, message, ColorReset)
+}
+
+// PrintThinking prints a "thinking" indicator for AI processing
+func (u *UI) PrintThinking(agentName string) {
+	fmt.Fprintf(u.out, "%s◐ %s is processing...%s\n", ColorDim, agentName, ColorReset)
 }
