@@ -87,7 +87,7 @@ func TestUI_PrintComplete(t *testing.T) {
 	ui.PrintComplete()
 
 	output := out.String()
-	if !strings.Contains(output, "COMPLETE") && !strings.Contains(output, "完成") {
+	if !strings.Contains(output, "DEBATE COMPLETE") {
 		t.Error("PrintComplete() should contain completion message")
 	}
 }
@@ -147,9 +147,6 @@ func TestUI_PrintProHeader(t *testing.T) {
 	if !strings.Contains(output, "AFFIRMATIVE") && !strings.Contains(output, "正方") {
 		t.Error("PrintProHeader() should contain pro title")
 	}
-	if !strings.Contains(output, "🟢") {
-		t.Error("PrintProHeader() should contain green icon")
-	}
 }
 
 func TestUI_PrintConHeader(t *testing.T) {
@@ -161,9 +158,6 @@ func TestUI_PrintConHeader(t *testing.T) {
 	output := out.String()
 	if !strings.Contains(output, "NEGATIVE") && !strings.Contains(output, "反方") {
 		t.Error("PrintConHeader() should contain con title")
-	}
-	if !strings.Contains(output, "🔴") {
-		t.Error("PrintConHeader() should contain red icon")
 	}
 }
 
@@ -177,9 +171,6 @@ func TestUI_PrintJudgeHeader(t *testing.T) {
 	if !strings.Contains(output, "ADJUDICATOR") && !strings.Contains(output, "裁决") {
 		t.Error("PrintJudgeHeader() should contain judge title")
 	}
-	if !strings.Contains(output, "⚖") {
-		t.Error("PrintJudgeHeader() should contain judge icon")
-	}
 }
 
 func TestUI_PrintResult(t *testing.T) {
@@ -187,21 +178,21 @@ func TestUI_PrintResult(t *testing.T) {
 	ui := NewUI(&out, &bytes.Buffer{})
 
 	result := &debate.Result{
-		ProArgument: "pro content",
-		ConArgument: "con content",
-		Verdict:     "verdict content",
+		ProFullBody:     "Positive Argument",
+		ConFullBody:     "Negative Argument",
+		VerdictFullBody: "Final Verdict",
 	}
 
 	ui.PrintResult(result)
 
 	output := out.String()
-	if !strings.Contains(output, "pro content") {
+	if !strings.Contains(output, "Positive Argument") {
 		t.Error("PrintResult() should contain pro argument")
 	}
-	if !strings.Contains(output, "con content") {
+	if !strings.Contains(output, "Negative Argument") {
 		t.Error("PrintResult() should contain con argument")
 	}
-	if !strings.Contains(output, "verdict content") {
+	if !strings.Contains(output, "Final Verdict") {
 		t.Error("PrintResult() should contain verdict")
 	}
 }

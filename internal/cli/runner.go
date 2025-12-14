@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/hrygo/dialecta/internal/config"
 	"github.com/hrygo/dialecta/internal/debate"
@@ -65,85 +65,150 @@ func (r *Runner) Run(ctx context.Context, material string) error {
 func (r *Runner) runStreaming(ctx context.Context, material string) error {
 	r.ui.PrintDebating()
 
+	// Status tracking
 	var (
-		mu           sync.Mutex
-		conBuffer    strings.Builder
-		proFinished  bool
-		proStarted   bool
-		conStarted   bool
-		judgeStarted bool
+		mu        sync.Mutex
+		proStatus = "Thinking..."
+		conStatus = "Thinking..."
+		proDone   bool
+		conDone   bool
+		judgeDone bool
 	)
+
+	// Helper to update status line
+	updateStatus := func() {
+		// ANSI Clear Line + Carriage Return
+		fmt.Printf("\r\033[K")
+		if !proDone || !conDone {
+			// Show status if not both finished
+			fmt.Printf("⏳ Status: 🔵 Pro [%s] | 🔴 Con [%s]", proStatus, conStatus)
+		} else if !judgeDone {
+			// If both debated, show Judge status
+			fmt.Printf("⏳ Status: ⚖️  Judge is deliberating...")
+		}
+	}
+
+	// Spinner control
+	var (
+		stopSpinner func()
+		spinnerOnce sync.Once
+	)
+
+	startJudgeSpinner := func() {
+		stop := make(chan struct{})
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		stopSpinner = func() {
+			spinnerOnce.Do(func() {
+				close(stop)
+				wg.Wait()
+				fmt.Printf("\r\033[K") // Final clear
+			})
+		}
+
+		go func() {
+			defer wg.Done()
+			chars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+			i := 0
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+					fmt.Printf("\r\033[K⏳ Status: ⚖️  Judge is deliberating... %s", chars[i%len(chars)])
+					time.Sleep(80 * time.Millisecond)
+					i++
+				}
+			}
+		}()
+	}
+
+	// Initial status
+	updateStatus()
 
 	r.executor.SetStream(
 		// Pro Callback
 		func(chunk string, done bool) {
 			mu.Lock()
 			defer mu.Unlock()
-
 			if done {
-				proFinished = true
-				// Flush any buffered Con content immediately
-				if conBuffer.Len() > 0 {
-					if !conStarted {
-						r.ui.Println("")
-						r.ui.PrintConHeader()
-						conStarted = true
-					}
-					r.ui.Print(conBuffer.String())
-					conBuffer.Reset()
+				proDone = true
+				if conDone {
+					// 明确触发裁决状态，确保用户看到
+					startJudgeSpinner()
+					// updateStatus() // 移除旧调用，避免被 'Ready' 覆盖
 				}
 				return
 			}
 
-			if !proStarted {
-				r.ui.PrintProHeader()
-				proStarted = true
-			}
-			r.ui.Print(chunk)
-		},
+			// We received the One-Liner
+			// Clear status line
+			fmt.Printf("\r\033[K")
+			r.ui.PrintProHeader()
+			fmt.Println(chunk)
+			fmt.Println("") // Spacing
 
+			proStatus = "Ready"
+			updateStatus()
+		},
 		// Con Callback
 		func(chunk string, done bool) {
 			mu.Lock()
 			defer mu.Unlock()
-
 			if done {
+				conDone = true
+				if proDone {
+					startJudgeSpinner()
+				}
 				return
 			}
 
-			if proFinished {
-				// Direct print if Pro is done
-				if !conStarted {
-					r.ui.Println("")
-					r.ui.PrintConHeader()
-					conStarted = true
-				}
-				r.ui.Print(chunk)
-			} else {
-				// Buffer if Pro is running
-				conBuffer.WriteString(chunk)
-			}
-		},
+			fmt.Printf("\r\033[K")
+			r.ui.PrintConHeader()
+			fmt.Println(chunk)
+			fmt.Println("")
 
+			conStatus = "Ready"
+			updateStatus()
+		},
 		// Judge Callback
 		func(chunk string, done bool) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			// Stop spinner on first activity
+			if stopSpinner != nil {
+				stopSpinner()
+			}
+
 			if done {
+				judgeDone = true
 				return
 			}
 
-			if !judgeStarted {
-				r.ui.Println("")
-				r.ui.PrintJudgeHeader()
-				judgeStarted = true
-			}
-			r.ui.Print(chunk)
+			fmt.Printf("\r\033[K")
+			r.ui.PrintJudgeHeader()
+			fmt.Println(chunk)
+			fmt.Println("")
 		},
 	)
 
-	_, err := r.executor.Execute(ctx, material)
+	result, err := r.executor.Execute(ctx, material)
+
+	// Clear any remaining status line
+	fmt.Printf("\r\033[K")
+
 	if err != nil {
-		return fmt.Errorf("执行失败: %w", err)
+		r.ui.PrintError(err.Error())
+		return err
 	}
+
+	// Final Summary
+	fmt.Println()
+	r.ui.PrintDivider()
+	fmt.Printf("📄 Full Debate Report Saved: %s\n", result.ReportPath)
+	r.ui.PrintDivider()
 
 	r.ui.PrintComplete()
 

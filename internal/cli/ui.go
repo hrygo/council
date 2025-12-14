@@ -172,9 +172,9 @@ func (u *UI) PrintDebating() {
 // PrintComplete prints the completion message with a success indicator
 func (u *UI) PrintComplete() {
 	fmt.Fprintln(u.out)
-	fmt.Fprintf(u.out, "%s%s╔══════════════════════════════════════════════════════════════╗%s\n", ColorBrightGreen, ColorBold, ColorReset)
-	fmt.Fprintf(u.out, "%s%s║                    ✓ DEBATE COMPLETE                          ║%s\n", ColorBrightGreen, ColorBold, ColorReset)
-	fmt.Fprintf(u.out, "%s%s╚══════════════════════════════════════════════════════════════╝%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s   ✓ DEBATE COMPLETE%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorGreen, ColorBold, ColorReset)
 	fmt.Fprintf(u.out, "%sSession ended at %s%s\n", ColorDim, time.Now().Format("2006-01-02 15:04:05"), ColorReset)
 }
 
@@ -201,7 +201,7 @@ func (u *UI) PrintSectionHeader(title, icon, color string) {
 // PrintProHeader prints the affirmative (pro) section header
 func (u *UI) PrintProHeader() {
 	fmt.Fprintln(u.out)
-	fmt.Fprintf(u.out, "%s%s🟢 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🟢%s\n", ColorBrightGreen, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorGreen, ColorBold, ColorReset)
 	fmt.Fprintf(u.out, "%s%s   AFFIRMATIVE ARGUMENT │ 正方论述%s\n", ColorBrightGreen, ColorBold, ColorReset)
 	fmt.Fprintf(u.out, "%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorGreen, ColorReset)
 }
@@ -209,7 +209,7 @@ func (u *UI) PrintProHeader() {
 // PrintConHeader prints the negative (con) section header
 func (u *UI) PrintConHeader() {
 	fmt.Fprintln(u.out)
-	fmt.Fprintf(u.out, "%s%s🔴 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 🔴%s\n", ColorBrightRed, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorRed, ColorBold, ColorReset)
 	fmt.Fprintf(u.out, "%s%s   NEGATIVE ARGUMENT │ 反方论述%s\n", ColorBrightRed, ColorBold, ColorReset)
 	fmt.Fprintf(u.out, "%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorRed, ColorReset)
 }
@@ -217,21 +217,21 @@ func (u *UI) PrintConHeader() {
 // PrintJudgeHeader prints the adjudicator (judge) section header
 func (u *UI) PrintJudgeHeader() {
 	fmt.Fprintln(u.out)
-	fmt.Fprintf(u.out, "%s%s⚖️  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ⚖️%s\n", ColorBrightYellow, ColorBold, ColorReset)
+	fmt.Fprintf(u.out, "%s%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorBrightYellow, ColorBold, ColorReset)
 	fmt.Fprintf(u.out, "%s%s   ADJUDICATOR'S VERDICT │ 裁决报告%s\n", ColorBrightYellow, ColorBold, ColorReset)
 	fmt.Fprintf(u.out, "%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", ColorYellow, ColorReset)
 }
 
-// PrintResult prints the complete debate result (non-streaming mode)
+// PrintResult prints the final debate result
 func (u *UI) PrintResult(result *debate.Result) {
 	u.PrintProHeader()
-	fmt.Fprintln(u.out, result.ProArgument)
+	fmt.Fprintln(u.out, result.ProFullBody)
 
 	u.PrintConHeader()
-	fmt.Fprintln(u.out, result.ConArgument)
+	fmt.Fprintln(u.out, result.ConFullBody)
 
 	u.PrintJudgeHeader()
-	fmt.Fprintln(u.out, result.Verdict)
+	fmt.Fprintln(u.out, result.VerdictFullBody)
 }
 
 // Print writes content to the output

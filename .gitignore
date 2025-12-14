@@ -34,3 +34,4 @@ bin/
 # Environment
 .env
 .env.local
+reports/
