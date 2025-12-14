@@ -83,20 +83,58 @@ func DefaultUI() *UI {
 func (u *UI) PrintBanner() {
 	fmt.Fprintln(u.out)
 
-	// Top border with gradient effect
-	fmt.Fprintf(u.out, "%s%s", ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  ╭──────────────────────────────────────────────────────────────╮\n")
-	fmt.Fprintf(u.out, "  │%s%s                                                              %s%s│\n", ColorReset, BgBlack, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s%s   ██████╗ ██╗ █████╗ ██╗     ███████╗ ██████╗████████╗ █████╗%s%s│\n", ColorBrightMagenta, ColorBold, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s%s   ██╔══██╗██║██╔══██╗██║     ██╔════╝██╔════╝╚══██╔══╝██╔══██╗%s%s│\n", ColorBrightMagenta, ColorBold, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s%s   ██║  ██║██║███████║██║     █████╗  ██║        ██║   ███████║%s%s│\n", ColorBrightCyan, ColorBold, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s%s   ██║  ██║██║██╔══██║██║     ██╔══╝  ██║        ██║   ██╔══██║%s%s│\n", ColorBrightCyan, ColorBold, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s%s   ██████╔╝██║██║  ██║███████╗███████╗╚██████╗   ██║   ██║  ██║%s%s│\n", ColorBrightBlue, ColorBold, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s%s   ╚═════╝ ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝%s%s│\n", ColorBrightBlue, ColorBold, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s%s                                                              %s%s│\n", ColorReset, BgBlack, ColorBrightCyan, ColorBold)
-	fmt.Fprintf(u.out, "  │%s  %s◈ Multi-Persona AI Debate System%s            %s▸ v1.0.0%s  │\n", ColorBrightWhite, ColorBold, ColorReset, ColorDim, ColorBrightCyan)
-	fmt.Fprintf(u.out, "  │%s  %s◈ Powered by DeepSeek × Gemini × Qwen%s                     %s│\n", ColorBrightYellow, ColorDim, ColorReset, ColorBrightCyan)
-	fmt.Fprintf(u.out, "  ╰──────────────────────────────────────────────────────────────╯%s\n\n", ColorReset)
+	// ASCII Art definition
+	asciiArt := []string{
+		"██████╗ ██╗ █████╗ ██╗     ███████╗ ██████╗████████╗ █████╗",
+		"██╔══██╗██║██╔══██╗██║     ██╔════╝██╔════╝╚══██╔══╝██╔══██╗",
+		"██║  ██║██║███████║██║     █████╗  ██║        ██║   ███████║",
+		"██║  ██║██║██╔══██║██║     ██╔══╝  ██║        ██║   ██╔══██║",
+		"██████╔╝██║██║  ██║███████╗███████╗╚██████╗   ██║   ██║  ██║",
+		"╚═════╝ ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝",
+	}
+
+	// Layout constants
+	borderTop := "╭──────────────────────────────────────────────────────────────╮"
+	borderBot := "╰──────────────────────────────────────────────────────────────╯"
+	padding := "  "
+	contentWidth := 62 // Width of the border content area
+
+	// 1. Top Border (Cyan)
+	fmt.Fprintf(u.out, "%s%s%s%s\n", padding, ColorBrightCyan, borderTop, ColorReset)
+
+	// 2. ASCII Art with Gradient Layering (Magenta -> Cyan -> Blue)
+	// Top Layer (Magenta)
+	for i := 0; i < 2; i++ {
+		fmt.Fprintf(u.out, "%s│%s%s   %s%s   │\n", padding, ColorReset, BgBlack, ColorBrightMagenta, asciiArt[i])
+	}
+	// Middle Layer (Cyan)
+	for i := 2; i < 4; i++ {
+		fmt.Fprintf(u.out, "%s│%s%s   %s%s   │\n", padding, ColorReset, BgBlack, ColorBrightCyan, asciiArt[i])
+	}
+	// Bottom Layer (Blue)
+	for i := 4; i < 6; i++ {
+		fmt.Fprintf(u.out, "%s│%s%s   %s%s   │\n", padding, ColorReset, BgBlack, ColorBrightBlue, asciiArt[i])
+	}
+
+	// 3. Spacing
+	fmt.Fprintf(u.out, "%s│%s%s%s│\n", padding, ColorReset, BgBlack, strings.Repeat(" ", contentWidth))
+
+	// 4. Metadata Footer
+	// Line 1: System Name + Version
+	// "  ◆ Multi-Persona AI Debate System            ► v1.0.0      "
+	fmt.Fprintf(u.out, "%s│%s%s  %s◆ Multi-Persona AI Debate System%s            %s► v1.0.0%s      │\n",
+		padding, ColorReset, BgBlack,
+		ColorBrightWhite, ColorReset,
+		ColorDim, ColorReset)
+
+	// Line 2: Powered By
+	// "  ◆ Powered by DeepSeek × Gemini × Qwen                     "
+	fmt.Fprintf(u.out, "%s│%s%s  %s◆ Powered by DeepSeek × Gemini × Qwen%s                     │\n",
+		padding, ColorReset, BgBlack,
+		ColorBrightYellow, ColorReset)
+
+	// 5. Bottom Border (Cyan)
+	fmt.Fprintf(u.out, "%s%s%s%s\n\n", padding, ColorBrightCyan, borderBot, ColorReset)
 }
 
 // PrintConfig prints the configuration info with a modern card-style layout
