@@ -22,9 +22,9 @@ type Result struct {
 type Executor struct {
 	cfg     *config.Config
 	stream  bool
-	onPro   func(string) // 正方流式回调
-	onCon   func(string) // 反方流式回调
-	onJudge func(string) // 裁决流式回调
+	onPro   func(string, bool) // (content, done)
+	onCon   func(string, bool)
+	onJudge func(string, bool)
 }
 
 // NewExecutor creates a new debate executor
@@ -36,7 +36,7 @@ func NewExecutor(cfg *config.Config) *Executor {
 }
 
 // SetStream enables streaming mode with callbacks
-func (e *Executor) SetStream(onPro, onCon, onJudge func(string)) {
+func (e *Executor) SetStream(onPro, onCon, onJudge func(string, bool)) {
 	e.stream = true
 	e.onPro = onPro
 	e.onCon = onCon
@@ -64,7 +64,10 @@ func (e *Executor) Execute(ctx context.Context, material string) (*Result, error
 
 		messages := prompt.BuildAffirmativeMessages(material)
 		if e.stream && e.onPro != nil {
-			result.ProArgument, err = client.ChatStream(ctx, messages, e.onPro)
+			result.ProArgument, err = client.ChatStream(ctx, messages, func(chunk string) {
+				e.onPro(chunk, false)
+			})
+			e.onPro("", true)
 		} else {
 			result.ProArgument, err = client.Chat(ctx, messages)
 		}
@@ -84,7 +87,10 @@ func (e *Executor) Execute(ctx context.Context, material string) (*Result, error
 
 		messages := prompt.BuildNegativeMessages(material)
 		if e.stream && e.onCon != nil {
-			result.ConArgument, err = client.ChatStream(ctx, messages, e.onCon)
+			result.ConArgument, err = client.ChatStream(ctx, messages, func(chunk string) {
+				e.onCon(chunk, false)
+			})
+			e.onCon("", true)
 		} else {
 			result.ConArgument, err = client.Chat(ctx, messages)
 		}
@@ -111,7 +117,10 @@ func (e *Executor) Execute(ctx context.Context, material string) (*Result, error
 
 	messages := prompt.BuildAdjudicatorMessages(material, result.ProArgument, result.ConArgument)
 	if e.stream && e.onJudge != nil {
-		result.Verdict, err = judgeClient.ChatStream(ctx, messages, e.onJudge)
+		result.Verdict, err = judgeClient.ChatStream(ctx, messages, func(chunk string) {
+			e.onJudge(chunk, false)
+		})
+		e.onJudge("", true)
 	} else {
 		result.Verdict, err = judgeClient.Chat(ctx, messages)
 	}

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/hrygo/dialecta/internal/config"
@@ -59,26 +61,78 @@ func (r *Runner) Run(ctx context.Context, material string) error {
 	return r.runNonStreaming(ctx, material)
 }
 
-// runStreaming executes the debate in streaming mode using a dual-column layout
+// runStreaming executes the debate in streaming mode using sequential display
 func (r *Runner) runStreaming(ctx context.Context, material string) error {
 	r.ui.PrintDebating()
 
-	// Phase 1: Dual-Column Parallel Stream (Pro/Con)
-	dp := r.ui.StartDualStream()
-
-	var judgeStarted bool
+	var (
+		mu           sync.Mutex
+		conBuffer    strings.Builder
+		proFinished  bool
+		proStarted   bool
+		conStarted   bool
+		judgeStarted bool
+	)
 
 	r.executor.SetStream(
-		func(chunk string) {
-			dp.UpdatePro(chunk)
+		// Pro Callback
+		func(chunk string, done bool) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if done {
+				proFinished = true
+				// Flush any buffered Con content immediately
+				if conBuffer.Len() > 0 {
+					if !conStarted {
+						r.ui.Println("")
+						r.ui.PrintConHeader()
+						conStarted = true
+					}
+					r.ui.Print(conBuffer.String())
+					conBuffer.Reset()
+				}
+				return
+			}
+
+			if !proStarted {
+				r.ui.PrintProHeader()
+				proStarted = true
+			}
+			r.ui.Print(chunk)
 		},
-		func(chunk string) {
-			dp.UpdateCon(chunk)
+
+		// Con Callback
+		func(chunk string, done bool) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if done {
+				return
+			}
+
+			if proFinished {
+				// Direct print if Pro is done
+				if !conStarted {
+					r.ui.Println("")
+					r.ui.PrintConHeader()
+					conStarted = true
+				}
+				r.ui.Print(chunk)
+			} else {
+				// Buffer if Pro is running
+				conBuffer.WriteString(chunk)
+			}
 		},
-		func(chunk string) {
-			// Phase 2: Judge Stream (Sequential after Pro/Con)
+
+		// Judge Callback
+		func(chunk string, done bool) {
+			if done {
+				return
+			}
+
 			if !judgeStarted {
-				r.ui.Println("\n") // Spacer from columns
+				r.ui.Println("")
 				r.ui.PrintJudgeHeader()
 				judgeStarted = true
 			}

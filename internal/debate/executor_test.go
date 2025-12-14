@@ -34,9 +34,9 @@ func TestExecutor_SetStream(t *testing.T) {
 	conCalled := false
 	judgeCalled := false
 
-	onPro := func(s string) { proCalled = true }
-	onCon := func(s string) { conCalled = true }
-	onJudge := func(s string) { judgeCalled = true }
+	onPro := func(s string, done bool) { proCalled = true }
+	onCon := func(s string, done bool) { conCalled = true }
+	onJudge := func(s string, done bool) { judgeCalled = true }
 
 	executor.SetStream(onPro, onCon, onJudge)
 
@@ -56,9 +56,9 @@ func TestExecutor_SetStream(t *testing.T) {
 	}
 
 	// Verify callbacks work
-	executor.onPro("test")
-	executor.onCon("test")
-	executor.onJudge("test")
+	executor.onPro("test", false)
+	executor.onCon("test", false)
+	executor.onJudge("test", false)
 
 	if !proCalled {
 		t.Error("onPro callback was not called")
@@ -211,9 +211,9 @@ func TestExecutor_StreamCallbacksInvoked(t *testing.T) {
 	var proChunks, conChunks, judgeChunks []string
 
 	executor.SetStream(
-		func(s string) { proChunks = append(proChunks, s) },
-		func(s string) { conChunks = append(conChunks, s) },
-		func(s string) { judgeChunks = append(judgeChunks, s) },
+		func(s string, done bool) { proChunks = append(proChunks, s) },
+		func(s string, done bool) { conChunks = append(conChunks, s) },
+		func(s string, done bool) { judgeChunks = append(judgeChunks, s) },
 	)
 
 	// Verify stream mode is enabled
@@ -222,10 +222,10 @@ func TestExecutor_StreamCallbacksInvoked(t *testing.T) {
 	}
 
 	// Manually invoke callbacks to test they are correctly wired
-	executor.onPro("pro chunk 1")
-	executor.onPro("pro chunk 2")
-	executor.onCon("con chunk 1")
-	executor.onJudge("judge chunk 1")
+	executor.onPro("pro chunk 1", false)
+	executor.onPro("pro chunk 2", false)
+	executor.onCon("con chunk 1", false)
+	executor.onJudge("judge chunk 1", false)
 
 	if len(proChunks) != 2 {
 		t.Errorf("proChunks length = %d, want 2", len(proChunks))
@@ -245,23 +245,23 @@ func TestExecutor_MultipleSetStream(t *testing.T) {
 	// First set
 	var count1 int
 	executor.SetStream(
-		func(s string) { count1++ },
-		func(s string) { count1++ },
-		func(s string) { count1++ },
+		func(s string, done bool) { count1++ },
+		func(s string, done bool) { count1++ },
+		func(s string, done bool) { count1++ },
 	)
 
 	// Second set should override
 	var count2 int
 	executor.SetStream(
-		func(s string) { count2++ },
-		func(s string) { count2++ },
-		func(s string) { count2++ },
+		func(s string, done bool) { count2++ },
+		func(s string, done bool) { count2++ },
+		func(s string, done bool) { count2++ },
 	)
 
 	// Invoke callbacks
-	executor.onPro("test")
-	executor.onCon("test")
-	executor.onJudge("test")
+	executor.onPro("test", false)
+	executor.onCon("test", false)
+	executor.onJudge("test", false)
 
 	if count1 != 0 {
 		t.Error("First set of callbacks should have been overridden")
