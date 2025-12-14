@@ -90,93 +90,48 @@ func (u *UI) PrintBanner() {
 		"██║  ██║██║███████║██║     █████╗  ██║        ██║   ███████║",
 		"██║  ██║██║██╔══██║██║     ██╔══╝  ██║        ██║   ██╔══██║",
 		"██████╔╝██║██║  ██║███████╗███████╗╚██████╗   ██║   ██║  ██║",
-		"╚═════╝ ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝",
+		"╚═════╝ ╚═╝╚╝  ╚═╝╚══════╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝",
 	}
 
 	// Layout constants
-	// ASCII Art width is 63 characters.
-	// We need 1 space padding on left and right -> 65 chars inner width.
-	// Border needs to be 65 chars long.
-	borderTop := "╭" + strings.Repeat("─", 65) + "╮"
-	borderBot := "╰" + strings.Repeat("─", 65) + "╯"
+	// We use a full-width style without vertical side borders to avoid alignment issues
+	// caused by variable-width unicode characters and terminal rendering differences.
+
+	// 1. Top Decoration
+	// Gradient line matching the image style
 	padding := "  "
+	fmt.Fprintf(u.out, "%s%s╭─────────────────────────────────────────────────────────────────╮%s\n", padding, ColorBrightCyan, ColorReset)
 
-	// 1. Top Border
-	fmt.Fprintf(u.out, "%s%s%s%s\n", padding, ColorBrightCyan, borderTop, ColorReset)
+	// Let's go with a cleaner, borderless ASCII art style,
+	// but kept the "Cyberpunk" colors.
 
-	// Helper to print a line with correct coloring
-	// Inner width is 65.
-	// Layout: │ + " " (BgBlack) + Content (63 chars) + " " (BgBlack) + │
-	printLine := func(content string, color string) {
-		// Left Border
-		fmt.Fprintf(u.out, "%s%s│%s", padding, ColorBrightCyan, ColorReset)
-
-		// Content: BgBlack + 1 space + Color Content + BgBlack 1 space + Reset
-		// We trust ASCII art is exactly 63 chars.
-		fmt.Fprintf(u.out, "%s %s%s%s %s", BgBlack, color, content, BgBlack, ColorReset)
-
-		// Right Border
-		fmt.Fprintf(u.out, "%s│%s\n", ColorBrightCyan, ColorReset)
-	}
-
-	// 2. ASCII Art
+	// 2. ASCII Art with Gradient Layering
+	// We print it simply, no box.
 	for i := 0; i < 2; i++ {
-		printLine(asciiArt[i], ColorBrightMagenta)
+		fmt.Fprintf(u.out, "%s%s%s%s\n", padding, " ", ColorBrightMagenta, asciiArt[i])
 	}
 	for i := 2; i < 4; i++ {
-		printLine(asciiArt[i], ColorBrightCyan)
+		fmt.Fprintf(u.out, "%s%s%s%s\n", padding, " ", ColorBrightCyan, asciiArt[i])
 	}
 	for i := 4; i < 6; i++ {
-		printLine(asciiArt[i], ColorBrightBlue)
+		fmt.Fprintf(u.out, "%s%s%s%s\n", padding, " ", ColorBrightBlue, asciiArt[i])
 	}
+	fmt.Fprintln(u.out)
 
-	// 3. Spacing line
-	// 65 spaces for full width background
-	fmt.Fprintf(u.out, "%s%s│%s%s%s%s%s│%s\n",
-		padding, ColorBrightCyan, ColorReset,
-		BgBlack, strings.Repeat(" ", 65), ColorReset,
-		ColorBrightCyan, ColorReset)
+	// 3. Metadata Footer (Modern Text Style)
+	// Line 1
+	fmt.Fprintf(u.out, "%s%s◆ Multi-Persona AI Debate System%s            %s► v1.0.0%s\n",
+		padding,
+		ColorBrightWhite, ColorReset,
+		ColorDim, ColorReset)
 
-	// 4. Metadata Footer
-	// Redoing Footer Logic for reliability:
-	// Use explicit spacers.
-	printFooterLine := func(left, right string, colorL, colorR string) {
-		fmt.Fprintf(u.out, "%s%s│%s", padding, ColorBrightCyan, ColorReset)
+	// Line 2
+	fmt.Fprintf(u.out, "%s%s◆ Powered by DeepSeek × Gemini × Qwen%s\n",
+		padding,
+		ColorBrightYellow, ColorReset)
 
-		// Left part: "  ◆ "
-		prefix := "  ◆ "
-
-		spacerLen := 0
-		if right == "► v1.0.0" {
-			// Line 1: 21 spaces
-			spacerLen = 21
-		} else {
-			// Line 2: 24 spaces
-			spacerLen = 24
-		}
-		spacer := strings.Repeat(" ", spacerLen)
-
-		// Format string: 15 placeholders for 15 args
-		// Args: BgBlack, White, Prefix, Reset, BgBlack, ColorL, Left, Reset, BgBlack, Spacer, ColorR, Right, Reset, BgBlack, Reset
-		fmt.Fprintf(u.out, "%s %s%s%s%s%s%s%s%s%s%s%s%s%s %s",
-			BgBlack,                              // 1
-			ColorBrightWhite, prefix, ColorReset, // 2,3,4
-			BgBlack,                  // 5
-			colorL, left, ColorReset, // 6,7,8
-			BgBlack,                   // 9
-			spacer,                    // 10
-			colorR, right, ColorReset, // 11,12,13
-			BgBlack,    // 14
-			ColorReset) // 15
-
-		fmt.Fprintf(u.out, "%s│%s\n", ColorBrightCyan, ColorReset)
-	}
-
-	printFooterLine("Multi-Persona AI Debate System", "► v1.0.0", ColorBrightWhite, ColorDim)
-	printFooterLine("Powered by DeepSeek × Gemini × Qwen", "", ColorBrightYellow, "")
-
-	// 5. Bottom Border
-	fmt.Fprintf(u.out, "%s%s%s%s\n\n", padding, ColorBrightCyan, borderBot, ColorReset)
+	// 4. Bottom Decoration
+	fmt.Fprintf(u.out, "%s%s╰─────────────────────────────────────────────────────────────────╯%s\n\n", padding, ColorBrightCyan, ColorReset)
 }
 
 // PrintConfig prints the configuration info with a modern card-style layout
