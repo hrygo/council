@@ -10,49 +10,58 @@ import (
 	"golang.org/x/term"
 )
 
-// DualPrinter handles side-by-side streaming output
+// DualPrinter handles vertical split streaming output (Top/Bottom boxes)
 type DualPrinter struct {
-	mu    sync.Mutex
-	out   *os.File
-	width int
+	mu         sync.Mutex
+	out        *os.File
+	termWidth  int
+	termHeight int
 
 	proLines []string
 	conLines []string
 
-	// Current print state
-	printedLines int
-
 	// Configuration
-	colWidth int
-	gap      int
+	boxHeight    int // Height of content area inside the box
+	contentWidth int // Width of text area
 
-	leftColor  string
-	rightColor string
+	// State
+	isStarted bool
 }
 
 func NewDualPrinter(out *os.File) *DualPrinter {
-	w, _, err := term.GetSize(int(out.Fd()))
+	w, h, err := term.GetSize(int(out.Fd()))
 	if err != nil {
-		w = 80 // Default fallback
+		w, h = 80, 24
 	}
 
-	// Safety for very narrow screens
-	if w < 40 {
-		w = 40
+	// Calculate Box Height based on terminal height
+	// We need 2 boxes. Each box has BorderTop + Content + BorderBot = Content + 2 lines.
+	// Plus 1 spacer line. Total overhead = 2*2 + 1 = 5 lines.
+	// Available for content = H - 5.
+	// content per box = (H - 5) / 2.
+
+	targetH := (h - 6) / 2
+	if targetH < 5 {
+		targetH = 5 // Minimum viable height
+	}
+	if targetH > 15 {
+		targetH = 15 // Cap maximum height to avoid taking over huge screens completely
 	}
 
-	gap := 4
-	colW := (w - gap) / 2
+	// Content width = Width - 4 (Border chars + padding)
+	cW := w - 4
+	if cW < 20 {
+		cW = 20
+	}
 
 	return &DualPrinter{
-		out:        out,
-		width:      w,
-		gap:        gap,
-		colWidth:   colW,
-		proLines:   []string{""}, // Start with empty line
-		conLines:   []string{""}, // Start with empty line
-		leftColor:  ColorBrightGreen,
-		rightColor: ColorBrightRed,
+		out:          out,
+		termWidth:    w,
+		termHeight:   h,
+		boxHeight:    targetH,
+		contentWidth: cW,
+		proLines:     []string{""},
+		conLines:     []string{""},
 	}
 }
 
@@ -60,12 +69,20 @@ func (dp *DualPrinter) Start() {
 	dp.mu.Lock()
 	defer dp.mu.Unlock()
 
-	// Print Headers
-	headers := dp.formatDualLine("🟢 正方 (PRO)", "🔴 反方 (CON)", ColorBrightGreen, ColorBrightRed)
-	fmt.Fprintln(dp.out, headers)
-	fmt.Fprintln(dp.out, dp.formatDualLine(strings.Repeat("─", dp.colWidth), strings.Repeat("─", dp.colWidth), ColorDim, ColorDim))
+	if dp.isStarted {
+		return
+	}
 
-	dp.printedLines = 0
+	// Reserve screen real estate by printing newlines
+	// Total Height = (BoxHeight + 2) * 2 + 1
+	totalLines := (dp.boxHeight+2)*2 + 1
+	fmt.Fprint(dp.out, strings.Repeat("\n", totalLines))
+
+	// Draw initial empty boxes
+	dp.drawBox(true)  // Draw Pro
+	dp.drawBox(false) // Draw Con
+
+	dp.isStarted = true
 }
 
 func (dp *DualPrinter) UpdatePro(text string) {
@@ -84,125 +101,187 @@ func (dp *DualPrinter) update(isPro bool, text string) {
 	for _, r := range runes {
 		dp.appendRune(isPro, r)
 	}
-	dp.render()
+
+	// Only redraw the modified box
+	dp.drawBox(isPro)
 }
 
 func (dp *DualPrinter) appendRune(isPro bool, r rune) {
-	var currentLineIdx int
-	var currentLineContent string
-
+	var lines *[]string
 	if isPro {
-		currentLineIdx = len(dp.proLines) - 1
-		currentLineContent = dp.proLines[currentLineIdx]
+		lines = &dp.proLines
 	} else {
-		currentLineIdx = len(dp.conLines) - 1
-		currentLineContent = dp.conLines[currentLineIdx]
+		lines = &dp.conLines
 	}
 
+	// Get current line
+	idx := len(*lines) - 1
+	line := (*lines)[idx]
+
 	if r == '\n' {
-		if isPro {
-			dp.proLines = append(dp.proLines, "")
-		} else {
-			dp.conLines = append(dp.conLines, "")
-		}
+		*lines = append(*lines, "")
 		return
 	}
 
 	rw := runeWidth(r)
-	curW := stringWidth(currentLineContent)
+	curW := stringWidth(line)
 
-	if curW+rw > dp.colWidth {
-		if isPro {
-			dp.proLines = append(dp.proLines, string(r))
-		} else {
-			dp.conLines = append(dp.conLines, string(r))
-		}
+	if curW+rw > dp.contentWidth {
+		*lines = append(*lines, string(r))
 	} else {
-		if isPro {
-			dp.proLines[currentLineIdx] += string(r)
-		} else {
-			dp.conLines[currentLineIdx] += string(r)
-		}
+		(*lines)[idx] += string(r)
 	}
 }
 
-func (dp *DualPrinter) render() {
-	targetHeight := len(dp.proLines)
-	if len(dp.conLines) > targetHeight {
-		targetHeight = len(dp.conLines)
-	}
+func (dp *DualPrinter) drawBox(isPro bool) {
+	// 1. Save Cursor position (Assuming we are at the bottom because we always restore downstream)
+	// Actually, standard practice is:
+	// We allocated N lines. We assume cursor is at the line AFTER the last box.
 
-	currentMaxHeight := targetHeight
+	// Calculate Up Distance
+	// Layout (Bottom Up):
+	// [Cursor]
+	// Con Border Bot (1)
+	// Con Content (H)
+	// Con Header (1)
+	// Spacer (1)
+	// Pro Border Bot (1)
+	// Pro Content (H)
+	// Pro Header (1)
 
-	// Scroll if needed
-	needed := currentMaxHeight - dp.printedLines
-	if needed > 0 {
-		fmt.Fprint(dp.out, strings.Repeat("\n", needed))
-		dp.printedLines = currentMaxHeight
-	}
+	var upLines int
+	boxTotal := dp.boxHeight + 2
 
-	// Update visible lines
-	// To minimize cursor jumping, we only update the active lines (the last ones)
-	// But simply always updating the last line of both is safe enough for append-only logic.
-	dp.updateLineOnScreen(len(dp.proLines)-1, true)
-	dp.updateLineOnScreen(len(dp.conLines)-1, false)
-}
-
-func (dp *DualPrinter) updateLineOnScreen(lineIdx int, isPro bool) {
-	if lineIdx < 0 {
-		return
-	}
-
-	up := dp.printedLines - 1 - lineIdx
-	if up < 0 {
-		return
+	if isPro {
+		// To redraw Pro, we go to top of Pro.
+		// Dist = ConTotal + Spacer + ProTotal
+		// Start of Pro is at Top.
+		// But we draw from top down.
+		// Start line of Pro is (ConTotal + Spacer + ProTotal) lines UP from current.
+		upLines = boxTotal + 1 + boxTotal
+	} else {
+		// Con
+		upLines = boxTotal
 	}
 
 	// Move Up
-	if up > 0 {
-		fmt.Fprintf(dp.out, "\033[%dA", up)
-	}
+	fmt.Fprintf(dp.out, "\033[%dA", upLines)
 
-	text := ""
+	// Draw Box
+	// Header
+	var title, borderColor, titleColor string
 	if isPro {
-		text = dp.proLines[lineIdx]
+		title = "🟢 正方 (PRO)"
+		borderColor = ColorBrightGreen
+		titleColor = ColorBrightGreen // Or use Bold
 	} else {
-		text = dp.conLines[lineIdx]
+		title = "🔴 反方 (CON)"
+		borderColor = ColorBrightRed
+		titleColor = ColorBrightRed
 	}
 
-	// Return to start of line
-	fmt.Fprint(dp.out, "\r")
+	// Header Line: ┌─ TITLE ──...─┐
+	// Architecture: ┌─ (2) + Space (1) + Title (W) + Space (1) + Dashes (N) + ┐ (1)
+	// Total Width used explicitly = 2 + 1 + W + 1 + 1 = 5 + W.
+	// Remaining for dashes = TermWidth - (5 + W).
 
+	headerBarLen := dp.termWidth - (5 + stringWidth(title))
+	if headerBarLen < 0 {
+		headerBarLen = 0
+	}
+
+	fmt.Fprintf(dp.out, "\r%s┌─ %s%s %s┐%s\n",
+		borderColor,
+		titleColor, title,
+		borderColor+strings.Repeat("─", headerBarLen),
+		ColorReset,
+	)
+
+	// Content with Clipping/Scrolling
+	lines := dp.conLines
 	if isPro {
-		fmt.Fprintf(dp.out, "%s%s%s", dp.leftColor, text, ColorReset)
-	} else {
-		moveRight := dp.colWidth + dp.gap
-		fmt.Fprintf(dp.out, "\033[%dC", moveRight)
-		fmt.Fprintf(dp.out, "%s%s%s", dp.rightColor, text, ColorReset)
+		lines = dp.proLines
 	}
+
+	// Determine visible window (Tail)
+	startIdx := 0
+	if len(lines) > dp.boxHeight {
+		startIdx = len(lines) - dp.boxHeight
+	}
+	visibleLines := lines[startIdx:]
+
+	// Draw Content Rows
+	for i := 0; i < dp.boxHeight; i++ {
+		text := ""
+		if i < len(visibleLines) {
+			text = visibleLines[i]
+		}
+
+		// Fill width
+		padding := dp.contentWidth - stringWidth(text)
+		if padding < 0 {
+			padding = 0
+		} // Should not happen due to wrap logic
+
+		fmt.Fprintf(dp.out, "\r%s│ %s%s%s%s%s │%s\n",
+			borderColor,
+			ColorReset,
+			text,
+			strings.Repeat(" ", padding),
+			borderColor, // Restore border color for │
+			"",          // extra arg
+			ColorReset,
+		)
+	}
+
+	// Footer Line
+	fmt.Fprintf(dp.out, "\r%s└%s┘%s",
+		borderColor,
+		strings.Repeat("─", dp.termWidth-2),
+		ColorReset,
+	)
 
 	// Restore Down
-	if up > 0 {
-		fmt.Fprintf(dp.out, "\033[%dB", up)
+	// We just printed (1 + H + 1) lines. We moved Up `upLines`.
+	// Current pos is at end of Footer.
+	// We need to move down by remaining distance.
+	// Total Up was `upLines`. We printed `boxTotal`.
+	// Remaining Down = upLines - boxTotal. NOT QUITE.
+	// Because printing moves cursor down.
+	// Initial: Y
+	// Move Up X: Y-X
+	// Print N: Y-X+N
+	// Target: Y.
+	// Need to move down: Y - (Y-X+N) = X - N.
+
+	downNeeded := upLines - boxTotal
+	if downNeeded > 0 {
+		fmt.Fprintf(dp.out, "\n\033[%dB", downNeeded)
+		// Note: \n moves down 1. So (downNeeded - 1)?
+		// Actually, Printf("\n") already is 1 line.
+		// Let's use Move Down explicitly without newline to be safe?
+		// No, the last Fprintf didn't verify newline at end?
+		// "└...┘" -> No newline at end in my code.
+		// So current is on same line as footer.
+		// So we actually outputted `boxTotal - 1` newlines. (Header, H content lines).
+		// Footer is just printed, cursor at end of footer line.
+
+		// So we are at Box Bottom Line.
+		// If isPro: we are at Pro Bottom. We need to jump over Spacer (1) + Con (BoxTotal).
+		// Distance = 1 + BoxTotal.
+		fmt.Fprintf(dp.out, "\n\033[%dB", downNeeded-1) // \n takes 1 line
+	} else {
+		// If Con (downNeeded == 0)
+		// We are at Con Footer.
+		// Cursor should be at line BELOW Con Footer.
+		fmt.Fprint(dp.out, "\n")
 	}
 
-	// Cleanup return
+	// Reset column
 	fmt.Fprint(dp.out, "\r")
 }
 
-func (dp *DualPrinter) formatDualLine(left, right, cLeft, cRight string) string {
-	padLeft := dp.colWidth - stringWidth(left)
-	if padLeft < 0 {
-		padLeft = 0
-	}
-
-	return fmt.Sprintf("%s%s%s%s%s%s%s%s",
-		cLeft, left, strings.Repeat(" ", padLeft), ColorReset,
-		strings.Repeat(" ", dp.gap),
-		cRight, right, ColorReset,
-	)
-}
-
+// Helpers retained
 func stringWidth(s string) int {
 	w := 0
 	for _, r := range s {
