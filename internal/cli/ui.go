@@ -94,46 +94,76 @@ func (u *UI) PrintBanner() {
 	}
 
 	// Layout constants
-	borderTop := "╭──────────────────────────────────────────────────────────────╮"
-	borderBot := "╰──────────────────────────────────────────────────────────────╯"
+	borderTop := "╭─────────────────────────────────────────────────────────────╮" // 61 dashes
+	borderBot := "╰─────────────────────────────────────────────────────────────╯"
 	padding := "  "
-	contentWidth := 62 // Width of the border content area
+	// Content width logic:
+	// Border is 63 chars wide (1 + 61 + 1)
+	// Inner content space is 61 chars
+	// ASCII Art is ~55 chars wide visually
+	// Padding left: 3 chars ("   ")
+	// Padding right: 3 chars ("   ")
+	// Total: 3 + 55 + 3 = 61 matches inner width
 
-	// 1. Top Border (Cyan)
+	// 1. Top Border
 	fmt.Fprintf(u.out, "%s%s%s%s\n", padding, ColorBrightCyan, borderTop, ColorReset)
 
-	// 2. ASCII Art with Gradient Layering (Magenta -> Cyan -> Blue)
-	// Top Layer (Magenta)
-	for i := 0; i < 2; i++ {
-		fmt.Fprintf(u.out, "%s│%s%s   %s%s   │\n", padding, ColorReset, BgBlack, ColorBrightMagenta, asciiArt[i])
-	}
-	// Middle Layer (Cyan)
-	for i := 2; i < 4; i++ {
-		fmt.Fprintf(u.out, "%s│%s%s   %s%s   │\n", padding, ColorReset, BgBlack, ColorBrightCyan, asciiArt[i])
-	}
-	// Bottom Layer (Blue)
-	for i := 4; i < 6; i++ {
-		fmt.Fprintf(u.out, "%s│%s%s   %s%s   │\n", padding, ColorReset, BgBlack, ColorBrightBlue, asciiArt[i])
+	// Helper to print a line with correct coloring
+	printLine := func(content string, color string) {
+		// Left Border: Padding + Cyan │ + Reset
+		fmt.Fprintf(u.out, "%s%s│%s", padding, ColorBrightCyan, ColorReset)
+
+		// Content: BgBlack + 3 spaces + Color Content + BgBlack 3 spaces + Reset
+		// Note: We avoid ColorReset inside the content to keep BgBlack active.
+		// Instead, we just set the color we want.
+		// But wait, 'content' is printed with 'color'. After content, we need to ensure right padding has BgBlack.
+		// And we need to ensure 'content' printing doesn't reset bg.
+		fmt.Fprintf(u.out, "%s   %s%s   %s", BgBlack, color, content, ColorReset)
+
+		// Right Border: Cyan │ + Reset
+		fmt.Fprintf(u.out, "%s│%s\n", ColorBrightCyan, ColorReset)
 	}
 
-	// 3. Spacing
-	fmt.Fprintf(u.out, "%s│%s%s%s│\n", padding, ColorReset, BgBlack, strings.Repeat(" ", contentWidth))
+	// 2. ASCII Art
+	for i := 0; i < 2; i++ {
+		printLine(asciiArt[i], ColorBrightMagenta)
+	}
+	for i := 2; i < 4; i++ {
+		printLine(asciiArt[i], ColorBrightCyan)
+	}
+	for i := 4; i < 6; i++ {
+		printLine(asciiArt[i], ColorBrightBlue)
+	}
+
+	// 3. Spacing line
+	fmt.Fprintf(u.out, "%s%s│%s%s%s%s%s│%s\n",
+		padding, ColorBrightCyan, ColorReset,
+		BgBlack, strings.Repeat(" ", 61), ColorReset,
+		ColorBrightCyan, ColorReset)
 
 	// 4. Metadata Footer
-	// Line 1: System Name + Version
-	// "  ◆ Multi-Persona AI Debate System            ► v1.0.0      "
-	fmt.Fprintf(u.out, "%s│%s%s  %s◆ Multi-Persona AI Debate System%s            %s► v1.0.0%s      │\n",
-		padding, ColorReset, BgBlack,
-		ColorBrightWhite, ColorReset,
-		ColorDim, ColorReset)
+	// Line 1: "  ◆ Multi-Persona AI Debate System            ► v1.0.0     "
+	// We use colors directly without intermediate resets to maintain BgBlack
+	// Let's rewrite the format string to be simpler and safer
+	// Line 1
+	fmt.Fprintf(u.out, "%s%s│%s%s  %s◆ Multi-Persona AI Debate System           %s► v1.0.0      %s%s│%s\n",
+		padding, ColorBrightCyan, ColorReset,
+		BgBlack,
+		ColorBrightWhite,
+		ColorDim,
+		ColorReset, // End of content
+		ColorBrightCyan, ColorReset)
 
-	// Line 2: Powered By
+	// Line 2
 	// "  ◆ Powered by DeepSeek × Gemini × Qwen                     "
-	fmt.Fprintf(u.out, "%s│%s%s  %s◆ Powered by DeepSeek × Gemini × Qwen%s                     │\n",
-		padding, ColorReset, BgBlack,
-		ColorBrightYellow, ColorReset)
+	fmt.Fprintf(u.out, "%s%s│%s%s  %s◆ Powered by DeepSeek × Gemini × Qwen                     %s%s│%s\n",
+		padding, ColorBrightCyan, ColorReset,
+		BgBlack,
+		ColorBrightYellow,
+		ColorReset,
+		ColorBrightCyan, ColorReset)
 
-	// 5. Bottom Border (Cyan)
+	// 5. Bottom Border
 	fmt.Fprintf(u.out, "%s%s%s%s\n\n", padding, ColorBrightCyan, borderBot, ColorReset)
 }
 
