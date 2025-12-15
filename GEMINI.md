@@ -113,3 +113,20 @@ POST       /api/v1/workflows/generate
 | 数据库     | PostgreSQL + pgvector            | 向量与关系统一存储 |
 | 搜索工具   | Tavily API                       | 事实核查           |
 | LLM        | OpenAI/Anthropic/Google/DeepSeek | 纯云服务           |
+
+---
+
+## 8. 测试规约 (Testing Standards)
+
+| 规则         | 说明                                                                                                      |
+| :----------- | :-------------------------------------------------------------------------------------------------------- |
+| **命令**     | 使用 `make test` 执行测试，严禁直接运行 `go test`                                                         |
+| **覆盖率**   | 核心逻辑必须 100% 覆盖。基础设施 (infrastructure) 代码可通过 `make test` 自动排除统计。                   |
+| **Mock**     | 核心业务测试禁止依赖真实 DB/LLM，必须使用 `MockProvider` 或 `Interface Stub`。                            |
+| **开发模式** | **TDD (Test-Driven Development)**。先写测试（红），再写实现（绿），最后重构（蓝）。禁止先写代码后补测试。 |
+
+```bash
+# 执行测试并查看覆盖率报告 (自动过滤 infrastructure 噪音)
+make test
+```
+```
