@@ -29,6 +29,15 @@ build: ## Build both backend and frontend
 	make frontend-build
 	go build -o bin/council cmd/council/main.go
 
+# --- Testing ---
+test: ## Run unit tests (excluding infrastructure wrappers)
+	@echo "Running tests..."
+	go test -v -coverprofile=coverage.out ./...
+	@# Filter out infrastructure and cmd/main.go from coverage report
+	@grep -v -E "internal/infrastructure|cmd/" coverage.out > coverage.filtered.out
+	@mv coverage.filtered.out coverage.out
+	@go tool cover -func=coverage.out
+
 # --- Dependencies (Docker) ---
 
 deps: ## Start Postgres and other dependencies
