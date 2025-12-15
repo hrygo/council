@@ -13,7 +13,8 @@ The Council is a visualized Multi-Agent Collaboration System & Personal Private 
 ## Getting Started
 
 ### Prerequisites
-- Docker & Docker Compose
+- Docker Engine >= 20.10
+- Docker Compose v2.x (Plugin, command: `docker compose`)
 - Go 1.21+
 - Node.js 20+
 
@@ -21,7 +22,7 @@ The Council is a visualized Multi-Agent Collaboration System & Personal Private 
 
 1. Start database:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 2. Start Backend:
