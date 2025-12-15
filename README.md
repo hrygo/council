@@ -1,6 +1,6 @@
 # The Council (理事会)
 
-**Version**: 0.1.0
+**Version**: 0.2.0
 
 The Council is a visualized Multi-Agent Collaboration System & Personal Private Think Tank.
 
@@ -27,7 +27,7 @@ The Council is a visualized Multi-Agent Collaboration System & Personal Private 
 
 2. Start Backend:
    ```bash
-   go run cmd/server/main.go
+   go run cmd/council/main.go
    ```
 
 3. Start Frontend:

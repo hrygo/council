@@ -8,7 +8,7 @@
 
 ```text
 council/
-├── cmd/server/              # Go 入口 (main.go)
+├── cmd/council/              # Go 入口 (main.go)
 ├── internal/
 │   ├── api/                 # HTTP/WS Handler
 │   ├── core/                # 领域逻辑 (Workflow, Agent, Memory)

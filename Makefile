@@ -8,14 +8,26 @@ dev: deps ## Start the full development environment (DB + properties + Frontend)
 	make -j2 run-backend run-frontend
 
 run-backend: ## Run the Go backend
-	go run cmd/server/main.go
+	go run cmd/council/main.go
 
-run-frontend: ## Run the React frontend
+run-frontend: #
+# Frontend commands
+frontend-dev: ## Run the React frontend in development mode
 	cd frontend && npm run dev
 
-build: ## Build both backend and frontend
+frontend-build: ## Build the React frontend for production
 	cd frontend && npm run build
-	go build -o bin/server cmd/server/main.go
+
+# Database commands
+migrate-up: ## Apply database migrations
+	migrate -path migrations -database "${DATABASE_URL}" up
+
+migrate-down: ## Revert database migrations
+	migrate -path migrations -database "${DATABASE_URL}" down
+
+build: ## Build both backend and frontend
+	make frontend-build
+	go build -o bin/council cmd/council/main.go
 
 # --- Dependencies (Docker) ---
 

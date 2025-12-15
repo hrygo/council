@@ -82,7 +82,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -o council-server ./cmd/server
+RUN CGO_ENABLED=0 go build -o council-server ./cmd/council
 
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates
@@ -157,7 +157,7 @@ jobs:
 docker-compose up -d postgres
 
 # 2. 启动后端 (热重载)
-cd cmd/server && go run . --dev
+cd cmd/council && go run . --dev
 
 # 3. 启动前端 (热重载)
 cd frontend && npm run dev
