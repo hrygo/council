@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.5.0] - 2025-12-16
+
+### Added
+- **Execution Runtime**: Implemented Session State Machine (`Pending`, `Running`, `Completed`, `Failed`).
+- **WebSocket Infrastructure**: `Hub` and `ServeWs` for real-time event broadcasting (`/ws` endpoint).
+- **API Integration**:
+  - `POST /workflows/execute`: Integrated with Engine and Hub.
+  - Runtime events (`StreamEvent`) pushed to connected clients via WebSocket.
+
+## [0.4.0] - 2025-12-16
+
+### Added
+- **Workflow Engine**: Implemented `DAG` based execution engine.
+  - **Core**: `GraphDefinition`, `Node`, `engine.go` (Concurrent execution with Factory pattern).
+  - **Validation**: Cycle detection and connectivity checks.
+  - **Processors**: `StartNode` (Inputs), `AgentNode` (LLM Integration), `EndNode` (Summarization).
+  - **TDD**: 100% unit test coverage for engine components.
+
+## [0.3.0] - 2025-12-15
+
+### Added
+- **Group & Agent Management**: Core domain logic, Entities, and Repositories.
+- **API**: RESTful Handlers for Groups and Agents.
+- **CI/CD**: GitHub Actions for Backend (Go) and Frontend (React/Vite).
+- **Testing**: TDD adoption with high coverage (>92%).
+
 ## [0.2.0] - 2025-12-15
 
 ### Service Infrastructure
