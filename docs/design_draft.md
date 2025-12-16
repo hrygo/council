@@ -1,6 +1,6 @@
 # The Council - UI/UX 设计蓝图 (Design Blueprint)
 
-> **版本**: v1.1 | **状态**: 修订版 | **基准**: PRD v1.2.0 & Debate Verdict 20251216_130019
+> **版本**: v1.5 | **状态**: 正式版 (Production Ready)
 
 ---
 
@@ -27,14 +27,17 @@
 *   **数据可视化**:
     *   **Dashboard Style**: 采用 Grafana/Bloomberg 风格的数据展示，使用等宽数字 (Monospace Numbers)，拒绝电商风的“价格标签”。
 
-### 1.2 架构层防御机制 (Architectural Defense Mechanisms) 🆕
+### 1.2 架构层防御机制 (Architectural Defense Mechanisms)
+系统内置两层防御机制，以保障高风险决策的安全性和可靠性。
+
 *   **逻辑熔断 (Logic Circuit Breaker)**:
-    *   **触发条件**: 当系统检测到连续两轮对话未产出有效差异、陷入无限循环或 Token 消耗速率异常激增时。
-    *   **响应**: 系统自动挂起当前进程，切断 LLM 调用。
-    *   **UI表现**: 界面四周出现红色脉冲呼吸灯 (Crimson Pulse)，并弹出模态窗口 "Logic Circuit Breaker Triggered"。用户必须手动点击 "Override" 才能继续，防止幻觉级联传播。
+    *   **机制**: 实时监控对话熵值。当检测到连续两轮对话无有效信息增量、陷入死循环或 Token 消耗速率异常激增时触发。
+    *   **响应 (Hard Stop)**: 立即终止所有 LLM 进程，将系统状态锁定为 `SUSPENDED (LOCKED)`。
+    *   **恢复流程**: 界面转为灰阶模式 (Grayscale)，仅保留红色警示。用户必须填写 "Risk Justification" (风险陈述) 或通过三项 "Safety Checks" (安全自查) 才能解锁系统，强制阻断无意识的操作惯性。
+
 *   **防幻觉传播 (Anti-Hallucination Propagation)**:
-    *   **机制**: 在 Agent 传递信息间隙增加 "Fact Verification Layer"。
-    *   **UI表现**: 对于高风险陈述 (如具体数据、引用)，在气泡旁标记 "Verify Pending" (黄色警示)，提醒下一环节的 Agent 或人类注意核实。
+    *   **机制**: 在 Agent 信息传递链路上部署 "Fact Verification Layer" (事实校验层)。
+    *   **UI表现**: 涉及具体数据或外部引用的陈述，若未经交叉验证，气泡旁会自动标记 "Verify Pending" (黄色警示)，提示下一环节关注。
 
 ---
 
@@ -50,97 +53,87 @@
 *   **交互逻辑**:
     *   **画布**: 占据 100% 屏幕空间。
     *   **节点属性面板 (Floating Property Panel)**: 
-        *   **交互**: 选中节点时，在节点旁浮出或在屏幕右侧悬浮显示（非定宽侧栏，避免视线长距离跳跃）。
-        *   **内容**: 模型参数 (Temperature, Top_P)、Prompt 模板、输入输出定义。
+        *   选中节点时在旁浮出或在屏幕右侧悬浮，避免视线长距离跳跃。
+        *   配置模型参数 (Temperature, Top_P)、Prompt 模板、输入输出定义。
     *   **底部状态栏**: 显示流程复杂度预估、预计成本范围。
 
 ### 2.3 作业区 B：运行态 (Run Mode - The Meeting)
-*   **核心逻辑**: **"轻量化左栏 + 宽幅阅读区"**。避免在运行时渲染重型 DAG，释放 GPU 资源。
+采用 **"轻量化左栏 + 宽幅阅读区"** 布局，避免运行时渲染重型 DAG，专注即时通讯体验。
 
 #### A. 左栏：时间轴 (Timeline Sidebar)
-*   **宽度**: 固定 240px 或 收缩为 Icons (64px)。
-*   **内容**: **线性化的进度视图 (Linear Step View)**。
-    *   不显示复杂的 DAG 连线，仅将当前执行路径扁平化为垂直的时间轴节点。
-    *   **状态指示**: 
-        *   🟢 完成 (Done)
-        *   🔵 进行中 (Spinner + 耗时计时器)
-        *   ⚪ 待定 (Pending)
-    *   **循环逻辑处理 (Loop Handling)** 🆕:
-        *   对于 `Loop` 节点，不无限延伸线性列表。
-        *   采用 **"嵌套组 (Nested Group)"** 设计：显示为 "Round 2/3 (Debating...)" 的可折叠容器。
-        *   点击容器展开查看历史轮次的详细步骤。
-*   **性能优势**: 纯 DOM/SVG 渲染，无 WebGL 开销。
+*   **视图**: **线性进度视图 (Linear Step View)**。将执行路径扁平化为垂直时间轴。
+*   **状态指示**: 🟢 完成 (Done)、🔵 进行中 (Spinner + 计时器)、⚪ 待定 (Pending)。
+*   **循环组 (Nested Groups)**: 
+    *   对于 `Loop` 节点，采用折叠容器设计 (例如 "Round 2/3")，保持时间轴整洁。
+    *   支持点击展开查看历史轮次详情。
+*   **技术栈**: 纯 DOM/SVG 渲染，无 WebGL 开销。
 
 #### B. 中栏：众议院 (Chat Stream) - **视觉绝对焦点**
-*   **宽度**: 弹性占据 50% - 70% 屏幕空间。
-*   **布局**: 垂直流 (Vertical Stream)。
+*   **布局**: 垂直流 (Vertical Stream)，占据 50% - 70% 宽幅。
 *   **关键组件**:
-    *   **专业级成本仪表盘 (Cost Dashboard)** 🆕:
-        *   **位置**: 顶部导航栏右侧或吸附在输入框上方。
-        *   **样式**: 单色、静止的低对比度文本。
-        *   **策略**: **“里程碑式汇报 (Milestone Reporting)”**。
-            *   **禁止**: 秒级跳动的实时金额。
-            *   **逻辑**: 仅在流程关键节点（如阶段完成、暂停时）更新显示，或显示静态的“本次会议总成本”。
-    *   **并行发言 (Parallel Group)** 🆕:
-        *   **策略**: **同时可见性原则 (Simultaneous Visibility)**。
-        *   **禁止**: 使用 Tab 切换隐藏内容 (无论屏幕宽度如何)。
-        *   **布局**:
-            *   **宽屏**: 并排卡片 (Side-by-Side Cards)。
-            *   **窄屏**: **横向滚动容器 (Horizontal Scroll Container)** 或 **多栏挤压布局 (Squeezed Columns)**。必须保证用户能同时看到多个 Agent 的存在和状态，便于横向对比。
+    *   **成本仪表盘 (Cost Dashboard)**:
+        *   采用 **“里程碑式汇报”** 策略：仅在阶段结束或暂停时更新，显示静态数值。
+        *   避免秒级跳动的金额造成焦虑干扰。
+    *   **并行发言组 (Parallel Group)**:
+        *   遵循 **同时可见性原则 (Simultaneous Visibility)**。
+        *   **布局**: 宽屏下并排展示卡片；窄屏下使用横向滚动容器或挤压布局。确保用户能同时对比多个 Agent 的状态，严禁使用 Tabs 隐藏内容。
     *   **Human Review (人类裁决) - Diff View**:
-        *   **优先级**: **P0 (Critical)**。
-        *   **样式**: **语义级差异对比 (Semantic Diff)** (类似 Google Docs / Notion 建议模式)。
-        *   **禁止**: 纯行的代码 Diff (Monaco Default)。
-        *   **功能**: 基于单词/短语 (Word-level) 的高亮修订，而非整行标红。
-        *   **动作**: [ 驳回 ] [ 签署通过 ]。
+        *   **样式**: **语义级差异对比 (Semantic Diff)** (类似 Notion 建议模式)。
+        *   基于单词/短语 (Word-level) 高亮修订，而非代码级的整行标红。
+        *   操作: [ 驳回 ] [ 签署通过 ]。
 
 #### C. 右栏：卷宗 (Context Drawer)
-*   **状态**: 默认折叠或以较窄宽度 (25%) 存在。
+*   **状态**: 默认折叠或以窄宽 (25%) 存在。
 *   **内容**: 文档阅读器、记忆检索结果。
-*   **联动**: 点击对话中的引用链接，右栏自动展开并定位。
+*   **联动**: 点击对话引用链接时自动展开并定位。
 
 ---
 
 ## 3. 关键交互流程 (Interaction Flows)
 
 ### 3.1 发起提案 (Wizard)
-*   保持原有三步设计：意图 -> 流程选择 -> 成本预估。
-*   **新增**: 在确认流程后，用户可选择 "Run Immediately (立即开会)" 或 "Open in Builder (进入构建态微调)"。
+*   三步向导：意图 -> 流程选择 -> 成本预估。
+*   完成指引后，提供 "Run Immediately" (立即开会) 和 "Open in Builder" (进入构建态微调) 两个分支入口。
 
 ### 3.2 会议中干预 (Intervention)
 *   用户输入消息时，系统自动在 Timeline 插入 "User Intervention" 节点。
-*   **暂停/继续**: 底部提供明显的全局控制按钮 [ ⏸ 暂停 ] [ ▶ 继续 ] [ ⏹ 强行终止 ] (用于熔断高消耗任务)。
+*   **全局控制**: 底部常驻 [ ⏸ 暂停 ] [ ▶ 继续 ] [ ⏹ 强行终止 ] 按钮。
 
 ### 3.3 记忆净化协议 (Memory Purification Protocol)
-*   **风险阻断**: 针对 "Memory Pollution" (记忆污染) 风险，采取 **"默认丢弃 (Opt-in)"** 策略。
-*   **交互流程**: 
-    *   会议结束后，**强制**弹出 "本次会议知识沉淀 (Session Knowledge Impact)" 面板。
-    *   系统列出提取的知识点，但 **默认全部不勾选** (尤其是从 Conflict 状态推导出的结论)。
-    *   用户必须 **手动勾选** 确认高信度的条目，才能将其写入长期向量数据库。这一步是防止错误信息污染核心智库的最后一道防线。
+为防止长期运行导致向量库污染，系统实施严格的分层记忆管理策略。
+
+1.  **第一道防线：Cortex Quarantine (记忆隔离区)**
+    *   会议产生的所有原始知识点、结论默认进入此临时缓冲区。
+    *   此区域物理隔离于核心向量库 (Long-Term Vector DB)，确保核心记忆库的纯净。
+
+2.  **第二道防线：Working Memory Buffer (工作记忆热层)**
+    *   **功能**: 为当前会话及短期交互提供即时上下文支持（解决“归档前真空期”问题）。
+    *   **Ingress Filter (入口过滤)**: 仅允许通过 **Self-Consistency Check (自洽性检查)** 的内容进入热层。
+    *   **生命周期**: 
+        *   **TTL**: **24小时** 自动过期。
+        *   **Scope**: 严格限制在当前 Project ID 内，禁止跨项目访问。
+    *   **UI标识**: 引用此类数据时，标记 "⚡️ Ephemeral Context" (临时上下文) 图标。
+
+3.  **第三道防线：Knowledge Promotion (知识晋升)**
+    *   **Smart Digest (智能简报)**: 系统按周生成 "Knowledge Promotion Digest"。
+    *   **机制**: 自动聚类 Quarantine 中的碎片信息，生成 5-10 条核心洞察。
+    *   **归档**: 用户基于简报进行 "One-click Promote"，将经过验证的高价值知识写入 Long-Term DB。
 
 ---
 
 ## 4. 响应式策略 (Responsive Strategy)
 
-*   **Ultra Wide (>1600px)**: 
-    *   运行态：左(Timeline) + 中(Chat) + 右(Docs) 并存。
-    *   并行消息：允许横向分栏显示 (Side-by-Side) 2-3 个 Agent。
-*   **Desktop/Laptop (1280px - 1600px)**:
-    *   左栏(Timeline) 保持可见。
-    *   右栏(Docs) 默认折叠，需手动展开。
-    *   并行消息：**横向滚动卡片**，保证内容不被 Tabs 隐藏。
-*   **Small Laptop/Tablet (<1280px)**:
-    *   左栏收起为图标条。
-    *   专注于中间对话流。
-    *   并行消息：**纵向交错 (Vertical Interleaved)** 或 **横向滚动**。
+*   **Ultra Wide (>1600px)**: 三栏并存 (Timeline + Chat + Docs)。并行消息支持横向分栏。
+*   **Desktop (1280px - 1600px)**: 左栏可见，右栏默认折叠。并行消息使用横向滚动卡片。
+*   **Tablet/Small (<1280px)**: 左栏收缩为图标条，专注于对话流。并行消息采用纵向交错或横向滚动。
 
 ---
 
 ## 5. UI 组件规范 (Component Specs)
 
-*   **Diff Editor**: 使用支持语义 Diff 的库 (如 `diff-match-patch` 封装组件)，而非简单的 Monaco Diff Editor。
-*   **Cost Dashboard**: 数字使用 `JetBrains Mono` 或 `Roboto Mono`，字号 `text-xs`，颜色 `text-slate-500` (低调安静)。
-*   **Loaders**: 使用精致的 SVG 动画代替系统默认 Spinner，体现 "Premium" 质感。
+*   **Diff Editor**: 使用支持语义 Diff 的库 (如 `diff-match-patch`)。
+*   **Typography**: 数据面板使用 `JetBrains Mono`，字号 `text-xs`，颜色 `text-slate-500`。
+*   **Motion**: 使用精致的 SVG 动画 (Lottie/Rive) 代替原生 Spinner。
 
 ---
 

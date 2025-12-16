@@ -7,13 +7,16 @@ description: Run an iterative design optimization loop using The Council (Dialec
 
 This workflow guides you through the process of refining the design draft using AI debates and consistency checks, with a focus on observability and stability.
 
+## Parameters
+*   `max_loops`: (Optional) Maximum number of iteration cycles. Default: 3.
+
 ## Process Overview
 
-1.  **Extract History**: Agent intelligently summarizes past debate verdicts into a compact context file to prevent amnesia.
-2.  **Convene**: The AI Council debates the current draft against the PRD.
-3.  **Monitor**: Observe the real-time "Thinking" output to ensure the debate is progressing.
-4.  **Verify**: Agent runs a Flip-Flop detection check against the history summary.
-5.  **Apply**: You (the Human or Agent) apply changes.
+1.  **Extract History**: Agent intelligently summarizes past debate verdicts.
+2.  **Convene**: The AI Council debates the current draft.
+3.  **Monitor**: Real-time status with throttled updates (avoiding noise).
+4.  **Verify**: Flip-Flop detection.
+5.  **Apply & Loop**: Apply changes and loop if conditions met.
 
 ## Step-by-Step Instructions
 
@@ -24,36 +27,35 @@ This workflow guides you through the process of refining the design draft using 
 *   **Task**: Read the most recent 2-3 debate reports.
 *   **Action**: Create or Update `docs/reports/history_summary.md`.
     *   *Format*: A chronological list of "Verdicts" and "Key Decisions".
-    *   *Goal*: This file serves as the "Common Law" (判例法) for the system to reference.
+    *   *Goal*: This file serves as the "Common Law" (判例法).
 
 ### Step 2: Convene The Council
 
-Run the Python script to generate the debate report. The script has been optimized to stream output in real-time.
+Run the Python script.
+*   Note: Output is now throttled (updates every ~2s) and transient status lines are excluded from the saved report.
 
 ```bash
 python3 scripts/dialecta_debate.py docs/design_draft.md docs/PRD.md --history docs/reports/history_summary.md
 ```
 
-**Observability Tip**:
-*   You will see lines like `⏳ Status: 🔵 Pro [Thinking...]` streaming in the terminal.
-*   If the output halts for >60 seconds, check the `command_status`.
-
 ### Step 3: Verify Consistency (Agent Logic)
 
-Read the new report generated (the path is printed at the end of Step 2).
-Compare its "Verdict" against `docs/reports/history_summary.md`.
+Read the new report (path printed at end of Step 2).
+Compare "Verdict" against `docs/reports/history_summary.md`.
 
-*   **Flip-Flop Check**: Does this new verdict contradict a decision made in the *immediate* previous session?
-    *   *Example*: Session N-1 said "Remove Feature X", Session N says "Bring back Feature X" without new context.
-    *   **If FLIP-FLOP DETECTED**: 
-        *   STOP. Do not edit the design draft.
-        *   Inform the user: "Detected policy flip-flop. Manual review required."
-    *   **If CONSISTENT**: Proceed to Step 4.
+*   **Flip-Flop Check**:
+    *   **If FLIP-FLOP DETECTED**: STOP. Inform user.
+    *   **If CONSISTENT**: Proceed.
 
-### Step 4: Apply Changes
+### Step 4: Apply Changes & Check Loop Condition
 
-If the report is valid:
-1.  Read the **Verdict** and **Actionable Recommendations** sections carefully.
+If report is valid:
+1.  Read **Verdict** and **Recommendations**.
 2.  Edit `docs/design_draft.md`.
-3.  **Commit**: Update the `version` in the draft's header.
-4.  **Loop**: Go back to Step 1 for the next iteration if needed.
+3.  **Commit**: Update `version` in header.
+4.  **Loop Check**:
+    *   Check current loop count.
+    *   **IF** `Current_Loop < max_loops` **AND** `Verdict != "Approved"`:
+        *   Go to **Step 1** for next iteration.
+    *   **ELSE**:
+        *   Terminate workflow. Report final status.

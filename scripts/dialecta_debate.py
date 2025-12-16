@@ -33,7 +33,7 @@ def clean_ansi(text):
     return ansi_escape.sub('', text)
 
 def run_dialecta(input_text, context_prompt=""):
-    """Invokes dialecta CLI via stdin, streaming output to console in real-time."""
+    """Invokes dialecta CLI via stdin, streaming output to console in real-time with throttling."""
     full_prompt = f"{context_prompt}\n\nMATERIAL TO ANALYZE:\n{input_text}"
     
     try:
@@ -47,17 +47,33 @@ def run_dialecta(input_text, context_prompt=""):
             cwd=DOCS_DIR
         )
         
-        # Write input and close stdin so dialecta knows input is finished
+        # Write input and close stdin
         try:
             process.stdin.write(full_prompt)
             process.stdin.close()
         except BrokenPipeError:
-            pass  # Process might have exited early
+            pass
 
         captured_output = []
+        last_status_time = 0
+        STATUS_THROTTLE = 2.0  # Seconds
         
         # Stream output line by line
         for line in process.stdout:
+            is_thinking = "Thinking..." in line
+            
+            if is_thinking:
+                current_time = time.time()
+                if current_time - last_status_time < STATUS_THROTTLE:
+                    # Skip printing and skip saving to keep report clean
+                    continue
+                last_status_time = current_time
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                # Do NOT append transient 'Checking/Thinking' status lines to the final report file
+                continue
+            
+            # Print and capture all other lines (content, headers, etc.)
             sys.stdout.write(line)
             sys.stdout.flush()
             captured_output.append(line)
