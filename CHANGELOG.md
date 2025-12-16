@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.1] - 2025-12-16
+
+### Fixed
+- **CI**: Resolved `errcheck` and `staticcheck` lint errors in `agent_test.go` and `hub.go`.
+- **Frontend**: Removed unused `useTranslation` import in `App.tsx` causing build failure.
+
 ## [0.6.0] - 2025-12-16
 
 ### Added
