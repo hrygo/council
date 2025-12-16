@@ -6,7 +6,7 @@
 | **版本号**     | **v1.2.0 (MVP_Simplified)**                                   |
 | **文档状态**   | **✅ 已定稿**                                                  |
 | **核心定位**   | 可视化的多智能体协作决策系统 & 个人私有智库                   |
-| **目标用户**   | 极客、程序员、技术背景的创业者、管理者、高管 (Power Users)    |
+| **目标用户**   | 有技术背景的创业者、管理者、高管 (Power Users)                |
 | **适用平台**   | Web Application (浏览器访问)                                  |
 | **技术栈核心** | Go (Backend API) + React (Frontend SPA) + PostgreSQL (Docker) |
 
