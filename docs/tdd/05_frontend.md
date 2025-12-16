@@ -1,4 +1,6 @@
-# 5. 前端架构关键点 (Frontend Specifics)
+# 5. 前端架构关键点 (Frontend Specifics: Dual-Mode)
+
+> 对应 PRD: [4. 性能需求] & [架构原则：模式分离]
 
 ### 5.1 弹性布局实现
 

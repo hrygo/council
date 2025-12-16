@@ -1,6 +1,6 @@
 # The Council - 技术架构方案 (Technical Architecture Document)
 
-这是一个基于 **The Council PRD v1.2.0** 的详细技术架构方案。
+这是一个基于 **The Council PRD v1.3.0** 的详细技术架构方案。
 
 > [!NOTE]
 > 本文档已拆分为模块化子文档。请点击以下链接查看详细内容。
@@ -18,7 +18,7 @@
 ### 2. 核心模块详细设计 (Core Modules)
 - [2.1 流程编排引擎 (Workflow Engine)](./tdd/02_core/01_workflow_engine.md)
 - [2.2 AI 网关与模型路由 (AI Model Router)](./tdd/02_core/02_ai_gateway.md)
-- [2.3 双层记忆系统 (RAG Implementation)](./tdd/02_core/03_rag.md)
+- [2.3 三层记忆协议 (Three-Tier Memory Protocol)](./tdd/02_core/03_rag.md)
 - [2.4 群组管理模块 (Group Management)](./tdd/02_core/04_group_management.md)
 - [2.5 Agent 工厂模块 (Agent Factory)](./tdd/02_core/05_agent_factory.md)
 - [2.6 节点处理器详解 (Node Processors)](./tdd/02_core/06_node_processors.md)
@@ -29,6 +29,7 @@
 - [2.11 并发执行配置 (Parallel Execution)](./tdd/02_core/11_parallel_execution.md)
 - [2.12 FactCheck 节点处理器 (Fact Verification Node)](./tdd/02_core/12_fact_check.md)
 - [2.13 自然语言转工作流模块 (NL2Workflow)](./tdd/02_core/13_nl2workflow.md)
+- [2.14 防御性中间件架构 (Defense Middleware Architecture)](./tdd/02_core/14_defense_mechanisms.md)
 
 ### 3. 通信与存储
 - [3. 前后端通信协议 (Communication Protocol)](./tdd/03_communication.md)
