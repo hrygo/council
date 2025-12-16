@@ -15,7 +15,6 @@ logs/
 # Go
 /bin
 /dist
-/main
 *.exe
 *.test
 *.prof
@@ -41,5 +40,5 @@ frontend/dist-ssr/
 *.local
 
 # Build Output & Tests
-council
+/council
 coverage.out

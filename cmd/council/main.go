@@ -55,6 +55,7 @@ func main() {
 	groupHandler := handler.NewGroupHandler(groupRepo)
 	agentHandler := handler.NewAgentHandler(agentRepo)
 	workflowHandler := handler.NewWorkflowHandler(hub, agentRepo, llmProvider)
+	workflowMgmtHandler := handler.NewWorkflowMgmtHandler()
 
 	// Routes
 	r.GET("/ws", func(c *gin.Context) {
@@ -79,6 +80,13 @@ func main() {
 
 		// Workflows
 		api.POST("/workflows/execute", workflowHandler.Execute)
+
+		// Workflow Management
+		api.GET("/workflows", workflowMgmtHandler.List)
+		api.GET("/workflows/:id", workflowMgmtHandler.Get)
+		api.POST("/workflows", workflowMgmtHandler.Create)
+		api.PUT("/workflows/:id", workflowMgmtHandler.Update)
+		api.POST("/workflows/generate", workflowMgmtHandler.Generate)
 	}
 
 	fmt.Printf("Server listening on :%s\n", cfg.Port)
