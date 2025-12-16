@@ -44,4 +44,4 @@ docs/
 - `GET/POST /api/v1/agents` - Agent CRUD
 - `WebSocket /ws` - 实时事件流
 
-详见 [api_spec_v1.5.md](../api_spec_v1.5.md)
+详见 [ui_support_v1.5.md](./ui_support_v1.5.md)
