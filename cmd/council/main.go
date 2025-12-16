@@ -7,7 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hrygo/council/internal/api/handler"
+	"github.com/hrygo/council/internal/api/ws"
 	"github.com/hrygo/council/internal/infrastructure/db"
+	"github.com/hrygo/council/internal/infrastructure/llm"
 	"github.com/hrygo/council/internal/infrastructure/persistence"
 	"github.com/hrygo/council/internal/pkg/config"
 )
@@ -31,11 +33,34 @@ func main() {
 	groupRepo := persistence.NewGroupRepository(pool)
 	agentRepo := persistence.NewAgentRepository(pool)
 
+	// LLM Provider
+	llmRouter := llm.NewRouter()
+	// Map config.LLMConfig to llm.LLMConfig
+	llmCfg := llm.LLMConfig{
+		Type:    cfg.LLM.Provider,
+		APIKey:  cfg.LLM.APIKey,
+		BaseURL: cfg.LLM.BaseURL,
+		Model:   cfg.LLM.Model,
+	}
+	llmProvider, err := llmRouter.GetLLMProvider(llmCfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize LLM provider: %v", err)
+	}
+
+	// WebSocket Hub
+	hub := ws.NewHub()
+	go hub.Run()
+
 	// Handlers
 	groupHandler := handler.NewGroupHandler(groupRepo)
 	agentHandler := handler.NewAgentHandler(agentRepo)
+	workflowHandler := handler.NewWorkflowHandler(hub, agentRepo, llmProvider)
 
 	// Routes
+	r.GET("/ws", func(c *gin.Context) {
+		ws.ServeWs(hub, c)
+	})
+
 	api := r.Group("/api/v1")
 	{
 		// Groups
@@ -51,6 +76,9 @@ func main() {
 		api.GET("/agents/:id", agentHandler.Get)
 		api.PUT("/agents/:id", agentHandler.Update)
 		api.DELETE("/agents/:id", agentHandler.Delete)
+
+		// Workflows
+		api.POST("/workflows/execute", workflowHandler.Execute)
 	}
 
 	fmt.Printf("Server listening on :%s\n", cfg.Port)
