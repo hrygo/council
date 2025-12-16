@@ -87,7 +87,7 @@ func (c *Client) writePump() {
 		message, ok := <-c.send
 		if !ok {
 			// Hub closed the channel
-			c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+			_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 			return
 		}
 

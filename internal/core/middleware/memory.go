@@ -63,8 +63,8 @@ func (mm *MemoryMiddleware) AfterNodeExecution(ctx context.Context, session *wor
 
 	if groupID != "" {
 		if err := mm.Manager.UpdateWorkingMemory(ctx, groupID, content, metadata); err != nil {
-			// Log and ignore?
-			// fmt.Printf("Working memory update failed: %v\n", err)
+			// Log and ignore error for now to prevent workflow interruption
+			fmt.Printf("warning: working memory update failed: %v\n", err)
 		}
 	}
 

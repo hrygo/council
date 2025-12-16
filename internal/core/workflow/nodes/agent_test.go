@@ -19,12 +19,14 @@ func TestAgentProcessor_Process(t *testing.T) {
 	mockLLM.StreamContent = []string{"Agent", " ", "Says", " ", "Hi"}
 
 	agentID := uuid.New()
-	mockRepo.Create(context.Background(), &agent.Agent{
+	if err := mockRepo.Create(context.Background(), &agent.Agent{
 		ID:            agentID,
 		Name:          "TestAgent",
 		PersonaPrompt: "You are a test agent.",
 		ModelConfig:   agent.ModelConfig{Model: "gpt-4"},
-	})
+	}); err != nil {
+		t.Fatalf("Failed to create mock agent: %v", err)
+	}
 
 	processor := &AgentProcessor{
 		AgentID:   agentID.String(),
