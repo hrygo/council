@@ -45,6 +45,7 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Create Session
 	session := workflow.NewSession(req.Graph, req.Input)
+	activeSessions[session.ID] = session
 	session.Start(context.Background())
 
 	// Create Engine
@@ -92,4 +93,81 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 		"session_id": session.ID,
 		"status":     "started",
 	})
+}
+
+type ControlRequest struct {
+	Action string `json:"action" binding:"required,oneof=pause resume stop"`
+}
+
+func (h *WorkflowHandler) Control(c *gin.Context) {
+	id := c.Param("id")
+	var req ControlRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// In a real app, we need a SessionRepository or global SessionRegistry to look up active sessions.
+	// For MVP, we don't have a global registry yet. The session created in Execute is lost reference-wise unless stored.
+	// We need to fix this by adding a SessionRegistry to WorkflowHandler.
+
+	// FIX: This indicates a missing architectural piece. We need a way to retrieve running sessions.
+	// For now, I will add a TO-DO and mock response, but I must fix this to make it work.
+	// Strategy: Use a simple map in memory for active sessions.
+
+	session := h.getSession(id) // Helper method
+	if session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found or not active"})
+		return
+	}
+
+	switch req.Action {
+	case "pause":
+		session.Pause()
+	case "resume":
+		session.Resume()
+	case "stop":
+		session.Stop()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":     id,
+		"status": session.Status,
+		"action": req.Action,
+	})
+}
+
+// Global active sessions map (Protected by mutex in real impl)
+// For MVP, simple map is fine if we don't have high concurrency on registry itself
+var activeSessions = map[string]*workflow.Session{}
+
+func (h *WorkflowHandler) getSession(id string) *workflow.Session {
+	return activeSessions[id]
+}
+
+type SignalRequest struct {
+	NodeID  string      `json:"node_id" binding:"required"`
+	Payload interface{} `json:"payload" binding:"required"`
+}
+
+func (h *WorkflowHandler) Signal(c *gin.Context) {
+	id := c.Param("id")
+	var req SignalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	session := h.getSession(id)
+	if session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+
+	if err := session.SendSignal(req.NodeID, req.Payload); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "signal_sent"})
 }

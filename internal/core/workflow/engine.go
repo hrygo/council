@@ -50,6 +50,22 @@ func (e *Engine) Run(ctx context.Context) {
 }
 
 func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[string]interface{}) {
+	// Check for Pause
+	if e.Session.Status == SessionPaused {
+		e.StreamChannel <- StreamEvent{
+			Type:      "execution:paused",
+			Timestamp: time.Now(),
+			// NodeID might be relevant if we pause BEFORE a specific node
+			NodeID: nodeID,
+			Data:   map[string]interface{}{"reason": "session_paused"},
+		}
+	}
+	if err := e.Session.WaitIfPaused(ctx); err != nil {
+		// Context cancelled or other error
+		e.emitError(nodeID, err)
+		return
+	}
+
 	e.mu.Lock()
 	node, exists := e.Graph.Nodes[nodeID]
 	if !exists {
@@ -119,6 +135,13 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 }
 
 func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[string]interface{}) {
+	e.StreamChannel <- StreamEvent{
+		Type:      "node:parallel_start",
+		Timestamp: time.Now(),
+		NodeID:    node.ID,
+		Data:      map[string]interface{}{"branches": node.NextIDs},
+	}
+
 	var wg sync.WaitGroup
 	for _, nextID := range node.NextIDs {
 		wg.Add(1)
