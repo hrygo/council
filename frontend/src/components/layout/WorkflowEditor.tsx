@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { WorkflowCanvas } from '../modules/WorkflowCanvas';
+import WorkflowCanvas from '../workflow/WorkflowCanvas';
 
 export const WorkflowEditor: FC = () => {
     return (

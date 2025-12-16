@@ -2,8 +2,8 @@ import type { FC } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useLayoutStore } from '../../stores/useLayoutStore';
-import { WorkflowCanvas } from '../modules/WorkflowCanvas';
-import { ChatStreamWindow } from '../modules/ChatStreamWindow';
+import WorkflowCanvas from '../workflow/WorkflowCanvas';
+import ChatPanel from '../chat/ChatPanel';
 import { DocumentReader } from '../modules/DocumentReader';
 
 const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel }) => {
@@ -29,7 +29,7 @@ export const MeetingRoom: FC = () => {
         const onExit = () => maximizePanel(null);
         const panelMap = {
             left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} />,
-            center: <ChatStreamWindow fullscreen onExitFullscreen={onExit} />,
+            center: <ChatPanel fullscreen onExitFullscreen={onExit} />,
             right: <DocumentReader fullscreen onExitFullscreen={onExit} />,
         };
         return (
@@ -66,7 +66,7 @@ export const MeetingRoom: FC = () => {
                 <Panel defaultSize={panelSizes[1]} minSize={30} order={2}>
                     <div className="relative h-full w-full">
                         <PanelMaximizeButton panel="center" />
-                        <ChatStreamWindow />
+                        <ChatPanel />
                     </div>
                 </Panel>
 

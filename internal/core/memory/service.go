@@ -87,8 +87,48 @@ func (s *Service) UpdateWorkingMemory(ctx context.Context, groupID string, conte
 	return nil
 }
 
-func (s *Service) Promote(ctx context.Context, groupID string, digest string) error {
-	// Stub for Tier 3
+func (s *Service) Promote(ctx context.Context, groupID string, content string) error {
+	// 1. Split Text
+	splitter := NewRecursiveCharacterSplitter(500, 50) // 500 chars chunk, 50 overlap
+	chunks := splitter.SplitText(content)
+
+	if len(chunks) == 0 {
+		return nil
+	}
+
+	pool := db.GetPool()
+	if pool == nil {
+		return fmt.Errorf("database pool not initialized")
+	}
+
+	// 2. Embed and Store Loop
+	// Optimization: Batch embedding if provider supports it, but for now loop is simpler for MVP
+	for _, chunk := range chunks {
+		embedding, err := s.Embedder.Embed(ctx, "default", chunk) // Use default model from config (implied)
+		if err != nil {
+			return fmt.Errorf("failed to embed chunk: %w", err)
+		}
+
+		vecBytes, _ := json.Marshal(embedding)
+		vecStr := string(vecBytes)
+
+		query := `
+			INSERT INTO memories (group_id, content, embedding, metadata)
+			VALUES ($1, $2, $3, $4)
+		`
+		// Metadata can store source info
+		meta := map[string]interface{}{
+			"source":      "promotion",
+			"promoted_at": time.Now(),
+		}
+		metaJSON, _ := json.Marshal(meta)
+
+		_, err = pool.Exec(ctx, query, groupID, chunk, vecStr, metaJSON)
+		if err != nil {
+			return fmt.Errorf("failed to store memory chunk: %w", err)
+		}
+	}
+
 	return nil
 }
 

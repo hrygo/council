@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hrygo/council/internal/api/handler"
 	"github.com/hrygo/council/internal/api/ws"
+	"github.com/hrygo/council/internal/core/memory"
+	"github.com/hrygo/council/internal/infrastructure/cache"
 	"github.com/hrygo/council/internal/infrastructure/db"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 	"github.com/hrygo/council/internal/infrastructure/persistence"
@@ -24,6 +26,17 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
+
+	// Initialize Redis
+	// Assuming no password and default DB 0 for now as per config
+	if err := cache.Init(cfg.RedisURL, "", 0); err != nil {
+		log.Printf("Warning: Redis initialization failed: %v", err)
+		// Proceeding without Redis? or fail? Implementation plan implies we need it.
+		// For MVP, maybe log fatal? TDD says "Strict Three-Tier Memory", so Redis is likely required.
+		// Let's log fatal to be safe and ensure infra is up.
+		log.Fatalf("Failed to initialize Redis: %v", err)
+	}
+	defer cache.Close()
 
 	r := gin.Default()
 
@@ -51,11 +64,19 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
+	// Services
+	embedder, ok := llmProvider.(llm.Embedder)
+	if !ok {
+		log.Fatalf("Selected LLM provider does not support embeddings")
+	}
+	memoryService := memory.NewService(embedder)
+
 	// Handlers
 	groupHandler := handler.NewGroupHandler(groupRepo)
 	agentHandler := handler.NewAgentHandler(agentRepo)
 	workflowHandler := handler.NewWorkflowHandler(hub, agentRepo, llmProvider)
 	workflowMgmtHandler := handler.NewWorkflowMgmtHandler()
+	memoryHandler := handler.NewMemoryHandler(memoryService)
 
 	// Routes
 	r.GET("/ws", func(c *gin.Context) {
@@ -89,6 +110,10 @@ func main() {
 		api.POST("/workflows", workflowMgmtHandler.Create)
 		api.PUT("/workflows/:id", workflowMgmtHandler.Update)
 		api.POST("/workflows/generate", workflowMgmtHandler.Generate)
+
+		// Memory
+		api.POST("/memory/ingest", memoryHandler.Ingest)
+		api.POST("/memory/query", memoryHandler.Query)
 	}
 
 	fmt.Printf("Server listening on :%s\n", cfg.Port)

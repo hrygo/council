@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xyflow/react": "^12.10.0",
     "clsx": "^2.1.1",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",

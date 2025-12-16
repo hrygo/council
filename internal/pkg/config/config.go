@@ -13,6 +13,7 @@ type Config struct {
 	DashScopeKey   string
 	GeminiKey      string
 	SiliconFlowKey string
+	RedisURL       string
 
 	LLM       LLMConfig
 	Embedding EmbeddingConfig
@@ -49,6 +50,11 @@ func Load() *Config {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgres://user:password@localhost:5432/council?sslmode=disable"
+	}
+
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		redisURL = "localhost:6379"
 	}
 
 	// 1536 Dimension Embedding Models Recommendation
@@ -100,6 +106,7 @@ func Load() *Config {
 	return &Config{
 		Port:         port,
 		DatabaseURL:  dbURL,
+		RedisURL:     redisURL,
 		TavilyAPIKey: os.Getenv("TAVILY_API_KEY"),
 
 		LLM: LLMConfig{

@@ -1,0 +1,49 @@
+package memory
+
+import (
+	"reflect"
+	"testing"
+)
+
+func TestRecursiveCharacterSplitter_SplitText(t *testing.T) {
+	type fields struct {
+		ChunkSize    int
+		ChunkOverlap int
+	}
+	type args struct {
+		text string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   []string
+	}{
+		{
+			name:   "short text",
+			fields: fields{ChunkSize: 10, ChunkOverlap: 0},
+			args:   args{text: "hello"},
+			want:   []string{"hello"},
+		},
+		{
+			name:   "simple split",
+			fields: fields{ChunkSize: 5, ChunkOverlap: 0},
+			args:   args{text: "hello world"},
+			want:   []string{"hello", "world"},
+		},
+		{
+			name:   "split with newline",
+			fields: fields{ChunkSize: 10, ChunkOverlap: 0},
+			args:   args{text: "hello\nworld"},
+			want:   []string{"hello", "world"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewRecursiveCharacterSplitter(tt.fields.ChunkSize, tt.fields.ChunkOverlap)
+			if got := s.SplitText(tt.args.text); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RecursiveCharacterSplitter.SplitText() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
