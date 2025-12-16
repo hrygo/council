@@ -54,9 +54,11 @@ export const MeetingRoom: FC = () => {
                     onCollapse={() => { if (!leftCollapsed) toggleLeftPanel() }}
                     onExpand={() => { if (leftCollapsed) toggleLeftPanel() }}
                 >
-                    <div className="relative h-full w-full">
+                    <div className="relative h-full w-full group">
                         <PanelMaximizeButton panel="left" />
-                        <WorkflowCanvas readOnly={isRunning} />
+                        {/* Temporary: Hardcoded Workflow ID for demo. In real app, this comes from URL or Context */}
+                        <WorkflowCanvas readOnly={isRunning} workflowId="1eb04085-f215-430b-9279-880c98f99e3a" />
+                        {/* TODO: Add a floating 'Run' button if needed, but 'MeetingRoom' usually implies running session. */}
                     </div>
                 </Panel>
 

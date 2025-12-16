@@ -12,14 +12,12 @@ council/
 ├── internal/
 │   ├── api/                 # HTTP/WS Handler
 │   ├── core/                # 领域逻辑 (Workflow, Agent, Memory)
-│   └── infrastructure/      # DB, LLM Client, SearchTool
-├── pkg/                     # 公共库
+│   └── infrastructure/      # DB, LLM Client, SearchTool, Cache
 ├── frontend/src/
 │   ├── components/          # React 组件
 │   ├── stores/              # Zustand (Session/Config/Layout)
 │   └── i18n/locales/        # 中英文案 (zh-CN, en-US)
-├── prompts/                 # AI 提示词版本管理
-├── docker-compose.yml       # PostgreSQL + pgvector
+├── docker-compose.yml       # PostgreSQL + pgvector + Redis
 └── docs/                    # PRD.md, TDD.md
 ```
 

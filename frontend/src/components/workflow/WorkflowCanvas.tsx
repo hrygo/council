@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
     ReactFlow,
     Background,
@@ -7,45 +7,76 @@ import {
     useEdgesState,
     addEdge,
     type Connection,
+    type Node,
     type Edge,
-    MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-
-const initialNodes = [
-    {
-        id: 'start',
-        position: { x: 250, y: 50 },
-        data: { label: 'Start' },
-        type: 'input',
-    },
-    {
-        id: 'process',
-        position: { x: 250, y: 150 },
-        data: { label: 'Process Node' },
-    },
-    {
-        id: 'end',
-        position: { x: 250, y: 250 },
-        data: { label: 'End' },
-        type: 'output',
-    },
-];
-
-const initialEdges: Edge[] = [
-    { id: 'e1-2', source: 'start', target: 'process', markerEnd: { type: MarkerType.ArrowClosed } },
-    { id: 'e2-3', source: 'process', target: 'end', markerEnd: { type: MarkerType.ArrowClosed } },
-];
+import { useWorkflow } from '../../hooks/useWorkflow';
+import { transformToReactFlow } from '../../utils/graphUtils';
+import { useConnectStore } from '../../stores/useConnectStore';
 
 interface WorkflowCanvasProps {
     readOnly?: boolean;
     fullscreen?: boolean;
     onExitFullscreen?: () => void;
+    workflowId?: string; // Optional for now
 }
 
-export default function WorkflowCanvas({ readOnly, fullscreen, onExitFullscreen }: WorkflowCanvasProps) {
-    const [nodes, , onNodesChange] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+export default function WorkflowCanvas({ readOnly, fullscreen, onExitFullscreen, workflowId }: WorkflowCanvasProps) {
+    const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+    const { workflow, fetchWorkflow } = useWorkflow();
+    const { lastMessage } = useConnectStore();
+
+    // Fetch Workflow on Mount
+    useEffect(() => {
+        if (workflowId) {
+            fetchWorkflow(workflowId);
+        }
+    }, [workflowId, fetchWorkflow]);
+
+    // Transform Backend Graph to React Flow
+    useEffect(() => {
+        if (workflow) {
+            const { nodes: initNodes, edges: initEdges } = transformToReactFlow(workflow);
+            setNodes(initNodes);
+            setEdges(initEdges);
+        }
+    }, [workflow, setNodes, setEdges]);
+
+    // Listen for WebSocket Events to Highlight Nodes
+    useEffect(() => {
+        if (!lastMessage || !readOnly) return; // Only highlight in readOnly/Run mode
+
+        // Event: "node:started", "node:completed"
+        // Data: { node_id: "..." }
+
+        if (lastMessage.type === 'node:started') {
+            const runningNodeId = lastMessage.data?.node_id;
+            if (runningNodeId) {
+                setNodes(nds => nds.map(node => {
+                    if (node.id === runningNodeId) {
+                        return { ...node, style: { ...node.style, border: '2px solid blue', background: '#e0f2fe' } };
+                    }
+                    return node;
+                }));
+            }
+        }
+
+        if (lastMessage.type === 'node:completed') {
+            const completedNodeId = lastMessage.data?.node_id;
+            if (completedNodeId) {
+                setNodes(nds => nds.map(node => {
+                    if (node.id === completedNodeId) {
+                        return { ...node, style: { ...node.style, border: '2px solid green', background: '#dcfce7' } };
+                    }
+                    return node;
+                }));
+            }
+        }
+
+    }, [lastMessage, readOnly, setNodes]);
+
 
     const onConnect = useCallback(
         (params: Connection) => {
