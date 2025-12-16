@@ -39,3 +39,7 @@ frontend/dist-ssr/
 .env.local
 .env.*.local
 *.local
+
+# Build Output & Tests
+council
+coverage.out
