@@ -9,50 +9,63 @@ import {
     type Connection,
     type Node,
     type Edge,
+    type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useWorkflow } from '../../hooks/useWorkflow';
-import { transformToReactFlow } from '../../utils/graphUtils';
+import { transformToReactFlow, type BackendGraph } from '../../utils/graphUtils';
 import { useConnectStore } from '../../stores/useConnectStore';
 
 interface WorkflowCanvasProps {
     readOnly?: boolean;
     fullscreen?: boolean;
     onExitFullscreen?: () => void;
-    workflowId?: string; // Optional for now
+    workflowId?: string;
+    graph?: BackendGraph | null;
+    onInit?: (instance: ReactFlowInstance) => void;
 }
 
-export default function WorkflowCanvas({ readOnly, fullscreen, onExitFullscreen, workflowId }: WorkflowCanvasProps) {
+export default function WorkflowCanvas({
+    readOnly,
+    fullscreen,
+    onExitFullscreen,
+    workflowId,
+    graph,
+    onInit
+}: WorkflowCanvasProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-    const { workflow, fetchWorkflow } = useWorkflow();
+    const { workflow: fetchedWorkflow, fetchWorkflow } = useWorkflow();
     const { lastMessage } = useConnectStore();
 
-    // Fetch Workflow on Mount
+    // Determine effective workflow to display: prop > fetched
+    const displayWorkflow = graph || fetchedWorkflow;
+
+    // Fetch if ID provided and no external graph
     useEffect(() => {
-        if (workflowId) {
+        if (workflowId && !graph) {
             fetchWorkflow(workflowId);
         }
-    }, [workflowId, fetchWorkflow]);
+    }, [workflowId, graph, fetchWorkflow]);
 
     // Transform Backend Graph to React Flow
     useEffect(() => {
-        if (workflow) {
-            const { nodes: initNodes, edges: initEdges } = transformToReactFlow(workflow);
+        if (displayWorkflow) {
+            const { nodes: initNodes, edges: initEdges } = transformToReactFlow(displayWorkflow);
             setNodes(initNodes);
             setEdges(initEdges);
         }
-    }, [workflow, setNodes, setEdges]);
+    }, [displayWorkflow, setNodes, setEdges]);
 
     // Listen for WebSocket Events to Highlight Nodes
     useEffect(() => {
-        if (!lastMessage || !readOnly) return; // Only highlight in readOnly/Run mode
+        // Safe access to lastMessage properties
+        const msg = lastMessage as Record<string, unknown> | null;
+        if (!msg || !readOnly) return;
 
-        // Event: "node:started", "node:completed"
-        // Data: { node_id: "..." }
-
-        if (lastMessage.type === 'node:started') {
-            const runningNodeId = lastMessage.data?.node_id;
+        if (msg.type === 'node:started') {
+            const data = msg.data as Record<string, unknown> | undefined;
+            const runningNodeId = data?.node_id as string | undefined;
             if (runningNodeId) {
                 setNodes(nds => nds.map(node => {
                     if (node.id === runningNodeId) {
@@ -63,8 +76,9 @@ export default function WorkflowCanvas({ readOnly, fullscreen, onExitFullscreen,
             }
         }
 
-        if (lastMessage.type === 'node:completed') {
-            const completedNodeId = lastMessage.data?.node_id;
+        if (msg.type === 'node:completed') {
+            const data = msg.data as Record<string, unknown> | undefined;
+            const completedNodeId = data?.node_id as string | undefined;
             if (completedNodeId) {
                 setNodes(nds => nds.map(node => {
                     if (node.id === completedNodeId) {
@@ -76,7 +90,6 @@ export default function WorkflowCanvas({ readOnly, fullscreen, onExitFullscreen,
         }
 
     }, [lastMessage, readOnly, setNodes]);
-
 
     const onConnect = useCallback(
         (params: Connection) => {
@@ -102,6 +115,7 @@ export default function WorkflowCanvas({ readOnly, fullscreen, onExitFullscreen,
                 onConnect={readOnly ? undefined : onConnect}
                 nodesDraggable={!readOnly}
                 nodesConnectable={!readOnly}
+                onInit={onInit}
                 fitView
             >
                 <Background color="#ccc" gap={20} />

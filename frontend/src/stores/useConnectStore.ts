@@ -5,8 +5,8 @@ interface ConnectState {
     isConnected: boolean;
     connect: (url: string) => void;
     disconnect: () => void;
-    lastMessage: any;
-    sendMessage: (msg: any) => void;
+    lastMessage: Record<string, unknown> | null;
+    sendMessage: (msg: unknown) => void;
 }
 
 export const useConnectStore = create<ConnectState>((set, get) => ({
@@ -47,7 +47,7 @@ export const useConnectStore = create<ConnectState>((set, get) => ({
         set({ socket: null, isConnected: false });
     },
 
-    sendMessage: (msg: any) => {
+    sendMessage: (msg: unknown) => {
         const { socket, isConnected } = get();
         if (socket && isConnected) {
             socket.send(JSON.stringify(msg));

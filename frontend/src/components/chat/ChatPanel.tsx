@@ -29,12 +29,20 @@ export default function ChatPanel({ fullscreen, onExitFullscreen }: ChatPanelPro
         connect('ws://localhost:8080/ws');
     }, [connect]);
 
+    const processedMsgRef = useRef<unknown>(null);
+
     useEffect(() => {
-        if (lastMessage) {
+        if (lastMessage && lastMessage !== processedMsgRef.current) {
+            processedMsgRef.current = lastMessage;
+            const msg = lastMessage as Record<string, unknown>;
+
             // Example handling: if lastMessage has 'content'
-            if (lastMessage.type === 'agent:speaking' || lastMessage.content) {
-                const content = lastMessage.content || lastMessage.data?.content;
+            if (msg.type === 'agent:speaking' || msg.content) {
+                const data = msg.data as Record<string, unknown> | undefined;
+                const content = (msg.content as string) || (data?.content as string);
+
                 if (content) {
+                    // eslint-disable-next-line react-hooks/set-state-in-effect
                     setMessages(prev => [...prev, { role: 'assistant', content }]);
                 }
             }

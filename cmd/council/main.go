@@ -45,6 +45,7 @@ func main() {
 	// Repositories
 	groupRepo := persistence.NewGroupRepository(pool)
 	agentRepo := persistence.NewAgentRepository(pool)
+	workflowRepo := persistence.NewWorkflowRepository(pool)
 
 	// LLM Provider
 	llmRouter := llm.NewRouter()
@@ -75,7 +76,7 @@ func main() {
 	groupHandler := handler.NewGroupHandler(groupRepo)
 	agentHandler := handler.NewAgentHandler(agentRepo)
 	workflowHandler := handler.NewWorkflowHandler(hub, agentRepo, llmProvider)
-	workflowMgmtHandler := handler.NewWorkflowMgmtHandler()
+	workflowMgmtHandler := handler.NewWorkflowMgmtHandler(workflowRepo, llmProvider)
 	memoryHandler := handler.NewMemoryHandler(memoryService)
 
 	// Routes

@@ -6,7 +6,7 @@ export interface BackendNode {
     type: string; // "start", "end", "agent", "llm", "tool", "parallel", "sequence"
     name: string;
     next_ids?: string[];
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
 }
 
 export interface BackendGraph {

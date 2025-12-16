@@ -1,51 +1,30 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/workflow"
+	"github.com/hrygo/council/internal/infrastructure/llm"
+	"github.com/hrygo/council/internal/infrastructure/persistence"
 )
 
-// WorkflowMgmtHandler handles CRUD operations for workflows (templates and user graphs)
+// WorkflowMgmtHandler handles CRUD operations for workflows
 type WorkflowMgmtHandler struct {
-	// We need a repository. For MVP we might use a simple in-memory or file-based one
-	// But ideally we should define a Repository interface in core/workflow
-	// For now, let's assume we use the existing AgentRepo pattern or similar.
-	// Since we haven't created a WorkflowRepo yet, I'll define a simple interface here or use a map for MVP if verified.
-	// But to be professional, we should probably add a repo.
+	Repo *persistence.WorkflowRepository
+	LLM  llm.LLMProvider
 }
 
-// In-Memory storage for MVP until DB is ready
-var workflowStore = map[string]*workflow.GraphDefinition{
-	"code-review": {
-		ID:          "code-review",
-		Name:        "Code Review",
-		Description: "Standard parallel code review",
-		Nodes: map[string]*workflow.Node{
-			"start": {ID: "start", Type: workflow.NodeTypeStart, NextIDs: []string{"parallel_review"}},
-			"parallel_review": {
-				ID: "parallel_review", Type: workflow.NodeTypeParallel,
-				NextIDs: []string{"security_agent", "performance_agent"},
-			},
-			"security_agent": {
-				ID: "security_agent", Type: workflow.NodeTypeAgent, NextIDs: []string{"merge"},
-				Properties: map[string]interface{}{"role": "security"},
-			},
-			"performance_agent": {
-				ID: "performance_agent", Type: workflow.NodeTypeAgent, NextIDs: []string{"merge"},
-				Properties: map[string]interface{}{"role": "performance"},
-			},
-			"merge": {ID: "merge", Type: workflow.NodeTypeEnd},
-		},
-		StartNodeID: "start",
-	},
-}
-
-func NewWorkflowMgmtHandler() *WorkflowMgmtHandler {
-	return &WorkflowMgmtHandler{}
+func NewWorkflowMgmtHandler(repo *persistence.WorkflowRepository, llm llm.LLMProvider) *WorkflowMgmtHandler {
+	return &WorkflowMgmtHandler{
+		Repo: repo,
+		LLM:  llm,
+	}
 }
 
 type ListWorkflowsResponse struct {
@@ -56,13 +35,19 @@ type ListWorkflowsResponse struct {
 
 // List returns available workflows
 func (h *WorkflowMgmtHandler) List(c *gin.Context) {
-	// TODO: Filter by type query param
+	ctx := c.Request.Context()
+	workflows, err := h.Repo.List(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	var list []ListWorkflowsResponse
-	for _, w := range workflowStore {
+	for _, w := range workflows {
 		list = append(list, ListWorkflowsResponse{
 			ID:        w.ID,
 			Name:      w.Name,
-			UpdatedAt: time.Now().Format(time.RFC3339),
+			UpdatedAt: w.UpdatedAt.Format(time.RFC3339),
 		})
 	}
 	c.JSON(http.StatusOK, list)
@@ -71,11 +56,13 @@ func (h *WorkflowMgmtHandler) List(c *gin.Context) {
 // Get returns a specific workflow definition
 func (h *WorkflowMgmtHandler) Get(c *gin.Context) {
 	id := c.Param("id")
-	if w, ok := workflowStore[id]; ok {
-		c.JSON(http.StatusOK, w)
+	ctx := c.Request.Context()
+	w, err := h.Repo.Get(ctx, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Workflow not found"})
 		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": "Workflow not found"})
+	c.JSON(http.StatusOK, w)
 }
 
 // Create saves a new workflow
@@ -90,7 +77,11 @@ func (h *WorkflowMgmtHandler) Create(c *gin.Context) {
 		req.ID = uuid.New().String()
 	}
 
-	workflowStore[req.ID] = &req
+	ctx := c.Request.Context()
+	if err := h.Repo.Create(ctx, &req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusCreated, req)
 }
 
@@ -103,43 +94,87 @@ func (h *WorkflowMgmtHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if _, ok := workflowStore[id]; !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Workflow not found"})
+	req.ID = id
+	ctx := c.Request.Context()
+	if err := h.Repo.Update(ctx, &req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	req.ID = id
-	workflowStore[id] = &req
 	c.JSON(http.StatusOK, req)
-}
-
-type GenerateWorkflowRequest struct {
-	Prompt string `json:"prompt" binding:"required"`
 }
 
 // Generate creates a workflow from natural language
 func (h *WorkflowMgmtHandler) Generate(c *gin.Context) {
-	var req GenerateWorkflowRequest
+	var req struct {
+		Prompt string `json:"prompt"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Mock response for MVP
-	// In real impl, we call LLM here
-	mockGraph := workflow.GraphDefinition{
-		ID:          uuid.New().String(),
-		Name:        "Generated: " + req.Prompt,
-		Description: "AI Generated workflow based on: " + req.Prompt,
-		StartNodeID: "start",
-		Nodes: map[string]*workflow.Node{
-			"start": {ID: "start", Type: workflow.NodeTypeStart, NextIDs: []string{"end"}},
-			"end":   {ID: "end", Type: workflow.NodeTypeEnd},
-		},
+	systemPrompt := `You are an expert Workflow Designer.
+Your goal is to generate a valid JSON GraphDefinition based on the user's request.
+Ref:
+type GraphDefinition struct {
+    ID          string              json:"id"
+    Name        string              json:"name"
+    Description string              json:"description"
+    StartNodeID string              json:"start_node_id"
+    Nodes       map[string]Node     json:"nodes"
+}
+type Node struct {
+    ID         string                 json:"id"
+    Type       NodeType               json:"type" // start, end, agent, llm, tool, parallel, sequence
+    Name       string                 json:"name"
+    NextIDs    []string               json:"next_ids,omitempty"
+    Properties map[string]interface{} json:"properties,omitempty"
+}
+Output STRICT JSON only.`
+
+	ctx := c.Request.Context()
+	model := os.Getenv("LLM_MODEL")
+	if model == "" {
+		model = "gemini-1.5-flash" // Fallback
 	}
 
+	resp, err := h.LLM.Generate(ctx, &llm.CompletionRequest{
+		Messages: []llm.Message{
+			{Role: "system", Content: systemPrompt},
+			{Role: "user", Content: req.Prompt},
+		},
+		Temperature: 0.2,
+		Model:       model,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "LLM generation failed: " + err.Error()})
+		return
+	}
+
+	// Strip markdown fences if present
+	content := resp.Content
+	if strings.Contains(content, "```json") {
+		content = strings.ReplaceAll(content, "```json", "")
+		content = strings.ReplaceAll(content, "```", "")
+	} else if strings.Contains(content, "```") {
+		content = strings.ReplaceAll(content, "```", "")
+	}
+	content = strings.TrimSpace(content)
+
+	var graph workflow.GraphDefinition
+	if err := json.Unmarshal([]byte(content), &graph); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse generated workflow", "raw": content})
+		return
+	}
+
+	// Ensure ID is set
+	graph.ID = uuid.New().String()
+
+	// Persist it? Or just return draft? Returning draft is safer for UI builder.
+	// But let's verify if user wants it saved immediately. Usually builder pattern = return draft.
+
 	c.JSON(http.StatusOK, gin.H{
-		"graph":       mockGraph,
-		"explanation": "Generated a simple start-end workflow for demo purposes.",
+		"graph":       graph,
+		"explanation": "Generated workflow based on your prompt.",
 	})
 }

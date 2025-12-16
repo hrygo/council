@@ -39,8 +39,9 @@ export const useWorkflow = (): UseWorkflowReturn => {
             // Map to our BackendGraph interface
             // Ensure fields match
             setWorkflow(graphDef);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -66,8 +67,9 @@ export const useWorkflow = (): UseWorkflowReturn => {
                 throw new Error(errData.error || 'Execution failed');
             }
             // Execution started successfully
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            setError(errorMessage);
             // Re-throw if caller needs to handle it
             throw err;
         } finally {

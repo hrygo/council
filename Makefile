@@ -1,61 +1,251 @@
-.PHONY: dev build run-backend run-frontend deps down clean logs ps help
+# ============================================================================
+# The Council - Development Makefile
+# ============================================================================
+# Usage: make [target]
+# Run `make help` to see all available commands
+# ============================================================================
 
-# Default target
-all: dev
+.PHONY: all help \
+        start stop restart status \
+        start-all stop-all \
+        start-db stop-db start-backend stop-backend start-frontend stop-frontend \
+        build test lint fmt check clean install
 
-dev: deps ## Start the full development environment (DB + properties + Frontend)
-	@echo "Starting Backend and Frontend..."
-	make -j2 run-backend run-frontend
+# ============================================================================
+# 🎨 Colors
+# ============================================================================
+BOLD   := \033[1m
+CYAN   := \033[36m
+GREEN  := \033[32m
+YELLOW := \033[33m
+RED    := \033[31m
+RESET  := \033[0m
 
-run-backend: ## Run the Go backend
-	go run cmd/council/main.go
+# ============================================================================
+# 📦 Variables (loaded from .env if exists)
+# ============================================================================
+-include .env
+export
 
-run-frontend: #
-# Frontend commands
-frontend-dev: ## Run the React frontend in development mode
-	cd frontend && npm run dev
+GO_BIN         := bin/council
+DATABASE_URL   ?= postgres://council:council_password@localhost:5432/council_db?sslmode=disable
+LLM_PROVIDER   ?= gemini
+LLM_MODEL      ?= gemini-2.0-flash
 
-frontend-build: ## Build the React frontend for production
-	cd frontend && npm run build
+# ============================================================================
+# 🚀 Default
+# ============================================================================
+all: help
 
-# Database commands
-migrate-up: ## Apply database migrations
-	migrate -path migrations -database "${DATABASE_URL}" up
+# ============================================================================
+# 🔄 LIFECYCLE COMMANDS (Primary)
+# ============================================================================
 
-migrate-down: ## Revert database migrations
-	migrate -path migrations -database "${DATABASE_URL}" down
+start: start-all ## 🚀 Start everything (DB + Backend + Frontend)
 
-build: ## Build both backend and frontend
-	make frontend-build
-	go build -o bin/council cmd/council/main.go
+stop: stop-all ## 🛑 Stop everything
 
-# --- Testing ---
-test: ## Run unit tests (excluding infrastructure wrappers)
-	@echo "Running tests..."
-	go test -v -coverprofile=coverage.out ./...
-	@# Filter out infrastructure and cmd/main.go from coverage report
-	@grep -v -E "internal/infrastructure|cmd/" coverage.out > coverage.filtered.out
-	@mv coverage.filtered.out coverage.out
-	@go tool cover -func=coverage.out
+restart: stop start ## 🔄 Restart everything
 
-# --- Dependencies (Docker) ---
+status: ## 📊 Show status of all services
+	@echo "$(BOLD)$(CYAN)📊 Service Status$(RESET)"
+	@echo "════════════════════════════════════════"
+	@echo ""
+	@echo "$(BOLD)🐳 Docker Services:$(RESET)"
+	@docker compose ps 2>/dev/null || echo "   Not running"
+	@echo ""
+	@echo "$(BOLD)🔧 Backend (port 8080):$(RESET)"
+	@lsof -ti:8080 >/dev/null 2>&1 && echo "   $(GREEN)● Running$(RESET) (PID: $$(lsof -ti:8080))" || echo "   $(RED)○ Stopped$(RESET)"
+	@echo ""
+	@echo "$(BOLD)🎨 Frontend (port 5173/5174):$(RESET)"
+	@lsof -ti:5173 >/dev/null 2>&1 && echo "   $(GREEN)● Running$(RESET) on :5173" || \
+		(lsof -ti:5174 >/dev/null 2>&1 && echo "   $(GREEN)● Running$(RESET) on :5174" || echo "   $(RED)○ Stopped$(RESET)")
+	@echo ""
 
-deps: ## Start Postgres and other dependencies
-	@echo "Starting dependencies..."
-	docker compose up -d
+# ============================================================================
+# 🐳 DOCKER SERVICES
+# ============================================================================
 
-down: ## Stop dependencies
-	docker compose down
+start-db: ## 🐳 Start database services (Postgres + Redis)
+	@echo "$(CYAN)🐳 Starting Docker services...$(RESET)"
+	@docker compose up -d
+	@echo "$(GREEN)✅ Docker services started$(RESET)"
+	@docker compose ps
 
-clean: ## Stop dependencies and delete data volumes
-	docker compose down -v
+stop-db: ## 🛑 Stop database services
+	@echo "$(YELLOW)🛑 Stopping Docker services...$(RESET)"
+	@docker compose down
+	@echo "$(GREEN)✅ Docker services stopped$(RESET)"
 
-logs: ## Follow docker logs
-	docker compose logs -f
+restart-db: stop-db start-db ## 🔄 Restart database services
 
-ps: ## Show running containers
-	docker compose ps
+logs-db: ## 📜 Follow database logs
+	@docker compose logs -f
 
-help: ## Show this help message
-	@echo "Usage: make [target]"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+reset-db: ## ⚠️ Reset database (DELETE ALL DATA)
+	@echo "$(RED)$(BOLD)⚠️ WARNING: This will DELETE all data!$(RESET)"
+	@read -p "Are you sure? [y/N]: " confirm && [ "$$confirm" = "y" ] || exit 1
+	@docker compose down -v
+	@docker compose up -d
+	@sleep 3
+	@echo "$(GREEN)✅ Database reset complete$(RESET)"
+
+# ============================================================================
+# 🔧 BACKEND
+# ============================================================================
+
+start-backend: ## 🔧 Start Go backend
+	@echo "$(CYAN)🔧 Starting Backend on :8080...$(RESET)"
+	@lsof -ti:8080 >/dev/null 2>&1 && { echo "$(YELLOW)⚠️ Port 8080 already in use. Stopping...$(RESET)"; make stop-backend; sleep 1; } || true
+	@env DATABASE_URL="$(DATABASE_URL)" \
+		LLM_PROVIDER="$(LLM_PROVIDER)" \
+		LLM_MODEL="$(LLM_MODEL)" \
+		GEMINI_API_KEY="$(GEMINI_API_KEY)" \
+		go run cmd/council/main.go &
+	@sleep 3
+	@lsof -ti:8080 >/dev/null 2>&1 && echo "$(GREEN)✅ Backend started$(RESET)" || echo "$(RED)❌ Backend failed to start. Check: make logs-backend$(RESET)"
+
+stop-backend: ## 🛑 Stop Go backend
+	@echo "$(YELLOW)🛑 Stopping Backend...$(RESET)"
+	@lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+	@echo "$(GREEN)✅ Backend stopped$(RESET)"
+
+restart-backend: stop-backend start-backend ## 🔄 Restart backend
+
+logs-backend: ## 📜 Tail backend logs (if using file logging)
+	@echo "$(YELLOW)Backend logs are in terminal output$(RESET)"
+
+# ============================================================================
+# 🎨 FRONTEND
+# ============================================================================
+
+start-frontend: ## 🎨 Start React frontend
+	@echo "$(CYAN)🎨 Starting Frontend...$(RESET)"
+	@cd frontend && npm run dev &
+	@sleep 2
+	@echo "$(GREEN)✅ Frontend started$(RESET)"
+
+stop-frontend: ## 🛑 Stop React frontend
+	@echo "$(YELLOW)🛑 Stopping Frontend...$(RESET)"
+	@lsof -ti:5173 | xargs kill -9 2>/dev/null || true
+	@lsof -ti:5174 | xargs kill -9 2>/dev/null || true
+	@echo "$(GREEN)✅ Frontend stopped$(RESET)"
+
+restart-frontend: stop-frontend start-frontend ## 🔄 Restart frontend
+
+# ============================================================================
+# 🚀 COMBINED LIFECYCLE
+# ============================================================================
+
+start-all: ## 🚀 Start all services
+	@echo "$(GREEN)$(BOLD)🚀 Starting The Council...$(RESET)"
+	@echo ""
+	@make start-db
+	@echo ""
+	@make start-backend
+	@echo ""
+	@make start-frontend
+	@echo ""
+	@echo "$(GREEN)$(BOLD)════════════════════════════════════════$(RESET)"
+	@echo "$(GREEN)$(BOLD)✅ All services started!$(RESET)"
+	@echo "   $(CYAN)Backend:  http://localhost:8080$(RESET)"
+	@echo "   $(CYAN)Frontend: http://localhost:5173$(RESET)"
+	@echo "$(GREEN)$(BOLD)════════════════════════════════════════$(RESET)"
+
+stop-all: ## 🛑 Stop all services
+	@echo "$(YELLOW)$(BOLD)🛑 Stopping The Council...$(RESET)"
+	@make stop-frontend
+	@make stop-backend
+	@make stop-db
+	@echo "$(GREEN)✅ All services stopped$(RESET)"
+
+# ============================================================================
+# 🏗️ BUILD & TEST
+# ============================================================================
+
+build: lint ## 🏗️ Build production binaries
+	@echo "$(GREEN)$(BOLD)🏗️ Building...$(RESET)"
+	@cd frontend && npm run build
+	@CGO_ENABLED=0 go build -ldflags="-s -w" -o $(GO_BIN) cmd/council/main.go
+	@echo "$(GREEN)✅ Build complete: $(GO_BIN)$(RESET)"
+
+test: ## 🧪 Run tests
+	@echo "$(CYAN)🧪 Running tests...$(RESET)"
+	@go test -v -race -coverprofile=coverage.out ./...
+	@go tool cover -func=coverage.out | tail -1
+
+test-short: ## ⚡ Quick tests (no race detector)
+	@go test -short ./...
+
+coverage: test ## 📊 Open coverage report
+	@go tool cover -html=coverage.out -o coverage.html
+	@open coverage.html 2>/dev/null || xdg-open coverage.html 2>/dev/null || echo "Open coverage.html"
+
+lint: ## 🔍 Run linters
+	@echo "$(CYAN)🔍 Linting...$(RESET)"
+	@go vet ./...
+	@cd frontend && npm run lint
+
+fmt: ## 🎯 Format code
+	@gofmt -w -s .
+	@echo "$(GREEN)✅ Formatted$(RESET)"
+
+check: lint test ## ✅ Run all checks
+
+# ============================================================================
+# 📦 SETUP
+# ============================================================================
+
+install: ## 📦 Install dependencies
+	@echo "$(CYAN)📦 Installing dependencies...$(RESET)"
+	@go mod download
+	@cd frontend && npm install
+	@[ -f .env ] || cp .env.example .env
+	@echo "$(GREEN)✅ Dependencies installed$(RESET)"
+
+clean: stop-all ## 🧹 Clean everything
+	@echo "$(YELLOW)🧹 Cleaning...$(RESET)"
+	@rm -rf bin/ coverage.out coverage.html
+	@cd frontend && rm -rf dist/ node_modules/.cache
+	@docker compose down -v 2>/dev/null || true
+	@echo "$(GREEN)✅ Clean complete$(RESET)"
+
+# ============================================================================
+# ❓ HELP
+# ============================================================================
+
+help: ## ❓ Show this help
+	@echo ""
+	@echo "$(BOLD)$(CYAN)🏛️  The Council$(RESET)"
+	@echo "$(BOLD)════════════════════════════════════════════════════════════════$(RESET)"
+	@echo ""
+	@echo "$(BOLD)🔄 Lifecycle:$(RESET)"
+	@echo "  $(CYAN)make start$(RESET)          Start everything"
+	@echo "  $(CYAN)make stop$(RESET)           Stop everything"
+	@echo "  $(CYAN)make restart$(RESET)        Restart everything"
+	@echo "  $(CYAN)make status$(RESET)         Show service status"
+	@echo ""
+	@echo "$(BOLD)🐳 Docker:$(RESET)"
+	@echo "  $(CYAN)make start-db$(RESET)       Start Postgres + Redis"
+	@echo "  $(CYAN)make stop-db$(RESET)        Stop Docker services"
+	@echo "  $(CYAN)make logs-db$(RESET)        Follow Docker logs"
+	@echo "  $(CYAN)make reset-db$(RESET)       Reset database (⚠️ deletes data)"
+	@echo ""
+	@echo "$(BOLD)🔧 Backend:$(RESET)"
+	@echo "  $(CYAN)make start-backend$(RESET)  Start Go server"
+	@echo "  $(CYAN)make stop-backend$(RESET)   Stop Go server"
+	@echo ""
+	@echo "$(BOLD)🎨 Frontend:$(RESET)"
+	@echo "  $(CYAN)make start-frontend$(RESET) Start React dev server"
+	@echo "  $(CYAN)make stop-frontend$(RESET)  Stop React dev server"
+	@echo ""
+	@echo "$(BOLD)🏗️ Build & Test:$(RESET)"
+	@echo "  $(CYAN)make build$(RESET)          Build for production"
+	@echo "  $(CYAN)make test$(RESET)           Run tests"
+	@echo "  $(CYAN)make lint$(RESET)           Run linters"
+	@echo "  $(CYAN)make check$(RESET)          Run all checks"
+	@echo ""
+	@echo "$(BOLD)📦 Setup:$(RESET)"
+	@echo "  $(CYAN)make install$(RESET)        Install dependencies"
+	@echo "  $(CYAN)make clean$(RESET)          Clean everything"
+	@echo ""
