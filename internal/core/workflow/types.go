@@ -1,5 +1,9 @@
 package workflow
 
+import (
+	"context"
+)
+
 // NodeStatus defines the execution state of a node
 type NodeStatus string
 
@@ -40,4 +44,11 @@ type Node struct {
 	Name       string                 `json:"name"`
 	NextIDs    []string               `json:"next_ids,omitempty"` // Adjacency list for next steps
 	Properties map[string]interface{} `json:"properties"`         // Node-specific config (e.g. Prompt, Model)
+}
+
+// Middleware allows intercepting node execution for safety and observability
+type Middleware interface {
+	Name() string
+	BeforeNodeExecution(ctx context.Context, session *Session, node *Node) error
+	AfterNodeExecution(ctx context.Context, session *Session, node *Node, output map[string]interface{}) (map[string]interface{}, error)
 }

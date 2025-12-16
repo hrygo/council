@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hrygo/council/internal/api/ws"
 	"github.com/hrygo/council/internal/core/agent"
+	"github.com/hrygo/council/internal/core/memory"
+	"github.com/hrygo/council/internal/core/middleware"
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/core/workflow/nodes"
 	"github.com/hrygo/council/internal/infrastructure/llm"
@@ -46,13 +48,26 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	session.Start(context.Background())
 
 	// Create Engine
-	engine := workflow.NewEngine(req.Graph, req.Input)
+	engine := workflow.NewEngine(session)
 
 	// Configure Factory
 	engine.NodeFactory = nodes.NewNodeFactory(nodes.NodeDependencies{
 		LLM:       h.LLM,
 		AgentRepo: h.AgentRepo,
 	})
+
+	// Inject Middleware
+	// Try to get Embedder from LLM Provider
+	var embedder llm.Embedder
+	if e, ok := h.LLM.(llm.Embedder); ok {
+		embedder = e
+	}
+	memService := memory.NewService(embedder) // Using default global pools
+	engine.Middlewares = []workflow.Middleware{
+		middleware.NewCircuitBreaker(10),           // Logic Circuit Breaker (Depth > 10)
+		middleware.NewFactCheckTrigger(),           // Anti-Hallucination
+		middleware.NewMemoryMiddleware(memService), // Memory Persistence
+	}
 
 	// Run in Goroutine
 	go func() {

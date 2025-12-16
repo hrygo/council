@@ -16,15 +16,20 @@ type Engine struct {
 	StreamChannel chan StreamEvent
 	mu            sync.RWMutex
 	inputs        map[string]interface{}
+
+	// Middleware hooks
+	Middlewares []Middleware
+	Session     *Session // Reference to the session state
 }
 
 // NewEngine creates a new workflow engine
-func NewEngine(graph *GraphDefinition, inputs map[string]interface{}) *Engine {
+func NewEngine(session *Session) *Engine {
 	return &Engine{
-		Graph:         graph,
+		Graph:         session.Graph,
 		Status:        make(map[string]NodeStatus),
 		StreamChannel: make(chan StreamEvent, 100), // Buffer for safety
-		inputs:        inputs,
+		inputs:        session.Inputs,
+		Session:       session,
 		// Default Factory (can be overridden)
 		NodeFactory: func(n *Node) (NodeProcessor, error) {
 			return nil, fmt.Errorf("no factory configured for node type %s", n.Type)
@@ -68,12 +73,30 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 		return
 	}
 
+	// Middleware: Before Execution
+	for _, mw := range e.Middlewares {
+		if err := mw.BeforeNodeExecution(ctx, e.Session, node); err != nil {
+			e.emitError(nodeID, fmt.Errorf("middleware %s blocked execution: %w", mw.Name(), err))
+			return
+		}
+	}
+
 	// Execute Processor
 	output, err := processor.Process(ctx, input, e.StreamChannel)
 	if err != nil {
 		e.updateStatus(nodeID, StatusFailed)
 		e.emitError(nodeID, err)
 		return
+	}
+
+	// Middleware: After Execution
+	for _, mw := range e.Middlewares { // Execute in order (or reverse? usually order is fine for transform)
+		var mwErr error
+		output, mwErr = mw.AfterNodeExecution(ctx, e.Session, node, output)
+		if mwErr != nil {
+			e.emitError(nodeID, fmt.Errorf("middleware %s failed post-processing: %w", mw.Name(), mwErr))
+			return
+		}
 	}
 
 	e.updateStatus(nodeID, StatusCompleted)

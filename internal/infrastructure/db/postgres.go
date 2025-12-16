@@ -38,7 +38,13 @@ func Init(ctx context.Context, databaseURL string) error {
 			return
 		}
 
-		log.Println("Database connection established successfully")
+		// Run Migrations
+		if migrateErr := Migrate(ctx, pool); migrateErr != nil {
+			err = fmt.Errorf("failed to run migrations: %w", migrateErr)
+			return
+		}
+
+		log.Println("Database connection established and migrations applied successfully")
 	})
 
 	return err

@@ -32,7 +32,8 @@ func TestEngine_Run_Linear(t *testing.T) {
 	}
 
 	// Setup Engine
-	engine := NewEngine(graph, nil)
+	session := NewSession(graph, nil)
+	engine := NewEngine(session)
 
 	// Mock Factory
 	mu := sync.Mutex{}
