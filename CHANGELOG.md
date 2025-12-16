@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0] - 2025-12-16
+
+### Added
+- **Three-Tier Memory Protocol**:
+  - **Tier 1 (Quarantine)**: `quarantine_logs` table (PostgreSQL) and logging middleware.
+  - **Tier 2 (Working Memory)**: Redis-backed `WorkingMemoryBuffer` with Ingress Filter.
+  - **Tier 3 (LTM)**: Stub for `KnowledgePromoter` and Hybrid Retrieval (PGVector + Redis).
+- **Defense Mechanisms (Safety)**:
+  - `LogicCircuitBreaker`: Middleware to prevent infinite loops (recursion depth check).
+  - `AntiHallucination`: Regex-based trigger to flag unverified claims (`[Specific Metric]`).
+  - `MemoryMiddleware`: Auto-injection of node outputs into Memory Protocol.
+- **Frontend Dual-Mode Architecture**:
+  - **Stores**: `useLayoutStore` (Panel Persistence), `useConfigStore` (God Mode).
+  - **MeetingRoom**: Resizable 3-pane layout (Canvas, Chat, Docs) with Fullscreen Focus.
+  - **UI Features**: `CostEstimator` and `ParallelMessageRow` visualization.
+- **Infrastructure**: Added `redis` service to `docker-compose.yml` and automated DB migration runner.
+
 ## [0.5.0] - 2025-12-16
 
 ### Added

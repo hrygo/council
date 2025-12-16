@@ -1,6 +1,6 @@
 # 🛠️ The Council - 工程开发规约
 
-> **版本**: v0.5.0 | **架构**: WebApp (React SPA + Go API + Docker PostgreSQL)
+> **Version**: v0.6.0 | **Architecture**: WebApp (React SPA + Go API + Docker PostgreSQL)
 
 ---
 
