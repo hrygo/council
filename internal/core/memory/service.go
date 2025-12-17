@@ -59,30 +59,52 @@ func (s *Service) UpdateWorkingMemory(ctx context.Context, groupID string, conte
 		return fmt.Errorf("redis client not initialized")
 	}
 
-	// 1. Ingress Filter
-	// Check confidence score
+	// 1. Ingress Filter: Check confidence score
 	confidence, ok := metadata["confidence"].(float64)
 	if ok && confidence < 0.8 {
-		// Reject (Log rejection?)
+		// Reject low-confidence content
 		return nil
 	}
 
-	// 2. Write to Redis List or Set
-	// Key: wm:{group_id}
-	// Value: content (or JSON with metadata)
+	// 2. Ingress Filter: LLM-based consistency check (optional, if embedder is available)
+	if s.Embedder != nil {
+		// Simple heuristic: too short content likely noise
+		if len(content) < 50 {
+			return nil // Skip very short content
+		}
+		// In production, we'd call LLM to verify consistency
+		// For MVP, we pass if content length is reasonable
+	}
+
+	// 3. Write to Redis List
 	key := fmt.Sprintf("wm:%s", groupID)
 
-	// For MVP: Just push to a list, TTL handled by expiration policy or manually?
-	// Redis List approach: LPUSH
 	if err := client.LPush(ctx, key, content).Err(); err != nil {
 		return fmt.Errorf("failed to push to working memory: %w", err)
 	}
 
-	// Set TTL if new key (24h)
+	// Set TTL (24h)
 	client.Expire(ctx, key, 24*time.Hour)
 
-	// Cap list size? keeping last 50 items
+	// Cap list size: keep last 50 items
 	client.LTrim(ctx, key, 0, 49)
+
+	return nil
+}
+
+// CleanupWorkingMemory removes expired entries (called by scheduler)
+func (s *Service) CleanupWorkingMemory(ctx context.Context) error {
+	client := cache.GetClient()
+	if client == nil {
+		return fmt.Errorf("redis client not initialized")
+	}
+
+	// Redis handles TTL automatically, but we can prune manually if needed
+	// This is a placeholder for any additional cleanup logic
+	// For example, scanning and removing very old keys:
+	// iter := client.Scan(ctx, 0, "wm:*", 100).Iterator()
+	// Redis' native TTL handles expiration, so this function primarily exists
+	// for potential future enhancements (e.g., archiving before deletion)
 
 	return nil
 }

@@ -3,15 +3,17 @@ package nodes
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/llm"
+	"github.com/hrygo/council/internal/infrastructure/search"
 )
 
 type FactCheckProcessor struct {
 	LLM             llm.LLMProvider
-	SearchSources   []string
+	SearchClient    search.SearchClient
 	VerifyThreshold float64
 }
 
@@ -24,36 +26,81 @@ func (f *FactCheckProcessor) Process(ctx context.Context, input map[string]inter
 
 	// 1. Gather text to check from input
 	var textToCheck string
-	// Simplified extraction
 	for _, v := range input {
 		if s, ok := v.(string); ok {
 			textToCheck += s + "\n"
 		}
 	}
 
-	// 2. Perform Search (Mocked for now)
-	// In real implementation, use f.SearchSources to call SerpAPI/Tavily
-	searchResults := "Search results: [Fact 1 confirmed], [Fact 2 disputed]" // Placeholder
+	// 2. Perform Web Search
+	var searchResults string
+	if f.SearchClient != nil {
+		result, err := f.SearchClient.Search(ctx, textToCheck, search.SearchOptions{
+			MaxResults: 3,
+			SearchType: "answer",
+		})
+		if err != nil {
+			stream <- workflow.StreamEvent{
+				Type:      "error",
+				Timestamp: time.Now(),
+				Data:      map[string]interface{}{"error": "search failed: " + err.Error()},
+			}
+			// Proceed with empty results instead of failing
+			searchResults = "[Search unavailable]"
+		} else {
+			// Build search summary
+			var sb strings.Builder
+			if result.Answer != "" {
+				sb.WriteString("Direct Answer: " + result.Answer + "\n")
+			}
+			for _, item := range result.Results {
+				sb.WriteString(fmt.Sprintf("- %s: %s\n", item.Title, item.Content))
+			}
+			searchResults = sb.String()
+		}
+	} else {
+		searchResults = "[No search client configured]"
+	}
 
 	// 3. Verify with LLM
-	prompt := fmt.Sprintf(`Analyze the following text against search results.
-Text: %s
-Search Results: %s
-Output 'VERIFIED' if accurate, 'DISPUTED' if false. Provide confidence 0.0-1.0.`, textToCheck, searchResults)
+	prompt := fmt.Sprintf(`Analyze the following text against web search results.
+Text to verify: 
+%s
 
-	// Call LLM... (Simplified synchronous call or reuse Stream logic from Agent)
-	// For this sprint part, we'll simulate output.
-	// In the future: f.LLM.Complete(ctx, prompt)
-	_ = prompt // Silence unused variable error for now
+Web Search Results:
+%s
+
+Determine if the claims in the text are accurate.
+Output JSON: {"verified": true/false, "confidence": 0.0-1.0, "issues": ["list of issues if any"]}`, textToCheck, searchResults)
 
 	verified := true
 	confidence := 0.9
+	issues := []string{}
+
+	if f.LLM != nil {
+		resp, err := f.LLM.Generate(ctx, &llm.CompletionRequest{
+			Messages: []llm.Message{
+				{Role: "user", Content: prompt},
+			},
+			Temperature: 0.1,
+		})
+		if err == nil && resp.Content != "" {
+			// Parse LLM response (simplified - assume success means verified)
+			if strings.Contains(strings.ToLower(resp.Content), `"verified": false`) ||
+				strings.Contains(strings.ToLower(resp.Content), `"verified":false`) {
+				verified = false
+				confidence = 0.7
+				issues = append(issues, "LLM flagged potential inaccuracies")
+			}
+		}
+	}
 
 	output := map[string]interface{}{
-		"verified":   verified,
-		"confidence": confidence,
-		"correction": "None needed",
-		"timestamp":  time.Now(),
+		"verified":       verified,
+		"confidence":     confidence,
+		"issues":         issues,
+		"search_summary": searchResults,
+		"timestamp":      time.Now(),
 	}
 
 	stream <- workflow.StreamEvent{

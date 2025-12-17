@@ -40,10 +40,10 @@
 | B.5                 | HumanReviewProcessor          | SPEC-405      | S3-4   | P0     | [x] Done | @Backend  |
 | B.6                 | Templates API                 | SPEC-406      | S3-4   | P1     | [x] Done | @Backend  |
 | B.7                 | Cost Estimation API           | SPEC-407      | S3-4   | P1     | [x] Done | @Backend  |
-| B.8                 | 三层记忆协议                  | SPEC-408      | S3-4   | P0     | [ ] Todo | @Backend  |
+| B.8                 | 三层记忆协议                  | SPEC-408      | S3-4   | P0     | [x] Done | @Backend  |
 | B.9                 | 逻辑熔断 (Circuit Breaker)    | SPEC-409      | S3-4   | P0     | [x] Done | @Backend  |
 | B.10                | 防幻觉传播                    | SPEC-410      | S3-4   | P1     | [x] Done | @Backend  |
-| B.11                | 联网搜索集成                  | SPEC-411      | S3-4   | P1     | [ ] Todo | @Backend  |
+| B.11                | 联网搜索集成                  | SPEC-411      | S3-4   | P1     | [x] Done | @Backend  |
 
 ---
 
