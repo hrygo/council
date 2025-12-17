@@ -86,7 +86,7 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
 
             loadWorkflow: (nodes, edges) => {
                 set((state) => {
-                    // @ts-ignore
+
                     state.nodes = nodes.map(n => ({
                         ...n,
                         data: {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useWorkflowRunStore, getControlState } from '../useWorkflowRunStore';
-import type { RuntimeNode } from '../../types/workflow-run';
+
 
 describe('useWorkflowRunStore', () => {
     beforeEach(() => {
@@ -14,7 +14,7 @@ describe('useWorkflowRunStore', () => {
             const mockNodes = [
                 { id: 'node-1', type: 'start', position: { x: 0, y: 0 }, data: {} },
             ];
-            // @ts-ignore
+
             loadWorkflow(mockNodes, []);
 
             useWorkflowRunStore.getState().updateNodeStatus('node-1', 'running');
@@ -29,7 +29,7 @@ describe('useWorkflowRunStore', () => {
                 { id: 'node-1', type: 'start', position: { x: 0, y: 0 }, data: {} },
                 { id: 'node-2', type: 'agent', position: { x: 0, y: 0 }, data: {} },
             ];
-            // @ts-ignore
+
             loadWorkflow(mockNodes, []);
 
             useWorkflowRunStore.getState().updateNodeStatus('node-1', 'completed');

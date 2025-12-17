@@ -193,7 +193,7 @@ export const useSessionStore = create<SessionState>()(
                 // 3. 处理流式消息
                 if (msg.isChunk && msg.isStreaming) {
                     // 查找同一 Agent 的最后一条流式消息
-                    // @ts-ignore - TS thinks this is WritableDraft but it has findLast with ES2023
+
                     const existingMsg = group.messages.findLast(
                         (m: Message) => m.agentId === msg.agentId && m.isStreaming
                     );
@@ -224,9 +224,9 @@ export const useSessionStore = create<SessionState>()(
             set(state => {
                 const group = state.messageGroups.find(g => g.nodeId === nodeId);
                 if (group) {
-                    // @ts-ignore
+
                     const msgs = group.messages.filter((m: Message) => m.agentId === agentId && m.isStreaming);
-                    // @ts-ignore
+                    // @ts-expect-error - Immer Map handling
                     msgs.forEach((m: Message) => { m.isStreaming = false; });
                 }
             });
@@ -253,7 +253,7 @@ export const useSessionStore = create<SessionState>()(
                 // 更新单条消息或最近一条消息的 token usage (Optional, not specified in detail but good to have)
                 const group = state.messageGroups.find(g => g.nodeId === nodeId);
                 if (group) {
-                    // @ts-ignore
+                    // @ts-expect-error - Immer Map handling
                     const lastMsg = group.messages.findLast((m: Message) => m.agentId === agentId);
                     if (lastMsg) {
                         if (!lastMsg.tokenUsage) lastMsg.tokenUsage = { inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };

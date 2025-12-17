@@ -1,6 +1,4 @@
-import { X, Maximize2, Minimize2 } from 'lucide-react'; // Fix unused imports in ChatHeader if needed, but here we fix tests.
-// The lint error about X and Maximize2 was in ChatHeader.tsx, let's fix that later or ignore if not critical. 
-// Focus on test failure.
+// Imports cleaned up
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ChatPanel } from '../ChatPanel';
