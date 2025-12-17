@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0] - 2025-12-17
+
+### Added
+- **Docs Overhaul**: Comprehensive README update with Architecture diagrams and Usage Guide.
+- **Development Plan**: Added **Phase 2 (Post-MVP)** roadmap including i18n (P0) and E2E Testing.
+
+### Changed
+- **Cleanup**: Removed manual TOC from README for cleaner layout.
+- **Fix**: Resolved SVG badge rendering issues in README.
+- **Refactor**: Eliminated all legacy TODO items in codebase.
+
+---
+
 ## [0.10.0] - 2025-12-17
 
 ### Added
