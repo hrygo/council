@@ -24,8 +24,11 @@ const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel
     );
 };
 
+import { useFullscreenShortcuts } from '../../hooks/useFullscreenShortcuts';
+
 export const MeetingRoom: FC = () => {
     useWebSocketRouter();
+    useFullscreenShortcuts();
     const { maximizedPanel, panelSizes, leftCollapsed, rightCollapsed, setPanelSizes, toggleLeftPanel, toggleRightPanel, maximizePanel } = useLayoutStore();
 
     // Fullscreen Mode
