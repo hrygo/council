@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.0] - 2025-12-17
+
+### Added
+- **Sprint 3 Complete**: Advanced Workflow Builder & Backend Processors.
+- **Workflow Builder Enhancements**:
+  - **Property Panel (SPEC-201)**: Dynamic configuration panel for all node types with strict type validation.
+  - **New Node Types (SPEC-202, SPEC-203)**:
+    - **Vote**: Threshold-based approval logic.
+    - **Loop**: Iteration control with consensus or max-round exit conditions.
+    - **FactCheck**: Source-based verification logic.
+    - **HumanReview**: Workflow suspension/resume capability.
+  - **Template System (SPEC-204, SPEC-205)**: Full stack implementation (Sidebar, Save Modal, Backend API) for workflow templates.
+  - **Wizard Mode (SPEC-206)**: AI-driven workflow generation from natural language descriptions.
+- **Backend Core**: 
+  - **Processor Registry**: Implemented `VoteProcessor`, `LoopProcessor`, `FactCheckProcessor`, and `HumanReviewProcessor`.
+  - **Template API**: Endpoints for Template CRUD operations (`/api/v1/templates`).
+- **Frontend Visuals**: 
+  - **Custom Nodes**: Rich visual React Flow components with icons and status indicators.
+
 ## [0.8.0] - 2025-12-17
 
 ### Added
@@ -12,8 +31,8 @@
   - **Model Configuration (SPEC-105)**: Advanced Model Selector with support for OpenAI, Anthropic, Google, DeepSeek, and DashScope.
   - **Capabilities**: Toggle for Web Search and Code Execution.
 - **Backend**: 
-  - Extended `Agent` entity with `ModelConfig` supporting `top_p` and `max_tokens`.
-  - JSONB schema flexibility leveraged for seamless updates.
+  - **Extended `Agent` entity with `ModelConfig` supporting `top_p` and `max_tokens`.
+  - **JSONB schema flexibility leveraged for seamless updates.
 - **DevEx**: Added `/agents` and `/groups` routes to primary `App` navigation.
 
 ## [0.7.0] - 2025-12-17
