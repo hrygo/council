@@ -12,7 +12,7 @@ interface ParallelMessageCardProps {
 }
 
 export const ParallelMessageCard: FC<ParallelMessageCardProps> = ({
-    message, index, accentColor,
+    message, accentColor,
 }) => (
     <div className={`border rounded-lg border-t-4 bg-white shadow-sm ${accentColor}`}>
         <div className="p-3 border-b flex items-center gap-2">
