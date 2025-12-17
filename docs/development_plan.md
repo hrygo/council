@@ -17,7 +17,7 @@
 | 1.2                 | 实现 `useWorkflowRunStore.ts` | SPEC-002      | S1     | P0     | [x] Done | @Frontend |
 | 1.3                 | ChatPanel 分组消息            | SPEC-003      | S1     | P1     | [x] Done | @Frontend |
 | 1.4                 | ChatPanel 并行消息            | SPEC-004      | S1     | P1     | [x] Done | @Frontend |
-| 1.5                 | WebSocket 优化                | SPEC-005      | S1     | P1     | [ ] Todo | @Frontend |
+| 1.5                 | WebSocket 优化                | SPEC-005      | S1     | P1     | [x] Done | @Frontend |
 | 2.1                 | 群组管理页面 + 列表           | SPEC-101, 102 | S2     | P0     | [ ] Todo | @Frontend |
 | 2.2                 | Agent 管理页面 + 列表         | SPEC-103, 104 | S2     | P0     | [ ] Todo | @Frontend |
 | 2.3                 | Agent 模型配置                | SPEC-105      | S2     | P1     | [ ] Todo | @Frontend |

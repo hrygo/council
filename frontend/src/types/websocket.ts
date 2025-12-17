@@ -1,0 +1,48 @@
+export type WSEventType =
+    | 'token_stream'        // Token 流
+    | 'node_state_change'   // 节点状态变化
+    | 'node:parallel_start' // 并行节点开始
+    | 'token_usage'         // Token 使用统计
+    | 'execution:paused'    // 执行已暂停
+    | 'execution:completed' // 执行完成
+    | 'error';              // 错误
+
+export interface WSMessage<T = unknown> {
+    event: WSEventType;
+    data: T;
+    timestamp?: string;
+}
+
+// 具体事件数据类型
+export interface TokenStreamData {
+    node_id: string;
+    agent_id: string;
+    chunk: string;
+    is_thinking?: boolean;
+}
+
+export interface NodeStateChangeData {
+    node_id: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+}
+
+export interface TokenUsageData {
+    node_id: string;
+    agent_id: string;
+    input_tokens: number;
+    output_tokens: number;
+    estimated_cost_usd: number;
+}
+
+export interface ParallelStartData {
+    node_id: string;
+    branches: string[];
+}
+
+// 上行命令 (Client -> Server)
+export type WSCommandType = 'start_session' | 'pause_session' | 'resume_session' | 'user_input';
+
+export interface WSCommand<T = unknown> {
+    cmd: WSCommandType;
+    data?: T;
+}

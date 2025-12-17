@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useLayoutStore } from '../../stores/useLayoutStore';
+import { useWebSocketRouter } from '../../hooks/useWebSocketRouter';
 import WorkflowCanvas from '../workflow/WorkflowCanvas';
 import ChatPanel from '../chat/ChatPanel';
 import { DocumentReader } from '../modules/DocumentReader';
@@ -22,6 +23,7 @@ const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel
 };
 
 export const MeetingRoom: FC = () => {
+    useWebSocketRouter();
     const { maximizedPanel, panelSizes, leftCollapsed, rightCollapsed, setPanelSizes, toggleLeftPanel, toggleRightPanel, maximizePanel } = useLayoutStore();
 
     // Fullscreen Mode
