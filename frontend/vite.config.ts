@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -12,4 +13,10 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    environment: 'happy-dom', // or jsdom if installed
+    globals: true,
+    setupFiles: './src/test-setup.ts', // This allows using describe, it, expect without importing? Wait, I imported them in test file. But globals: true is common.
+    // I imported them explicitly in my test file, so globals: true is not strictly necessary but harmless.
+  }
 })
