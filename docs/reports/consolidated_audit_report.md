@@ -12,8 +12,8 @@
 
 | 审计阶段                    | 日期       | 报告文件                | 结论                                      |
 | :-------------------------- | :--------- | :---------------------- | :---------------------------------------- |
-| 阶段1: PRD/TDD实现差距审计  | 2024-12-15 | `audit_report.md`       | Alpha阶段，核心骨架搭建完成               |
-| 阶段2: Specs完整性审计      | 2024-12-16 | `specs_audit_report.md` | 98% PRD覆盖，已补充遗漏的5个关键Specs     |
+| 阶段1: PRD/TDD实现差距审计  | 2025-12-15 | `audit_report.md`       | Alpha阶段，核心骨架搭建完成               |
+| 阶段2: Specs完整性审计      | 2025-12-16 | `specs_audit_report.md` | 98% PRD覆盖，已补充遗漏的5个关键Specs     |
 | 阶段3: Sprint 4功能验证审计 | 2025-12-17 | `sprint4_audit.md`      | Human Review / Cost / Knowledge 100% 通过 |
 
 ---

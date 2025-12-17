@@ -126,4 +126,4 @@ handleParallelNodeStart: (nodeId: string, branches: string[]) => {
 
 | 日期       | 版本 | 变更内容 |
 | ---------- | ---- | -------- |
-| 2024-12-16 | v1.0 | 初始规格 |
+| 2025-12-16 | v1.0 | 初始规格 |

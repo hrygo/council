@@ -78,7 +78,7 @@ interface AgentVote {
 ```json
 {
   "type": "human_review:requested",
-  "timestamp": "2024-12-16T10:00:00Z",
+  "timestamp": "2025-12-16T10:00:00Z",
   "data": {
     "review_id": "review-uuid",
     "session_id": "session-uuid",
@@ -99,7 +99,7 @@ interface AgentVote {
         {"agent_id": "cfo", "agent_name": "CFO", "vote": "no", "reason": "..."}
       ]
     },
-    "expires_at": "2024-12-16T10:30:00Z"  // 30分钟超时
+    "expires_at": "2025-12-16T10:30:00Z"  // 30分钟超时
   }
 }
 ```
@@ -111,7 +111,7 @@ interface AgentVote {
 ```json
 {
   "type": "human_review:reminder",
-  "timestamp": "2024-12-16T10:25:00Z",
+  "timestamp": "2025-12-16T10:25:00Z",
   "data": {
     "review_id": "review-uuid",
     "expires_in_seconds": 300,
@@ -125,7 +125,7 @@ interface AgentVote {
 ```json
 {
   "type": "human_review:expired",
-  "timestamp": "2024-12-16T10:30:00Z",
+  "timestamp": "2025-12-16T10:30:00Z",
   "data": {
     "review_id": "review-uuid",
     "action_taken": "session_paused",  // 或 "default_rejected"
@@ -210,8 +210,8 @@ GET /api/v1/reviews/pending
       "id": "review-uuid-1",
       "session_id": "session-uuid-1",
       "session_name": "商业计划评审",
-      "created_at": "2024-12-16T10:00:00Z",
-      "expires_at": "2024-12-16T10:30:00Z"
+      "created_at": "2025-12-16T10:00:00Z",
+      "expires_at": "2025-12-16T10:30:00Z"
     }
   ],
   "total": 1

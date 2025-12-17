@@ -188,7 +188,7 @@ GET /api/v1/models/pricing
       "context_window": 64000
     }
   ],
-  "last_updated": "2024-12-01T00:00:00Z"
+  "last_updated": "2025-12-01T00:00:00Z"
 }
 ```
 

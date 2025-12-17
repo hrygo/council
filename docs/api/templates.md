@@ -63,8 +63,8 @@ GET /api/v1/templates
       "description": "Start → Parallel(安全/性能/可维护性) → Vote → HumanReview → End",
       "category": "code_review",
       "is_system": true,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
     }
   ],
   "total": 1
@@ -102,8 +102,8 @@ GET /api/v1/templates/:id
       // ... more nodes
     }
   },
-  "created_at": "2024-01-01T00:00:00Z",
-  "updated_at": "2024-01-01T00:00:00Z"
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z"
 }
 ```
 
@@ -139,8 +139,8 @@ POST /api/v1/templates
   "category": "custom",
   "is_system": false,
   "graph": { /* ... */ },
-  "created_at": "2024-12-16T10:00:00Z",
-  "updated_at": "2024-12-16T10:00:00Z"
+  "created_at": "2025-12-16T10:00:00Z",
+  "updated_at": "2025-12-16T10:00:00Z"
 }
 ```
 
@@ -220,7 +220,7 @@ POST /api/v1/templates/:id/instantiate
     "name": "基于模版的新工作流",
     "template_id": "tpl-001",
     "graph": { /* 复制自模版 */ },
-    "created_at": "2024-12-16T10:00:00Z"
+    "created_at": "2025-12-16T10:00:00Z"
   }
 }
 ```
@@ -251,8 +251,8 @@ export const mockTemplates: Template[] = [
     category: 'code_review',
     is_system: true,
     graph: { /* ... */ },
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2025-01-01T00:00:00Z',
   },
   // ...
 ];
