@@ -10,11 +10,31 @@ import {
     type Node,
     type Edge,
     type ReactFlowInstance,
+    type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useWorkflow } from '../../hooks/useWorkflow';
 import { transformToReactFlow, type BackendGraph } from '../../utils/graphUtils';
 import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
+import {
+    AgentNode,
+    VoteNode,
+    LoopNode,
+    FactCheckNode,
+    HumanReviewNode,
+    StartNode,
+    EndNode
+} from './nodes/CustomNodes';
+
+const nodeTypes: NodeTypes = {
+    agent: AgentNode,
+    vote: VoteNode,
+    loop: LoopNode,
+    fact_check: FactCheckNode,
+    human_review: HumanReviewNode,
+    start: StartNode,
+    end: EndNode,
+};
 
 interface WorkflowCanvasProps {
     readOnly?: boolean;
@@ -120,6 +140,7 @@ export default function WorkflowCanvas({
             <ReactFlow
                 nodes={displayedNodes}
                 edges={displayedEdges}
+                nodeTypes={nodeTypes}
                 onNodesChange={readOnly ? undefined : onNodesChange}
                 onEdgesChange={readOnly ? undefined : onEdgesChange}
                 onConnect={readOnly ? undefined : onConnect}

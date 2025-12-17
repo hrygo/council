@@ -77,6 +77,8 @@ func main() {
 	agentHandler := handler.NewAgentHandler(agentRepo)
 	workflowHandler := handler.NewWorkflowHandler(hub, agentRepo, llmProvider)
 	workflowMgmtHandler := handler.NewWorkflowMgmtHandler(workflowRepo, llmProvider)
+	templateRepo := persistence.NewTemplateRepository(pool)
+	templateHandler := handler.NewTemplateHandler(templateRepo)
 	memoryHandler := handler.NewMemoryHandler(memoryService)
 
 	// Routes
@@ -111,6 +113,11 @@ func main() {
 		api.POST("/workflows", workflowMgmtHandler.Create)
 		api.PUT("/workflows/:id", workflowMgmtHandler.Update)
 		api.POST("/workflows/generate", workflowMgmtHandler.Generate)
+
+		// Templates
+		api.GET("/templates", templateHandler.List)
+		api.POST("/templates", templateHandler.Create)
+		api.DELETE("/templates/:id", templateHandler.Delete)
 
 		// Memory
 		api.POST("/memory/ingest", memoryHandler.Ingest)
