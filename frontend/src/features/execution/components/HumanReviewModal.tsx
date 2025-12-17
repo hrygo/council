@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useWorkflowRunStore } from '../../../../stores/useWorkflowRunStore';
+import { useState } from 'react';
+import { useWorkflowRunStore } from '../../../stores/useWorkflowRunStore';
 import { AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
 

@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.10.0] - 2025-12-17
+
+### Added
+- **Sprint 4 Complete**: Advanced Features for MVP Readiness.
+- **Human-in-the-Loop (SPEC-301, SPEC-405)**:
+  - **HumanReviewModal**: Frontend modal for pausing workflow execution and awaiting human decisions.
+  - **Backend**: `StatusSuspended` node state, `ErrSuspended` signal, and `POST /sessions/:id/review` API for Approve/Reject/Modify actions.
+  - **Engine**: `ResumeNode()` method to resume suspended workflows with injected output.
+- **Cost Estimation (SPEC-302, SPEC-407)**:
+  - **CostEstimator Widget**: Real-time cost/token/agent breakdown displayed in `WorkflowEditor`.
+  - **Backend**: `EstimateWorkflowCost()` logic with model-based pricing and `POST /workflows/estimate` API.
+- **Knowledge & Experience**:
+  - **Document Reference (SPEC-303)**: `[Ref: ID]` in chat messages transformed to clickable links opening Document Reader.
+  - **KaTeX Rendering (SPEC-305)**: LaTeX math formula support via `remark-math` + `rehype-katex`.
+  - **Fullscreen Shortcuts (SPEC-304)**: `Cmd/Ctrl + 1/2/3` for panel maximize, `Escape` to exit.
+- **Three-Tier Memory Protocol (SPEC-408)**:
+  - **Ingress Filter**: Confidence and content-length validation before Working Memory insertion.
+  - **Cleanup**: `CleanupWorkingMemory()` placeholder for future scheduled purging.
+- **Web Search Integration (SPEC-411)**:
+  - **TavilyClient**: Implementation for web search API (`internal/infrastructure/search`).
+  - **FactCheckProcessor**: Integrated real Tavily search for claim verification.
+
+### Changed
+- **Development Plan**: All Sprint 1-4 items marked as Done. Project at MVP milestone.
+
+---
+
 ## [0.9.0] - 2025-12-17
 
 ### Added
