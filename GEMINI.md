@@ -15,6 +15,7 @@
 **交付规约**:
 *   **Atomic Delivery**: 每次 PR 必须是完整可运行单元，禁止 Broken Build。
 *   **Atomic Commits**: 单一逻辑变更/commit，规范 message (`feat:`, `fix:`).
+*   **Strict Quality Gates**: 每个 SPEC 完成后必须通过所有验收标准 (Acceptance Criteria) 及 CI 检查 (Lint + Test)。
 *   **Track Progress**: 任务完成后必须更新 `docs/development_plan.md` 进度矩阵。
 
 ## 2. 统一编码规约 (Coding Standards)

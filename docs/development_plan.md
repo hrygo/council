@@ -2,6 +2,7 @@
 
 > **基于**: [审计报告](docs/reports/audit_report.md)  
 > **策略**: 前端优先，API Contract First  
+> **质量内建**: 每个 Spec 必须通过 CI (Lint/Test) 和验收标准 (Acceptance Criteria) 方可标记 Done  
 > **预估周期**: 4 周
 
 ---
