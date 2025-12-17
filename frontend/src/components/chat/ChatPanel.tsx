@@ -1,129 +1,78 @@
-import { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
-import { Send, Bot, User } from 'lucide-react';
-import 'highlight.js/styles/github.css'; // Or any other style you prefer
-import { useConnectStore } from '../../stores/useConnectStore';
+import { useRef, useEffect } from 'react';
+import type { FC } from 'react';
+import { useSessionStore } from '../../stores/useSessionStore';
+import { MessageGroupCard } from './MessageGroupCard';
+import { ChatInput } from './ChatInput';
+import { ChatHeader } from './ChatHeader';
+import type { ChatPanelProps } from './ChatPanel.types';
 
-interface Message {
-    role: 'user' | 'assistant';
-    content: string;
-}
+export const ChatPanel: FC<ChatPanelProps> = ({
+    fullscreen,
+    onExitFullscreen,
+    readOnly,
+    sessionId
+}) => {
+    const messageGroups = useSessionStore(state => state.messageGroups);
+    const currentSession = useSessionStore(state => state.currentSession);
+    const activeNodeIds = currentSession?.activeNodeIds ?? [];
 
-interface ChatPanelProps {
-    fullscreen?: boolean;
-    onExitFullscreen?: () => void;
-}
-
-export default function ChatPanel({ fullscreen, onExitFullscreen }: ChatPanelProps) {
-    const [input, setInput] = useState('');
-    const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: '### Welcome to The Council\nI am ready to assist you with your workflows.' }
-    ]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const { sendMessage, lastMessage, connect } = useConnectStore();
 
+    // 自动滚动到底部
     useEffect(() => {
-        // Auto-connect for demo purposes (in real app, might happen on session start)
-        connect('ws://localhost:8080/ws');
-    }, [connect]);
-
-    const processedMsgRef = useRef<unknown>(null);
-
-    useEffect(() => {
-        if (lastMessage && lastMessage !== processedMsgRef.current) {
-            processedMsgRef.current = lastMessage;
-            const msg = lastMessage as Record<string, unknown>;
-
-            // Example handling: if lastMessage has 'content'
-            if (msg.type === 'agent:speaking' || msg.content) {
-                const data = msg.data as Record<string, unknown> | undefined;
-                const content = (msg.content as string) || (data?.content as string);
-
-                if (content) {
-                    // eslint-disable-next-line react-hooks/set-state-in-effect
-                    setMessages(prev => [...prev, { role: 'assistant', content }]);
-                }
-            }
-        }
-    }, [lastMessage]);
-
-    const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(scrollToBottom, [messages]);
-
-    const handleSend = () => {
-        if (!input.trim()) return;
-        const newMsg: Message = { role: 'user', content: input };
-        setMessages(prev => [...prev, newMsg]);
-        setInput('');
-
-        // Send to backend
-        sendMessage({ type: 'user_input', content: input });
-    };
+    }, [messageGroups, messageGroups.length]);
+    // Note: Only scroll on length change or deep changes might be needed, but usually length or last group update triggers it.
+    // Ideally, track last message content length too if streaming, but auto-scroll behavior sometimes annoying if user scrolls up.
+    // For now simple behavior.
 
     return (
-        <div className={`flex flex-col h-full bg-white border-l border-gray-200 shadow-xl z-10 w-full ${fullscreen ? 'fixed inset-0 z-50 p-8' : ''}`}>
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-semibold text-gray-800">Council Chat</h2>
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Online</span>
-                    {fullscreen && <button onClick={onExitFullscreen} className="text-sm bg-gray-100 px-2 py-1 rounded">Min</button>}
-                </div>
-            </div>
+        <div
+            className={`
+        flex flex-col h-full bg-white border-l border-gray-200 shadow-xl z-10 w-full
+        ${fullscreen ? "fixed inset-0 z-50 p-8" : ""}
+      `}
+        >
+            {/* Header */}
+            <ChatHeader
+                sessionStatus={currentSession?.status}
+                onExitFullscreen={fullscreen ? onExitFullscreen : undefined}
+            />
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                {messages.map((msg, idx) => (
-                    <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'assistant' ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'}`}>
-                            {msg.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
-                        </div>
-
-                        <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user'
-                            ? 'bg-blue-600 text-white rounded-br-none'
-                            : 'bg-gray-50 border border-gray-100 text-gray-800 rounded-bl-none'
-                            }`}>
-                            <div className={`prose prose-sm max-w-none ${msg.role === 'user' ? 'prose-invert' : ''}`}>
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    rehypePlugins={[rehypeHighlight]}
-                                >
-                                    {msg.content}
-                                </ReactMarkdown>
-                            </div>
-                        </div>
+            {/* Message Groups */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
+                {messageGroups.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                        等待会议开始...
                     </div>
-                ))}
+                ) : (
+                    messageGroups.map(group => (
+                        <MessageGroupCard
+                            key={group.nodeId} // Assuming nodeId is unique per group sequence, or use group.id if available. SPEC-001 defined group having nodeId. Using nodeId as key might be duplicate if looped? SPEC-001 says messageGroups is array.
+                            // If loop visits same node, we need unique key.
+                            // SPEC-001: interface MessageGroup { id: string; nodeId: string; ... } => Let's double check if we defined ID.
+                            // Checked session.ts in memory: MessageGroup has `nodeId`, no `id`?
+                            // Wait, looking at SPEC-001 snippet in chat history:
+                            // export interface MessageGroup { nodeId: string; ... }
+                            // If we revisit a node, we might have multiple groups for same nodeId?
+                            // The store implementation should handle creating new groups for new visits.
+                            // If store implementation uses array index or adds unique ID, better.
+                            // Let's use index as fallback or assume store handles unique references.
+                            // To be safe, let's look at `index` in map.
+                            group={group}
+                            isActive={activeNodeIds.includes(group.nodeId)}
+                        />
+                    ))
+                )}
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-gray-100">
-                <div className="relative">
-                    <textarea
-                        className="w-full p-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 min-h-[50px] max-h-[120px]"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSend();
-                            }
-                        }}
-                        placeholder="Type a message..."
-                        rows={1}
-                    />
-                    <button
-                        onClick={handleSend}
-                        disabled={!input.trim()}
-                        className="absolute right-2 bottom-2.5 p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <Send size={16} />
-                    </button>
-                </div>
-            </div>
+            {/* Input */}
+            {!readOnly && sessionId && (
+                <ChatInput sessionId={sessionId} />
+            )}
         </div>
     );
-}
+};
+
+export default ChatPanel;
