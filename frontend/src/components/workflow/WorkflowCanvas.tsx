@@ -14,7 +14,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useWorkflow } from '../../hooks/useWorkflow';
 import { transformToReactFlow, type BackendGraph } from '../../utils/graphUtils';
-import { useConnectStore } from '../../stores/useConnectStore';
+import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
 
 interface WorkflowCanvasProps {
     readOnly?: boolean;
@@ -36,8 +36,6 @@ export default function WorkflowCanvas({
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const { workflow: fetchedWorkflow, fetchWorkflow } = useWorkflow();
-    const { lastMessage } = useConnectStore();
-
     // Determine effective workflow to display: prop > fetched
     const displayWorkflow = graph || fetchedWorkflow;
 
@@ -57,39 +55,47 @@ export default function WorkflowCanvas({
         }
     }, [displayWorkflow, setNodes, setEdges]);
 
-    // Listen for WebSocket Events to Highlight Nodes
+    // Listen for WebSocket Events via hook (should be called in parent or here? better in parent or high level layout)
+    // But since this is a presentation component, maybe the hook should be used in the page.
+    // However, for highlighting, we need to merge passed `nodes` with `activeNodeIds` or usage `runNodes` if in readOnly mode.
+
+    // Strategy:
+    // If readOnly (Run Mode), we use `runNodes` from store which are synchronized with execution state.
+    // If not readOnly (Edit Mode), we use local `nodes`.
+
+    // Actually, `runNodes` in store are populated via `loadWorkflow`.
+    // Let's assume onInit or prop update triggers `loadWorkflow`.
+
     useEffect(() => {
-        // Safe access to lastMessage properties
-        const msg = lastMessage as Record<string, unknown> | null;
-        if (!msg || !readOnly) return;
-
-        if (msg.type === 'node:started') {
-            const data = msg.data as Record<string, unknown> | undefined;
-            const runningNodeId = data?.node_id as string | undefined;
-            if (runningNodeId) {
-                setNodes(nds => nds.map(node => {
-                    if (node.id === runningNodeId) {
-                        return { ...node, style: { ...node.style, border: '2px solid blue', background: '#e0f2fe' } };
-                    }
-                    return node;
-                }));
-            }
+        if (readOnly && displayWorkflow) {
+            const { nodes: initNodes, edges: initEdges } = transformToReactFlow(displayWorkflow);
+            useWorkflowRunStore.getState().loadWorkflow(initNodes, initEdges);
         }
+    }, [readOnly, displayWorkflow]);
 
-        if (msg.type === 'node:completed') {
-            const data = msg.data as Record<string, unknown> | undefined;
-            const completedNodeId = data?.node_id as string | undefined;
-            if (completedNodeId) {
-                setNodes(nds => nds.map(node => {
-                    if (node.id === completedNodeId) {
-                        return { ...node, style: { ...node.style, border: '2px solid green', background: '#dcfce7' } };
-                    }
-                    return node;
-                }));
-            }
-        }
+    // Use store nodes if readOnly, otherwise local state
+    // But wait, React Flow needs `nodes` passed to it.
+    // If readOnly, we should sync `nodes` from store or just derive styles?
+    // Using store nodes directly might be cleaner for ReadOnly mode.
 
-    }, [lastMessage, readOnly, setNodes]);
+    const storeNodes = useWorkflowRunStore(state => state.nodes);
+    const storeEdges = useWorkflowRunStore(state => state.edges);
+    const activeIds = useWorkflowRunStore(state => state.activeNodeIds);
+
+    // Merge styles for active nodes if using local nodes (hybrid approach) OR just use store nodes.
+    // Let's use storeNodes for readOnly mode.
+
+    // We need to type cast or ensure runtime nodes are compatible with ReactFlow Node type
+    const displayedNodes = readOnly ? storeNodes.map((node) => ({
+        ...node,
+        className: activeIds.has(node.id) ? 'node-active-pulse' : '',
+        style: activeIds.has(node.id) ? { ...node.style, border: '2px solid #3B82F6' } : node.style
+    })) : nodes;
+
+    const displayedEdges = readOnly ? storeEdges : edges;
+
+    // Remove old WebSocket effect since we use useWorkflowEvents hook globally or at page level
+    // But wait, the previous code had local effect. We are replacing it.
 
     const onConnect = useCallback(
         (params: Connection) => {
@@ -108,8 +114,8 @@ export default function WorkflowCanvas({
                 </div>
             )}
             <ReactFlow
-                nodes={nodes}
-                edges={edges}
+                nodes={displayedNodes}
+                edges={displayedEdges}
                 onNodesChange={readOnly ? undefined : onNodesChange}
                 onEdgesChange={readOnly ? undefined : onEdgesChange}
                 onConnect={readOnly ? undefined : onConnect}
