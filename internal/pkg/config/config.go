@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -42,17 +43,17 @@ type EmbeddingConfig struct {
 }
 
 func Load() *Config {
-	port := os.Getenv("PORT")
+	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
 		port = "8080"
 	}
 
-	dbURL := os.Getenv("DATABASE_URL")
+	dbURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	if dbURL == "" {
 		dbURL = "postgres://user:password@localhost:5432/council?sslmode=disable"
 	}
 
-	redisURL := os.Getenv("REDIS_URL")
+	redisURL := strings.TrimSpace(os.Getenv("REDIS_URL"))
 	if redisURL == "" {
 		redisURL = "localhost:6379"
 	}
@@ -63,7 +64,7 @@ func Load() *Config {
 	// SiliconFlow: Qwen/Qwen3-Embedding-8B
 	// Ollama:      gte-qwen2-1.5b-instruct-embed-f16
 
-	embeddingProvider := os.Getenv("EMBEDDING_PROVIDER")
+	embeddingProvider := strings.TrimSpace(os.Getenv("EMBEDDING_PROVIDER"))
 	if embeddingProvider == "" {
 		embeddingProvider = "siliconflow"
 	}

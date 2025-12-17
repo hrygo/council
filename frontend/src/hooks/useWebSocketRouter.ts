@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useConnectStore } from '../stores/useConnectStore';
 import { useSessionStore } from '../stores/useSessionStore';
 import { useWorkflowRunStore } from '../stores/useWorkflowRunStore';
@@ -14,30 +14,7 @@ export const useWebSocketRouter = () => {
     const sessionStore = useSessionStore();
     const workflowStore = useWorkflowRunStore();
 
-    useEffect(() => {
-        // 订阅 WebSocket 消息
-        const unsubscribe = useConnectStore.subscribe(
-            (state) => state._lastMessage,
-            (message) => {
-                if (!message) return;
-
-                // 防重复处理
-                // Assuming message has some ID or unique timestamp combination if simpler approach needed.
-                // If message doesn't have unique ID, we might need to rely on strict sequential processing.
-                // The spec suggested `${message.event}-${message.timestamp}`, assuming timestamp exists.
-                // If data doesn't guarantee unique timestamp, simpler logic: just process it.
-                // React effect re-runs might cause double subscription if not careful, but `subscribeWithSelector` returns unsubscribe.
-                // We will skip strict deduping for now unless specific message IDs are added to protocol.
-
-                // 路由到对应处理器
-                routeMessage(message);
-            }
-        );
-
-        return unsubscribe;
-    }, [sessionStore, workflowStore]);
-
-    const routeMessage = (msg: WSMessage) => {
+    const routeMessage = useCallback((msg: WSMessage) => {
         switch (msg.event) {
             case 'token_stream': {
                 const data = msg.data as TokenStreamData;
@@ -55,7 +32,7 @@ export const useWebSocketRouter = () => {
             case 'node_state_change': {
                 const data = msg.data as NodeStateChangeData;
                 workflowStore.updateNodeStatus(data.node_id, data.status);
-                sessionStore.updateNodeStatus(data.node_id, data.status); // Session needs updates too
+                sessionStore.updateNodeStatus(data.node_id, data.status);
 
                 if (data.status === 'running') {
                     workflowStore.addActiveNode(data.node_id);
@@ -112,5 +89,18 @@ export const useWebSocketRouter = () => {
                 break;
             }
         }
-    };
+    }, [sessionStore, workflowStore]);
+
+    useEffect(() => {
+        // 订阅 WebSocket 消息
+        const unsubscribe = useConnectStore.subscribe(
+            (state) => state._lastMessage,
+            (message) => {
+                if (!message) return;
+                routeMessage(message);
+            }
+        );
+
+        return unsubscribe;
+    }, [routeMessage]);
 };
