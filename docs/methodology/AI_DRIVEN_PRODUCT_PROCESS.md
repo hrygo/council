@@ -18,9 +18,7 @@
 
 ---
 
-## 🗺️ 全流程可视化
-
-### 核心阶段流转图
+## 🗺️ 流程全景与交互架构
 
 ![AI Driven Product Process Flow](./images/process_flow_optimized.jpg)
 
