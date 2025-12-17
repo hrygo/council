@@ -226,7 +226,6 @@ export const useSessionStore = create<SessionState>()(
                 if (group) {
 
                     const msgs = group.messages.filter((m: Message) => m.agentId === agentId && m.isStreaming);
-                    // @ts-expect-error - Immer Map handling
                     msgs.forEach((m: Message) => { m.isStreaming = false; });
                 }
             });
@@ -253,7 +252,6 @@ export const useSessionStore = create<SessionState>()(
                 // 更新单条消息或最近一条消息的 token usage (Optional, not specified in detail but good to have)
                 const group = state.messageGroups.find(g => g.nodeId === nodeId);
                 if (group) {
-                    // @ts-expect-error - Immer Map handling
                     const lastMsg = group.messages.findLast((m: Message) => m.agentId === agentId);
                     if (lastMsg) {
                         if (!lastMsg.tokenUsage) lastMsg.tokenUsage = { inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };

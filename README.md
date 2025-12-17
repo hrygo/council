@@ -1,6 +1,6 @@
 # The Council (理事会)
 
-**Version**: 0.5.0
+**Version**: 0.8.0
 
 The Council is a visualized Multi-Agent Collaboration System & Personal Private Think Tank.
 

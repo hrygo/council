@@ -4,7 +4,7 @@ import { useWebSocketRouter } from '../useWebSocketRouter';
 import { useConnectStore } from '../../stores/useConnectStore';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore'; // Adjust path
-import { WSMessage } from '../../types/websocket';
+import type { WSMessage } from '../../types/websocket';
 
 describe('useWebSocketRouter', () => {
     // ... setup code logic is likely fine in beforeEach but let's just make sure imports are clean.

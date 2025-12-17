@@ -24,6 +24,8 @@ type ModelConfig struct {
 	Provider    string  `json:"provider"`
 	Model       string  `json:"model"`
 	Temperature float64 `json:"temperature"`
+	TopP        float64 `json:"top_p"`
+	MaxTokens   int     `json:"max_tokens"`
 }
 
 // Capabilities defines what this agent can do.

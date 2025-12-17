@@ -15,16 +15,18 @@ interface ChatInputProps {
 
 export const ChatInput: FC<ChatInputProps> = ({ sessionId }) => {
     const [input, setInput] = useState('');
-    const sendMessage = useConnectStore((state) => state.sendMessage);
+    const send = useConnectStore((state) => state.send);
 
     const handleSend = () => {
         if (!input.trim()) return;
 
         // We send to backend, backend broadcasts back, store picks it up via event listener
-        sendMessage({
-            type: 'user_input',
-            content: input,
-            session_id: sessionId
+        send({
+            cmd: 'user_input',
+            data: {
+                content: input,
+                session_id: sessionId
+            }
         });
 
         setInput('');

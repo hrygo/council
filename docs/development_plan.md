@@ -18,9 +18,9 @@
 | 1.3                 | ChatPanel 分组消息            | SPEC-003      | S1     | P1     | [x] Done | @Frontend |
 | 1.4                 | ChatPanel 并行消息            | SPEC-004      | S1     | P1     | [x] Done | @Frontend |
 | 1.5                 | WebSocket 优化                | SPEC-005      | S1     | P1     | [x] Done | @Frontend |
-| 2.1                 | 群组管理页面 + 列表           | SPEC-101, 102 | S2     | P0     | [ ] Todo | @Frontend |
-| 2.2                 | Agent 管理页面 + 列表         | SPEC-103, 104 | S2     | P0     | [ ] Todo | @Frontend |
-| 2.3                 | Agent 模型配置                | SPEC-105      | S2     | P1     | [ ] Todo | @Frontend |
+| 2.1                 | 群组管理页面 + 列表           | SPEC-101, 102 | S2     | P0     | [x] Done | @Frontend |
+| 2.2                 | Agent 管理页面 + 列表         | SPEC-103, 104 | S2     | P0     | [x] Done | @Frontend |
+| 2.3                 | Agent 模型配置                | SPEC-105      | S2     | P1     | [x] Done | @Frontend |
 | 3.1                 | 节点属性面板 (PropertyPanel)  | SPEC-201      | S3     | P0     | [ ] Todo | @Frontend |
 | 3.2                 | Vote/Loop 节点 UI             | SPEC-202      | S3     | P1     | [ ] Todo | @Frontend |
 | 3.3                 | FactCheck/HumanReview UI      | SPEC-203      | S3     | P1     | [ ] Todo | @Frontend |
@@ -109,8 +109,8 @@
 - `GET/PUT/DELETE /api/v1/agents/:id`
 
 ### 交付物
-- [ ] 可创建/管理群组
-- [ ] 可创建/管理 Agent，并配置模型
+- [x] 可创建/管理群组
+- [x] 可创建/管理 Agent，并配置模型
 
 ### 📚 详细规格文档
 

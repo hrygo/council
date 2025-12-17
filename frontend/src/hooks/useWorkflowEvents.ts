@@ -9,7 +9,7 @@ interface WebSocketMessage {
 }
 
 export const useWorkflowEvents = () => {
-    const lastMessage = useConnectStore((state) => state.lastMessage);
+    const lastMessage = useConnectStore((state) => state._lastMessage);
     const workflowStore = useWorkflowRunStore();
 
     useEffect(() => {

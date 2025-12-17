@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.0] - 2025-12-17
+
+### Added
+- **Sprint 2 Complete**: Full implementation of Groups and Agents Management.
+- **Groups Management (SPEC-101, 102)**:
+  - **CRUD Operations**: Complete management of User Groups for multi-tenant isolation.
+  - **UI/UX**: Dedicated `/groups` page with Grid view and Create/Edit modals.
+- **Agents Management (SPEC-103, 104)**:
+  - **Agent Factory**: Interface to design specialized AI agents.
+  - **Model Configuration (SPEC-105)**: Advanced Model Selector with support for OpenAI, Anthropic, Google, DeepSeek, and DashScope.
+  - **Capabilities**: Toggle for Web Search and Code Execution.
+- **Backend**: 
+  - Extended `Agent` entity with `ModelConfig` supporting `top_p` and `max_tokens`.
+  - JSONB schema flexibility leveraged for seamless updates.
+- **DevEx**: Added `/agents` and `/groups` routes to primary `App` navigation.
+
 ## [0.7.0] - 2025-12-17
 
 ### Added

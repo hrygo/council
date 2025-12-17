@@ -94,7 +94,7 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                             status: 'pending',
                             id: n.id,
                             type: n.type || 'default',
-                            label: n.data?.label || n.id,
+                            label: (n.data?.label as string) || n.id,
                         }
                     }));
                     state.edges = edges;
