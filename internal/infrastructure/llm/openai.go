@@ -73,7 +73,6 @@ func (c *OpenAIClient) Generate(ctx context.Context, req *CompletionRequest) (*C
 }
 
 func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-chan string, <-chan error) {
-	// TODO: Implement streaming
 	outputChan := make(chan string)
 	errChan := make(chan error, 1)
 

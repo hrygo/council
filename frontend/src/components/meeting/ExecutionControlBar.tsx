@@ -1,21 +1,11 @@
 import type { FC } from 'react';
 import { useWorkflowRunStore, getControlState } from '../../stores/useWorkflowRunStore';
 import { Pause, Play, Square } from 'lucide-react';
+import { StatusDot } from '../ui/StatusDot';
 
 interface ExecutionControlBarProps {
     sessionId: string;
 }
-
-// TODO: Move StatusDot to shared components if used elsewhere
-const StatusDot: FC<{ status: string }> = ({ status }) => {
-    let color = 'bg-gray-400';
-    if (status === 'running') color = 'bg-blue-500 animate-pulse';
-    if (status === 'completed') color = 'bg-green-500';
-    if (status === 'failed') color = 'bg-red-500';
-    if (status === 'paused') color = 'bg-yellow-500';
-
-    return <div className={`w-2.5 h-2.5 rounded-full ${color}`} />;
-};
 
 export const ExecutionControlBar: FC<ExecutionControlBarProps> = ({ sessionId }) => {
     const executionStatus = useWorkflowRunStore((state) => state.executionStatus);
