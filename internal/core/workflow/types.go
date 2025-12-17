@@ -19,13 +19,17 @@ const (
 type NodeType string
 
 const (
-	NodeTypeStart    NodeType = "start"
-	NodeTypeEnd      NodeType = "end"
-	NodeTypeAgent    NodeType = "agent"
-	NodeTypeLLM      NodeType = "llm"      // Direct LLM call
-	NodeTypeTool     NodeType = "tool"     // Search, etc.
-	NodeTypeParallel NodeType = "parallel" // Logic node: Parallel branch
-	NodeTypeSequence NodeType = "sequence" // Logic node: Sequential steps
+	NodeTypeStart       NodeType = "start"
+	NodeTypeEnd         NodeType = "end"
+	NodeTypeAgent       NodeType = "agent"
+	NodeTypeLLM         NodeType = "llm"          // Direct LLM call
+	NodeTypeTool        NodeType = "tool"         // Search, etc.
+	NodeTypeParallel    NodeType = "parallel"     // Logic node: Parallel branch
+	NodeTypeSequence    NodeType = "sequence"     // Logic node: Sequential steps
+	NodeTypeVote        NodeType = "vote"         // Logic node: Vote
+	NodeTypeLoop        NodeType = "loop"         // Logic node: Loop
+	NodeTypeFactCheck   NodeType = "fact_check"   // Logic node: Fact Check
+	NodeTypeHumanReview NodeType = "human_review" // Logic node: Human Review
 )
 
 // GraphDefinition represents the static definition of a workflow

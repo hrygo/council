@@ -45,6 +45,37 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 				LLM:       deps.LLM,
 			}, nil
 
+		case workflow.NodeTypeVote:
+			threshold, _ := node.Properties["threshold"].(float64)
+			voteType, _ := node.Properties["vote_type"].(string)
+			return &VoteProcessor{
+				Threshold: threshold,
+				VoteType:  voteType,
+			}, nil
+
+		case workflow.NodeTypeLoop:
+			maxRounds, _ := node.Properties["max_rounds"].(float64) // JSON numbers often float64
+			exitCond, _ := node.Properties["exit_condition"].(string)
+			return &LoopProcessor{
+				MaxRounds:     int(maxRounds),
+				ExitCondition: exitCond,
+			}, nil
+
+		case workflow.NodeTypeFactCheck:
+			threshold, _ := node.Properties["verify_threshold"].(float64)
+			return &FactCheckProcessor{
+				LLM:             deps.LLM,
+				VerifyThreshold: threshold,
+			}, nil
+
+		case workflow.NodeTypeHumanReview:
+			timeout, _ := node.Properties["timeout_minutes"].(float64)
+			allowSkip, _ := node.Properties["allow_skip"].(bool)
+			return &HumanReviewProcessor{
+				TimeoutMinutes: int(timeout),
+				AllowSkip:      allowSkip,
+			}, nil
+
 		default:
 			return nil, fmt.Errorf("unsupported node type: %s", node.Type)
 		}
