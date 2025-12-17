@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import type { MessageGroup } from '../../types/session';
 import { GroupHeader } from './GroupHeader';
 import { SequentialMessage } from './SequentialMessage';
+import { ParallelMessageRow } from './ParallelMessageRow';
 
 interface MessageGroupCardProps {
     group: MessageGroup;
@@ -26,7 +27,7 @@ export const MessageGroupCard: FC<MessageGroupCardProps> = ({ group, isActive })
             {/* 消息内容 */}
             <div className="mt-3 pl-4 border-l-2 border-gray-200">
                 {group.isParallel ? (
-                    <div className="text-gray-500 italic text-sm p-2">并行消息渲染暂未实现 (SPEC-004)</div>
+                    <ParallelMessageRow messages={group.messages} />
                 ) : (
                     group.messages.map(msg => (
                         <SequentialMessage key={msg.id} message={msg} />

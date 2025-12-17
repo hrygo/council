@@ -58,6 +58,46 @@ describe('ChatPanel', () => {
         expect(screen.getByText('Test message')).toBeInTheDocument();
     });
 
+    it('should render parallel messages', () => {
+        useSessionStore.setState({
+            messageGroups: [
+                {
+                    nodeId: 'node-parallel-1',
+                    nodeName: 'ParallelReview',
+                    nodeType: 'parallel',
+                    status: 'running',
+                    isParallel: true,
+                    messages: [
+                        {
+                            id: 'msg-p1',
+                            nodeId: 'node-parallel-1',
+                            role: 'agent',
+                            agentName: 'Security',
+                            content: 'Security Check',
+                            timestamp: new Date(),
+                            isStreaming: false
+                        },
+                        {
+                            id: 'msg-p2',
+                            nodeId: 'node-parallel-1',
+                            role: 'agent',
+                            agentName: 'Performance',
+                            content: 'Performance Check',
+                            timestamp: new Date(),
+                            isStreaming: false
+                        }
+                    ]
+                }
+            ]
+        });
+
+        render(<ChatPanel sessionId="test-session" />);
+
+        expect(screen.getByText('Security')).toBeInTheDocument();
+        expect(screen.getByText('Performance')).toBeInTheDocument();
+        expect(screen.getByText('Security Check')).toBeInTheDocument();
+    });
+
     it('should show active status for current node group', () => {
         // const store = useSessionStore.getState();
         useSessionStore.setState({
