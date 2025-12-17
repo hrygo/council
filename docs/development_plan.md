@@ -29,9 +29,9 @@
 | 3.6                 | 向导模式 (`WizardMode`)       | SPEC-206      | S3     | P0     | [x] Done | @Frontend |
 | 4.1                 | HumanReviewModal              | SPEC-301      | S4     | P0     | [x] Done | @Frontend |
 | 4.2                 | CostEstimator                 | SPEC-302      | S4     | P1     | [x] Done | @Frontend |
-| 4.3                 | 文档引用跳转                  | SPEC-303      | S4     | P1     | [ ] Todo | @Frontend |
-| 4.4                 | 快捷键支持                    | SPEC-304      | S4     | P2     | [ ] Todo | @Frontend |
-| 4.5                 | KaTeX 公式渲染                | SPEC-305      | S4     | P2     | [ ] Todo | @Frontend |
+| 4.3                 | 文档引用跳转                  | SPEC-303      | S4     | P1     | [x] Done | @Frontend |
+| 4.4                 | 快捷键支持                    | SPEC-304      | S4     | P2     | [x] Done | @Frontend |
+| 4.5                 | KaTeX 公式渲染                | SPEC-305      | S4     | P2     | [x] Done | @Frontend |
 | **后端 (Backend)**  |
 | B.1                 | SequenceProcessor             | SPEC-401      | S1-2   | P1     | [x] Done | @Backend  |
 | B.2                 | VoteProcessor                 | SPEC-402      | S1-2   | P1     | [x] Done | @Backend  |
