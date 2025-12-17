@@ -2,10 +2,10 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.10.0-blue)
-![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![License](https://img.shields.io/badge/license-MIT-green)
+<img src="https://img.shields.io/badge/version-0.10.0-blue" alt="Version" />
+<img src="https://img.shields.io/badge/Go-1.21%2B-00ADD8?logo=go" alt="Go" />
+<img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React" />
+<img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 
 **A Visualized Multi-Agent Collaboration System & Personal Private Think Tank**
 
