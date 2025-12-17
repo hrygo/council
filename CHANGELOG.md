@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0] - 2025-12-17
+
+### Added
+- **Sprint 1 Complete**: Full implementation of Sprint 1 Specifications (SPEC-001 to SPEC-005).
+- **Session Store (SPEC-001)**: `useSessionStore` rewrite with strict normalized state, streaming support, and `useAuthStore` separation.
+- **Workflow Run Store (SPEC-002)**: Complete runtime stage management (Pending/Running/Completed/Failed) with execution timers and controls.
+- **Chat Panel (SPEC-003, SPEC-004)**: 
+  - **Grouped Messages**: Visual grouping by Node ID and Agent identity.
+  - **Parallel Layout**: Side-by-side rendering for parallel agent execution steps.
+- **WebSocket Optimization (SPEC-005)**:
+  - **Robustness**: Auto-reconnect with exponential backoff and Heartbeat mechanism.
+  - **Type Safety**: New `useWebSocketRouter` hook with strict `WSMessage` typing.
+- **Quality Assurance**: Added "Strict Quality Gates" to `GEMINI.md` requiring Acceptance Criteria + CI checks for every Spec.
+
 ## [0.6.1] - 2025-12-16
 
 ### Fixed
