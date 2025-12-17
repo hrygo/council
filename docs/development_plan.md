@@ -6,12 +6,43 @@
 
 ---
 
-## 开发原则
 
-1. **前端驱动**: 前端开发不等待后端，先定义 API 契约
-2. **Mock First**: 前端使用 MSW 或 JSON 文件 Mock API
-3. **契约同步**: 后端按 API 文档实现，保证兼容
-4. **渐进交付**: 每个 Sprint 交付可演示功能
+## 开发进度跟踪矩阵 (Progress Matrix)
+
+| ID                  | 任务名称 (Task)               | Spec ID       | Sprint | 优先级 | 状态     | 负责人    |
+| ------------------- | ----------------------------- | ------------- | ------ | ------ | -------- | --------- |
+| **前端 (Frontend)** |
+| 1.1                 | 重写 `useSessionStore.ts`     | SPEC-001      | S1     | P0     | [x] Done | @Frontend |
+| 1.2                 | 实现 `useWorkflowRunStore.ts` | SPEC-002      | S1     | P0     | [x] Done | @Frontend |
+| 1.3                 | ChatPanel 分组消息            | SPEC-003      | S1     | P1     | [x] Done | @Frontend |
+| 1.4                 | ChatPanel 并行消息            | SPEC-004      | S1     | P1     | [ ] Todo | @Frontend |
+| 1.5                 | WebSocket 优化                | SPEC-005      | S1     | P1     | [ ] Todo | @Frontend |
+| 2.1                 | 群组管理页面 + 列表           | SPEC-101, 102 | S2     | P0     | [ ] Todo | @Frontend |
+| 2.2                 | Agent 管理页面 + 列表         | SPEC-103, 104 | S2     | P0     | [ ] Todo | @Frontend |
+| 2.3                 | Agent 模型配置                | SPEC-105      | S2     | P1     | [ ] Todo | @Frontend |
+| 3.1                 | 节点属性面板 (PropertyPanel)  | SPEC-201      | S3     | P0     | [ ] Todo | @Frontend |
+| 3.2                 | Vote/Loop 节点 UI             | SPEC-202      | S3     | P1     | [ ] Todo | @Frontend |
+| 3.3                 | FactCheck/HumanReview UI      | SPEC-203      | S3     | P1     | [ ] Todo | @Frontend |
+| 3.4                 | 模版库侧边栏                  | SPEC-204      | S3     | P2     | [ ] Todo | @Frontend |
+| 3.5                 | 保存为模版                    | SPEC-205      | S3     | P2     | [ ] Todo | @Frontend |
+| 3.6                 | 向导模式 (`WizardMode`)       | SPEC-206      | S3     | P0     | [ ] Todo | @Frontend |
+| 4.1                 | HumanReviewModal              | SPEC-301      | S4     | P0     | [ ] Todo | @Frontend |
+| 4.2                 | CostEstimator                 | SPEC-302      | S4     | P1     | [ ] Todo | @Frontend |
+| 4.3                 | 文档引用跳转                  | SPEC-303      | S4     | P1     | [ ] Todo | @Frontend |
+| 4.4                 | 快捷键支持                    | SPEC-304      | S4     | P2     | [ ] Todo | @Frontend |
+| 4.5                 | KaTeX 公式渲染                | SPEC-305      | S4     | P2     | [ ] Todo | @Frontend |
+| **后端 (Backend)**  |
+| B.1                 | SequenceProcessor             | SPEC-401      | S1-2   | P1     | [ ] Todo | @Backend  |
+| B.2                 | VoteProcessor                 | SPEC-402      | S1-2   | P1     | [ ] Todo | @Backend  |
+| B.3                 | LoopProcessor                 | SPEC-403      | S1-2   | P2     | [ ] Todo | @Backend  |
+| B.4                 | FactCheckProcessor            | SPEC-404      | S3-4   | P1     | [ ] Todo | @Backend  |
+| B.5                 | HumanReviewProcessor          | SPEC-405      | S3-4   | P0     | [ ] Todo | @Backend  |
+| B.6                 | Templates API                 | SPEC-406      | S3-4   | P1     | [ ] Todo | @Backend  |
+| B.7                 | Cost Estimation API           | SPEC-407      | S3-4   | P1     | [ ] Todo | @Backend  |
+| B.8                 | 三层记忆协议                  | SPEC-408      | S3-4   | P0     | [ ] Todo | @Backend  |
+| B.9                 | 逻辑熔断 (Circuit Breaker)    | SPEC-409      | S3-4   | P0     | [ ] Todo | @Backend  |
+| B.10                | 防幻觉传播                    | SPEC-410      | S3-4   | P1     | [ ] Todo | @Backend  |
+| B.11                | 联网搜索集成                  | SPEC-411      | S3-4   | P1     | [ ] Todo | @Backend  |
 
 ---
 
