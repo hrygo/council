@@ -28,7 +28,7 @@
 | 3.5                 | 保存为模版                    | SPEC-205      | S3     | P2     | [x] Done | @Frontend |
 | 3.6                 | 向导模式 (`WizardMode`)       | SPEC-206      | S3     | P0     | [x] Done | @Frontend |
 | 4.1                 | HumanReviewModal              | SPEC-301      | S4     | P0     | [x] Done | @Frontend |
-| 4.2                 | CostEstimator                 | SPEC-302      | S4     | P1     | [ ] Todo | @Frontend |
+| 4.2                 | CostEstimator                 | SPEC-302      | S4     | P1     | [x] Done | @Frontend |
 | 4.3                 | 文档引用跳转                  | SPEC-303      | S4     | P1     | [ ] Todo | @Frontend |
 | 4.4                 | 快捷键支持                    | SPEC-304      | S4     | P2     | [ ] Todo | @Frontend |
 | 4.5                 | KaTeX 公式渲染                | SPEC-305      | S4     | P2     | [ ] Todo | @Frontend |
@@ -39,7 +39,7 @@
 | B.4                 | FactCheckProcessor            | SPEC-404      | S3-4   | P1     | [x] Done | @Backend  |
 | B.5                 | HumanReviewProcessor          | SPEC-405      | S3-4   | P0     | [x] Done | @Backend  |
 | B.6                 | Templates API                 | SPEC-406      | S3-4   | P1     | [x] Done | @Backend  |
-| B.7                 | Cost Estimation API           | SPEC-407      | S3-4   | P1     | [ ] Todo | @Backend  |
+| B.7                 | Cost Estimation API           | SPEC-407      | S3-4   | P1     | [x] Done | @Backend  |
 | B.8                 | 三层记忆协议                  | SPEC-408      | S3-4   | P0     | [ ] Todo | @Backend  |
 | B.9                 | 逻辑熔断 (Circuit Breaker)    | SPEC-409      | S3-4   | P0     | [x] Done | @Backend  |
 | B.10                | 防幻觉传播                    | SPEC-410      | S3-4   | P1     | [x] Done | @Backend  |
