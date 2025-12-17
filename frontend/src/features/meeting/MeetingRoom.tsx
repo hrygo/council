@@ -7,6 +7,7 @@ import { useWebSocketRouter } from '../../hooks/useWebSocketRouter';
 import WorkflowCanvas from '../../components/workflow/WorkflowCanvas';
 import ChatPanel from '../../components/chat/ChatPanel';
 import { DocumentReader } from '../../components/modules/DocumentReader';
+import { HumanReviewModal } from '../execution/components/HumanReviewModal';
 
 const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel }) => {
     const { maximizedPanel, maximizePanel } = useLayoutStore();
@@ -38,6 +39,7 @@ export const MeetingRoom: FC = () => {
         return (
             <div className="h-screen w-screen fixed top-0 left-0 bg-white dark:bg-gray-900 z-50">
                 {panelMap[maximizedPanel]}
+                <HumanReviewModal />
             </div>
         );
     }
@@ -93,6 +95,7 @@ export const MeetingRoom: FC = () => {
                     </div>
                 </Panel>
             </PanelGroup>
+            <HumanReviewModal />
         </div>
     );
 };

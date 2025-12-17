@@ -45,11 +45,11 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Create Session
 	session := workflow.NewSession(req.Graph, req.Input)
-	activeSessions[session.ID] = session
 	session.Start(context.Background())
 
 	// Create Engine
 	engine := workflow.NewEngine(session)
+	activeEngines[session.ID] = engine
 
 	// Configure Factory
 	engine.NodeFactory = nodes.NewNodeFactory(nodes.NodeDependencies{
@@ -115,11 +115,12 @@ func (h *WorkflowHandler) Control(c *gin.Context) {
 	// For now, I will add a TO-DO and mock response, but I must fix this to make it work.
 	// Strategy: Use a simple map in memory for active sessions.
 
-	session := h.getSession(id) // Helper method
-	if session == nil {
+	engine := h.getEngine(id) // Helper method
+	if engine == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found or not active"})
 		return
 	}
+	session := engine.Session
 
 	switch req.Action {
 	case "pause":
@@ -137,12 +138,11 @@ func (h *WorkflowHandler) Control(c *gin.Context) {
 	})
 }
 
-// Global active sessions map (Protected by mutex in real impl)
-// For MVP, simple map is fine if we don't have high concurrency on registry itself
-var activeSessions = map[string]*workflow.Session{}
+// Global active engine map (Protected by mutex in real impl)
+var activeEngines = map[string]*workflow.Engine{}
 
-func (h *WorkflowHandler) getSession(id string) *workflow.Session {
-	return activeSessions[id]
+func (h *WorkflowHandler) getEngine(sessionID string) *workflow.Engine {
+	return activeEngines[sessionID]
 }
 
 type SignalRequest struct {
@@ -158,11 +158,12 @@ func (h *WorkflowHandler) Signal(c *gin.Context) {
 		return
 	}
 
-	session := h.getSession(id)
-	if session == nil {
+	engine := h.getEngine(id)
+	if engine == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
 		return
 	}
+	session := engine.Session
 
 	if err := session.SendSignal(req.NodeID, req.Payload); err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
@@ -170,4 +171,48 @@ func (h *WorkflowHandler) Signal(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "signal_sent"})
+}
+
+type ReviewRequest struct {
+	NodeID string                 `json:"node_id" binding:"required"`
+	Action string                 `json:"action" binding:"required,oneof=approve reject modify"`
+	Data   map[string]interface{} `json:"data"` // Optional patch data
+}
+
+func (h *WorkflowHandler) Review(c *gin.Context) {
+	id := c.Param("id")
+	var req ReviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	engine := h.getEngine(id)
+	if engine == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found or not active"})
+		return
+	}
+
+	// Logic for Human Review Resume
+	// We need to fetch the node to confirm it is suspended?
+	// The Engine.ResumeNode checks this.
+
+	// Construct output payload based on Action
+	output := map[string]interface{}{
+		"review_action": req.Action,
+		"reviewer":      "human", // Placeholder
+		"timestamp":     c.GetHeader("Date"),
+	}
+	if req.Data != nil {
+		for k, v := range req.Data {
+			output[k] = v
+		}
+	}
+
+	if err := engine.ResumeNode(c.Request.Context(), req.NodeID, output); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "resumed"})
 }

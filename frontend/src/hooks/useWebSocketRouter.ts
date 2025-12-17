@@ -75,6 +75,23 @@ export const useWebSocketRouter = () => {
                 sessionStore.updateSessionStatus('completed');
                 break;
 
+            case 'human_interaction_required': {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const data = msg.data as any;
+                workflowStore.setHumanReview({
+                    sessionId: 'current', // Logic to get current session ID needed, or passed in broadcast
+                    nodeId: msg.node_id || data.node_id, // Ensure protocol consistency
+                    reason: data.reason,
+                    timeout: data.timeout,
+                });
+                break;
+            }
+
+            case 'node_resumed': {
+                workflowStore.setHumanReview(null);
+                break;
+            }
+
             case 'error': {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const data = msg.data as any;

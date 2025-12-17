@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"fmt"
 )
 
 // NodeStatus defines the execution state of a node
@@ -13,6 +14,12 @@ const (
 	StatusCompleted NodeStatus = "completed"
 	StatusFailed    NodeStatus = "failed"
 	StatusSkipped   NodeStatus = "skipped"
+	StatusSuspended NodeStatus = "suspended"
+)
+
+var (
+	// ErrSuspended indicates that execution is suspended at this node
+	ErrSuspended = fmt.Errorf("execution suspended")
 )
 
 // NodeType enum for supported node types

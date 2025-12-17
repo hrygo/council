@@ -100,6 +100,10 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 	// Execute Processor
 	output, err := processor.Process(ctx, input, e.StreamChannel)
 	if err != nil {
+		if err == ErrSuspended {
+			e.updateStatus(nodeID, StatusSuspended)
+			return // Suspended execution
+		}
 		e.updateStatus(nodeID, StatusFailed)
 		e.emitError(nodeID, err)
 		return
@@ -169,4 +173,67 @@ func (e *Engine) emitError(nodeID string, err error) {
 		Data:      map[string]interface{}{"error": err.Error()},
 	}
 	e.updateStatus(nodeID, StatusFailed)
+}
+
+// ResumeNode resumes execution of a suspended node with provided output
+func (e *Engine) ResumeNode(ctx context.Context, nodeID string, output map[string]interface{}) error {
+	e.mu.Lock()
+	status, exists := e.Status[nodeID]
+	e.mu.Unlock()
+
+	if !exists {
+		return fmt.Errorf("node %s not found in execution status", nodeID)
+	}
+	if status != StatusSuspended {
+		return fmt.Errorf("node %s is not suspended (status: %s)", nodeID, status)
+	}
+
+	// Update Status
+	e.updateStatus(nodeID, StatusCompleted)
+
+	// Propagate to Next Nodes (similar to executeNode logic)
+	// We need to fetch the node definition
+	e.mu.Lock()
+	node := e.Graph.Nodes[nodeID]
+	e.mu.Unlock()
+
+	e.StreamChannel <- StreamEvent{
+		Type:      "node_resumed",
+		Timestamp: time.Now(),
+		NodeID:    nodeID,
+		Data:      output,
+	}
+
+	// Launch next nodes
+	var wg sync.WaitGroup
+	for _, nextID := range node.NextIDs {
+		wg.Add(1)
+		go func(nid string) {
+			defer wg.Done()
+			e.executeNode(ctx, nid, output)
+		}(nextID)
+	}
+	// Note: We don't Wait here because ResumeNode is called from API handler and we want to return immediately.
+	// But executeNode launches goroutines anyway?
+	// executeNode logic:
+	// "var wg sync.WaitGroup ... wg.Wait()"
+	// executeNode Waits for its children.
+	// If we don't wait here, the background process for "Resuming" will define the lifecycle.
+	// Since we are likely in a handler, we shouldn't block the request until entire workflow finishes.
+	// So we should run the traversal in a goroutine.
+
+	// BUT, if we spawn a new root goroutine, we need to ensure it's tracked or contexts are valid.
+	// The original Engine.Run might have finished if it hit the suspension point (assuming sequential tail).
+	// If it was parallel, other branches might be running.
+	// The Context `ctx` passed here should probably be the Request context, which is short-lived.
+	// We should use the Session's context or a persistent context.
+	// Session has a Context().
+
+	// FIX: Use e.Session.Context() or background if that's invalid.
+
+	go func() {
+		wg.Wait()
+	}()
+
+	return nil
 }

@@ -3,7 +3,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { enableMapSet } from 'immer';
 import type { Node, Edge } from '@xyflow/react';
-import type { RuntimeNode, RunControlState, ControlAction } from '../types/workflow-run';
+import type { RuntimeNode, RunControlState, ControlAction, HumanReviewRequest } from '../types/workflow-run';
 import type { NodeStatus } from '../types/session';
 
 enableMapSet();
@@ -30,6 +30,7 @@ interface WorkflowRunState {
      * 执行状态
      */
     executionStatus: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+    humanReview: HumanReviewRequest | null;
 
     /**
      * 累计统计
@@ -61,6 +62,8 @@ interface WorkflowRunState {
     updateNodeTokenUsage: (nodeId: string, usage: NonNullable<RuntimeNode['tokenUsage']>) => void;
     setExecutionStatus: (status: WorkflowRunState['executionStatus']) => void;
     sendControl: (sessionId: string, action: ControlAction) => Promise<void>;
+    setHumanReview: (request: HumanReviewRequest | null) => void;
+    submitHumanReview: (req: HumanReviewRequest, action: 'approve' | 'reject' | 'modify', data?: Record<string, unknown>) => Promise<void>;
     startTimer: () => void;
     stopTimer: () => void;
 }
@@ -75,6 +78,7 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
             edges: [],
             activeNodeIds: new Set(),
             executionStatus: 'idle',
+            humanReview: null as HumanReviewRequest | null,
             stats: {
                 totalNodes: 0,
                 completedNodes: 0,
@@ -197,6 +201,38 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                     }
                 } catch (error) {
                     console.error('Failed to send control command:', error);
+                    throw error;
+                }
+            },
+
+            setHumanReview: (request) => {
+                set((state) => {
+                    state.humanReview = request;
+                });
+            },
+
+            submitHumanReview: async (req, action, data) => {
+                const { setHumanReview } = get();
+                try {
+                    const payload = {
+                        node_id: req.nodeId,
+                        action,
+                        data,
+                    };
+                    const response = await fetch(`/api/v1/sessions/${req.sessionId}/review`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Review submission failed: ${response.statusText}`);
+                    }
+
+                    // On success, clear the modal state
+                    setHumanReview(null);
+                } catch (error) {
+                    console.error('Failed to submit human review:', error);
                     throw error;
                 }
             },

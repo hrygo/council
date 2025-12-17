@@ -5,12 +5,15 @@ export type WSEventType =
     | 'token_usage'         // Token 使用统计
     | 'execution:paused'    // 执行已暂停
     | 'execution:completed' // 执行完成
-    | 'error';              // 错误
+    | 'error'               // 错误
+    | 'human_interaction_required' // 人工介入请求
+    | 'node_resumed';       // 节点恢复执行
 
 export interface WSMessage<T = unknown> {
     event: WSEventType;
     data: T;
     timestamp?: string;
+    node_id?: string;
 }
 
 // 具体事件数据类型

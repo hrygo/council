@@ -34,9 +34,9 @@ func TestWorkflowHandler_Control(t *testing.T) {
 	session := workflow.NewSession(graph, nil)
 	session.Start(context.Background())
 
-	// Manually inject into activeSessions for testing
-	// Note: activeSessions is package-level var in handler.go
-	activeSessions[session.ID] = session
+	// Manually inject into activeEngines for testing
+	engine := workflow.NewEngine(session)
+	activeEngines[session.ID] = engine
 
 	t.Run("Pause", func(t *testing.T) {
 		payload := ControlRequest{Action: "pause"}
@@ -122,7 +122,8 @@ func TestWorkflowHandler_Signal(t *testing.T) {
 	// Setup Session
 	session := workflow.NewSession(nil, nil)
 	session.Start(context.Background())
-	activeSessions[session.ID] = session
+	engine := workflow.NewEngine(session)
+	activeEngines[session.ID] = engine
 
 	// Manually open a signal channel
 	ch := session.GetSignalChannel("wait_node")

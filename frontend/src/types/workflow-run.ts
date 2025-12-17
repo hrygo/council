@@ -31,3 +31,10 @@ export interface RunControlState {
     canResume: boolean;
     canStop: boolean;
 }
+
+export interface HumanReviewRequest {
+    sessionId: string;
+    nodeId: string;
+    reason: string;
+    timeout: number;
+}
