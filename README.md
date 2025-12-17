@@ -9,13 +9,13 @@
 
 **A Visualized Multi-Agent Collaboration System & Personal Private Think Tank**
 
-[Features](#-features) •
-[Quick Start](#-quick-start) •
-[Architecture](#-architecture) •
-[Usage Guide](#-usage-guide) •
-[API Reference](#-api-reference)
-
 </div>
+
+- [Features](#-features)
+- [Quick Start](#-quick-start)
+- [Architecture](#-architecture)
+- [Usage Guide](#-usage-guide)
+- [API Reference](#-api-reference)
 
 ---
 
