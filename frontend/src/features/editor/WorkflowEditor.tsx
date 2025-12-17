@@ -4,13 +4,15 @@ import { type ReactFlowInstance, type Node } from '@xyflow/react';
 import { type BackendGraph, type BackendNode } from '../../utils/graphUtils';
 import { PropertyPanel } from './components/PropertyPanel/PropertyPanel';
 import type { WorkflowNode } from '../../types/workflow';
+import { TemplateSidebar } from './components/TemplateSidebar';
+import { SaveTemplateModal } from './components/SaveTemplateModal';
+import { WizardMode } from './components/Wizard/WizardMode';
+import type { Template } from '../../types/template';
+import { Wand2, LayoutTemplate, Save } from 'lucide-react';
 
 export const WorkflowEditor: FC = () => {
     const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
     const [graph, setGraph] = useState<BackendGraph | null>(null);
-    const [prompt, setPrompt] = useState("");
-    const [isGenerating, setIsGenerating] = useState(false);
-
     // Property Panel State
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
@@ -59,26 +61,6 @@ export const WorkflowEditor: FC = () => {
     }, [rfInstance]);
 
 
-    // We can use a custom hook or fetch directly for Generation since it's specific
-    const handleGenerate = async () => {
-        setIsGenerating(true);
-        try {
-            const res = await fetch('/api/v1/workflows/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt })
-            });
-            const data = await res.json();
-            if (data.graph) {
-                setGraph(data.graph);
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Generation failed");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     const handleSave = async () => {
         if (!rfInstance) return;
@@ -136,52 +118,120 @@ export const WorkflowEditor: FC = () => {
         }
     };
 
+    // Template & Wizard State
+    const [showTemplates, setShowTemplates] = useState(false);
+    const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+    const [showWizard, setShowWizard] = useState(false);
+
+    // Initial load wizard logic could go here if route param exists
+
+    const handleApplyTemplate = (template: Template) => {
+        // Load template graph into editor
+        setGraph(template.graph);
+        // Also need to reset rfInstance nodes/edges via transform?
+        // Actually WorkflowCanvas handles graph prop change via useEffect.
+        setShowTemplates(false);
+    };
+
+    const handleWizardComplete = (generatedGraph: BackendGraph) => {
+        setGraph(generatedGraph);
+        setShowWizard(false);
+    };
+
     return (
         <div className="h-screen flex flex-col relative">
-            <header className="h-14 border-b px-4 flex items-center justify-between bg-white dark:bg-gray-800 shrink-0 z-10">
+            <header className="h-14 border-b px-4 flex items-center justify-between bg-white dark:bg-gray-800 shrink-0 z-10 shadow-sm relative">
                 <div className="flex items-center gap-4">
-                    <h1 className="font-bold">Workflow Builder</h1>
+                    <h1 className="font-bold text-lg flex items-center gap-2">
+                        Workflow Builder
+                    </h1>
+
+                    <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-2" />
+
                     <div className="flex gap-2">
-                        <input
-                            className="border rounded px-2 py-1 text-sm w-64 dark:bg-gray-700 dark:border-gray-600"
-                            placeholder="Describe workflow to generate..."
-                            value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                        />
                         <button
-                            onClick={handleGenerate}
-                            disabled={!prompt || isGenerating}
-                            className="px-3 py-1 bg-purple-600 text-white rounded text-sm disabled:opacity-50"
+                            onClick={() => setShowWizard(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-900/30 rounded-lg text-sm font-medium transition-colors"
                         >
-                            {isGenerating ? "Generating..." : "Generate AI"}
+                            <Wand2 size={16} />
+                            Wizard
+                        </button>
+
+                        <button
+                            onClick={() => setShowTemplates(!showTemplates)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${showTemplates
+                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                                }`}
+                        >
+                            <LayoutTemplate size={16} />
+                            Templates
                         </button>
                     </div>
                 </div>
+
                 <div className="flex gap-2">
-                    <button onClick={handleSave} className="px-3 py-1 bg-blue-500 text-white rounded text-sm">Save</button>
-                    <button className="px-3 py-1 bg-green-500 text-white rounded text-sm">Run Session</button>
+                    <button
+                        onClick={() => setShowSaveTemplate(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+                    >
+                        <Save size={16} />
+                        Save as Template
+                    </button>
+                    <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-2" />
+                    <button onClick={handleSave} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        Save Workflow
+                    </button>
                 </div>
             </header>
-            <div className="flex-1 overflow-hidden relative">
-                <WorkflowCanvas
-                    graph={graph}
-                    onInit={setRfInstance}
-                    onNodeClick={handleNodeClick}
-                    onPaneClick={handlePaneClick}
-                />
 
-                {selectedNodeId && selectedNode && (
-                    <PropertyPanel
-                        node={selectedNode}
-                        onUpdate={handleNodeUpdate}
-                        onDelete={handleNodeDelete}
-                        onClose={() => {
-                            setSelectedNodeId(null);
-                            setSelectedNode(null);
-                        }}
-                    />
+            <div className="flex-1 overflow-hidden relative flex">
+                {/* Template Sidebar */}
+                {showTemplates && (
+                    <div className="relative z-20">
+                        <TemplateSidebar
+                            open={showTemplates}
+                            onClose={() => setShowTemplates(false)}
+                            onApply={handleApplyTemplate}
+                        />
+                    </div>
                 )}
+
+                {/* Canvas */}
+                <div className="flex-1 relative">
+                    <WorkflowCanvas
+                        graph={graph}
+                        onInit={setRfInstance}
+                        onNodeClick={handleNodeClick}
+                        onPaneClick={handlePaneClick}
+                    />
+
+                    {selectedNodeId && selectedNode && (
+                        <PropertyPanel
+                            node={selectedNode}
+                            onUpdate={handleNodeUpdate}
+                            onDelete={handleNodeDelete}
+                            onClose={() => {
+                                setSelectedNodeId(null);
+                                setSelectedNode(null);
+                            }}
+                        />
+                    )}
+                </div>
             </div>
+
+            {/* Modals */}
+            <SaveTemplateModal
+                open={showSaveTemplate}
+                onClose={() => setShowSaveTemplate(false)}
+                currentGraph={graph} // Passes current loaded graph structure (needs to be kept in sync or re-extracted from RF instance)
+            />
+
+            <WizardMode
+                open={showWizard}
+                onClose={() => setShowWizard(false)}
+                onComplete={handleWizardComplete}
+            />
         </div>
     );
 };
