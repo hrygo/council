@@ -11,12 +11,6 @@
 
 </div>
 
-- [Features](#-features)
-- [Quick Start](#-quick-start)
-- [Architecture](#-architecture)
-- [Usage Guide](#-usage-guide)
-- [API Reference](#-api-reference)
-
 ---
 
 ## ✨ Features
