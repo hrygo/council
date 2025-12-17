@@ -178,3 +178,33 @@ Output STRICT JSON only.`
 		"explanation": "Generated workflow based on your prompt.",
 	})
 }
+
+// EstimateCost calculates the estimated cost of a workflow
+func (h *WorkflowMgmtHandler) EstimateCost(c *gin.Context) {
+	// Support both: POST with JSON body (draft workflow) OR GET /:id (saved workflow)
+	// Spec says: POST /api/v1/workflows/:id/estimate (if ID exists)
+	// But usually we want to estimate *before* saving edits.
+	// Let's support POST on collection /workflows/estimate with body.
+
+	// If ID is passed in URL:
+	id := c.Param("id")
+	var graph workflow.GraphDefinition
+
+	if id != "" {
+		g, err := h.Repo.Get(c.Request.Context(), id)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Workflow not found"})
+			return
+		}
+		graph = *g
+	} else {
+		// Expect body
+		if err := c.ShouldBindJSON(&graph); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	estimate := workflow.EstimateWorkflowCost(&graph)
+	c.JSON(http.StatusOK, estimate)
+}

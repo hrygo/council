@@ -114,6 +114,7 @@ func main() {
 		api.POST("/workflows", workflowMgmtHandler.Create)
 		api.PUT("/workflows/:id", workflowMgmtHandler.Update)
 		api.POST("/workflows/generate", workflowMgmtHandler.Generate)
+		api.POST("/workflows/estimate", workflowMgmtHandler.EstimateCost)
 
 		// Templates
 		api.GET("/templates", templateHandler.List)

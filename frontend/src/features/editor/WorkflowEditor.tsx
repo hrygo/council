@@ -9,6 +9,7 @@ import { SaveTemplateModal } from './components/SaveTemplateModal';
 import { WizardMode } from './components/Wizard/WizardMode';
 import type { Template } from '../../types/template';
 import { Wand2, LayoutTemplate, Save } from 'lucide-react';
+import { CostEstimator } from '../execution/components/CostEstimator';
 
 export const WorkflowEditor: FC = () => {
     const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
@@ -205,6 +206,13 @@ export const WorkflowEditor: FC = () => {
                         onNodeClick={handleNodeClick}
                         onPaneClick={handlePaneClick}
                     />
+
+                    {/* Cost Estimator Widget */}
+                    <div className="absolute top-4 left-4 z-10 pointer-events-none">
+                        <div className="pointer-events-auto">
+                            {rfInstance && <CostEstimator nodes={rfInstance.getNodes()} edges={rfInstance.getEdges()} />}
+                        </div>
+                    </div>
 
                     {selectedNodeId && selectedNode && (
                         <PropertyPanel
