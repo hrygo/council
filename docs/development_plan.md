@@ -10,40 +10,45 @@
 
 ## 开发进度跟踪矩阵 (Progress Matrix)
 
-| ID                  | 任务名称 (Task)               | Spec ID       | Sprint | 优先级 | 状态     | 负责人    |
-| ------------------- | ----------------------------- | ------------- | ------ | ------ | -------- | --------- |
-| **前端 (Frontend)** |
-| 1.1                 | 重写 `useSessionStore.ts`     | SPEC-001      | S1     | P0     | [x] Done | @Frontend |
-| 1.2                 | 实现 `useWorkflowRunStore.ts` | SPEC-002      | S1     | P0     | [x] Done | @Frontend |
-| 1.3                 | ChatPanel 分组消息            | SPEC-003      | S1     | P1     | [x] Done | @Frontend |
-| 1.4                 | ChatPanel 并行消息            | SPEC-004      | S1     | P1     | [x] Done | @Frontend |
-| 1.5                 | WebSocket 优化                | SPEC-005      | S1     | P1     | [x] Done | @Frontend |
-| 2.1                 | 群组管理页面 + 列表           | SPEC-101, 102 | S2     | P0     | [x] Done | @Frontend |
-| 2.2                 | Agent 管理页面 + 列表         | SPEC-103, 104 | S2     | P0     | [x] Done | @Frontend |
-| 2.3                 | Agent 模型配置                | SPEC-105      | S2     | P1     | [x] Done | @Frontend |
-| 3.1                 | 节点属性面板 (PropertyPanel)  | SPEC-201      | S3     | P0     | [x] Done | @Frontend |
-| 3.2                 | Vote/Loop 节点 UI             | SPEC-202      | S3     | P1     | [x] Done | @Frontend |
-| 3.3                 | FactCheck/HumanReview UI      | SPEC-203      | S3     | P1     | [x] Done | @Frontend |
-| 3.4                 | 模版库侧边栏                  | SPEC-204      | S3     | P2     | [x] Done | @Frontend |
-| 3.5                 | 保存为模版                    | SPEC-205      | S3     | P2     | [x] Done | @Frontend |
-| 3.6                 | 向导模式 (`WizardMode`)       | SPEC-206      | S3     | P0     | [x] Done | @Frontend |
-| 4.1                 | HumanReviewModal              | SPEC-301      | S4     | P0     | [x] Done | @Frontend |
-| 4.2                 | CostEstimator                 | SPEC-302      | S4     | P1     | [x] Done | @Frontend |
-| 4.3                 | 文档引用跳转                  | SPEC-303      | S4     | P1     | [x] Done | @Frontend |
-| 4.4                 | 快捷键支持                    | SPEC-304      | S4     | P2     | [x] Done | @Frontend |
-| 4.5                 | KaTeX 公式渲染                | SPEC-305      | S4     | P2     | [x] Done | @Frontend |
-| **后端 (Backend)**  |
-| B.1                 | SequenceProcessor             | SPEC-401      | S1-2   | P1     | [x] Done | @Backend  |
-| B.2                 | VoteProcessor                 | SPEC-402      | S1-2   | P1     | [x] Done | @Backend  |
-| B.3                 | LoopProcessor                 | SPEC-403      | S1-2   | P2     | [x] Done | @Backend  |
-| B.4                 | FactCheckProcessor            | SPEC-404      | S3-4   | P1     | [x] Done | @Backend  |
-| B.5                 | HumanReviewProcessor          | SPEC-405      | S3-4   | P0     | [x] Done | @Backend  |
-| B.6                 | Templates API                 | SPEC-406      | S3-4   | P1     | [x] Done | @Backend  |
-| B.7                 | Cost Estimation API           | SPEC-407      | S3-4   | P1     | [x] Done | @Backend  |
-| B.8                 | 三层记忆协议                  | SPEC-408      | S3-4   | P0     | [x] Done | @Backend  |
-| B.9                 | 逻辑熔断 (Circuit Breaker)    | SPEC-409      | S3-4   | P0     | [x] Done | @Backend  |
-| B.10                | 防幻觉传播                    | SPEC-410      | S3-4   | P1     | [x] Done | @Backend  |
-| B.11                | 联网搜索集成                  | SPEC-411      | S3-4   | P1     | [x] Done | @Backend  |
+| ID                     | 任务名称 (Task)               | Spec ID       | Sprint | 优先级 | 状态     | 负责人    |
+| ---------------------- | ----------------------------- | ------------- | ------ | ------ | -------- | --------- |
+| **前端 (Frontend)**    |
+| 1.1                    | 重写 `useSessionStore.ts`     | SPEC-001      | S1     | P0     | [x] Done | @Frontend |
+| 1.2                    | 实现 `useWorkflowRunStore.ts` | SPEC-002      | S1     | P0     | [x] Done | @Frontend |
+| 1.3                    | ChatPanel 分组消息            | SPEC-003      | S1     | P1     | [x] Done | @Frontend |
+| 1.4                    | ChatPanel 并行消息            | SPEC-004      | S1     | P1     | [x] Done | @Frontend |
+| 1.5                    | WebSocket 优化                | SPEC-005      | S1     | P1     | [x] Done | @Frontend |
+| 2.1                    | 群组管理页面 + 列表           | SPEC-101, 102 | S2     | P0     | [x] Done | @Frontend |
+| 2.2                    | Agent 管理页面 + 列表         | SPEC-103, 104 | S2     | P0     | [x] Done | @Frontend |
+| 2.3                    | Agent 模型配置                | SPEC-105      | S2     | P1     | [x] Done | @Frontend |
+| 3.1                    | 节点属性面板 (PropertyPanel)  | SPEC-201      | S3     | P0     | [x] Done | @Frontend |
+| 3.2                    | Vote/Loop 节点 UI             | SPEC-202      | S3     | P1     | [x] Done | @Frontend |
+| 3.3                    | FactCheck/HumanReview UI      | SPEC-203      | S3     | P1     | [x] Done | @Frontend |
+| 3.4                    | 模版库侧边栏                  | SPEC-204      | S3     | P2     | [x] Done | @Frontend |
+| 3.5                    | 保存为模版                    | SPEC-205      | S3     | P2     | [x] Done | @Frontend |
+| 3.6                    | 向导模式 (`WizardMode`)       | SPEC-206      | S3     | P0     | [x] Done | @Frontend |
+| 4.1                    | HumanReviewModal              | SPEC-301      | S4     | P0     | [x] Done | @Frontend |
+| 4.2                    | CostEstimator                 | SPEC-302      | S4     | P1     | [x] Done | @Frontend |
+| 4.3                    | 文档引用跳转                  | SPEC-303      | S4     | P1     | [x] Done | @Frontend |
+| 4.4                    | 快捷键支持                    | SPEC-304      | S4     | P2     | [x] Done | @Frontend |
+| 4.5                    | KaTeX 公式渲染                | SPEC-305      | S4     | P2     | [x] Done | @Frontend |
+| **后端 (Backend)**     |
+| B.1                    | SequenceProcessor             | SPEC-401      | S1-2   | P1     | [x] Done | @Backend  |
+| B.2                    | VoteProcessor                 | SPEC-402      | S1-2   | P1     | [x] Done | @Backend  |
+| B.3                    | LoopProcessor                 | SPEC-403      | S1-2   | P2     | [x] Done | @Backend  |
+| B.4                    | FactCheckProcessor            | SPEC-404      | S3-4   | P1     | [x] Done | @Backend  |
+| B.5                    | HumanReviewProcessor          | SPEC-405      | S3-4   | P0     | [x] Done | @Backend  |
+| B.6                    | Templates API                 | SPEC-406      | S3-4   | P1     | [x] Done | @Backend  |
+| B.7                    | Cost Estimation API           | SPEC-407      | S3-4   | P1     | [x] Done | @Backend  |
+| B.8                    | 三层记忆协议                  | SPEC-408      | S3-4   | P0     | [x] Done | @Backend  |
+| B.9                    | 逻辑熔断 (Circuit Breaker)    | SPEC-409      | S3-4   | P0     | [x] Done | @Backend  |
+| B.10                   | 防幻觉传播                    | SPEC-410      | S3-4   | P1     | [x] Done | @Backend  |
+| B.11                   | 联网搜索集成                  | SPEC-411      | S3-4   | P1     | [x] Done | @Backend  |
+| **Phase 2 (Post-MVP)** |
+| 5.1                    | i18n 国际化完整实现           | SPEC-501      | S5     | P0     | [ ] Todo | @Frontend |
+| 5.2                    | 端到端测试 (E2E Testing)      | SPEC-502      | S5     | P1     | [ ] Todo | @QA       |
+| 5.3                    | 性能优化 (Code Splitting)     | SPEC-503      | S5     | P2     | [ ] Todo | @Frontend |
+| 5.4                    | 安全强化 (RBAC/RateLimit)     | SPEC-504      | S5     | P1     | [ ] Todo | @Backend  |
 
 ---
 
@@ -269,6 +274,31 @@
 ## 技术债务清理 (持续进行)
 
 - [ ] 测试覆盖率提升至 80%
-- [ ] i18n 翻译完善
 - [ ] 暗黑模式切换
 - [ ] 性能优化 (Run Mode 轻量渲染)
+
+---
+
+## Phase 2: Post-MVP Optimization (Sprint 5)
+
+### 目标
+提升系统稳定性、国际化支持及安全性，为 1.0 正式版做准备。
+
+### 任务清单
+
+| 任务                         | Spec ID  | 优先级 | 状态     |
+| :--------------------------- | :------- | :----- | :------- |
+| **i18n 国际化完整实现**      | SPEC-501 | **P0** | [ ] Todo |
+| - 支持 EN/ZH/JP 多语言切换   |          |        |          |
+| - 提取所有硬编码字符串       |          |        |          |
+| - 翻译管理流程               |          |        |          |
+| **端到端测试 (E2E)**         | SPEC-502 | P1     | [ ] Todo |
+| - 集成 Cypress 或 Playwright |          |        |          |
+| - 覆盖核心工作流             |          |        |          |
+| **性能优化**                 | SPEC-503 | P2     | [ ] Todo |
+| - Route-based code splitting |          |        |          |
+| - 虚拟列表优化聊天渲染       |          |        |          |
+| **安全强化**                 | SPEC-504 | P1     | [ ] Todo |
+| - 细粒度 RBAC 权限控制       |          |        |          |
+| - API Rate Limiting          |          |        |          |
+
