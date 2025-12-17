@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import type { CreateGroupInput, Group } from '../../../types/group';
 
@@ -13,23 +13,11 @@ interface CreateGroupModalProps {
 const ICONS = ['🏢', '🏠', '💼', '🎯', '⚙️', '📊', '🧪', '🎨', '🚀', '💡', '🤖', '🌐'];
 
 export function CreateGroupModal({ open, onClose, onSubmit, isLoading, initialData }: CreateGroupModalProps) {
-    const [name, setName] = useState('');
-    const [icon, setIcon] = useState(ICONS[0]);
-    const [systemPrompt, setSystemPrompt] = useState('');
+    const [name, setName] = useState(() => initialData?.name || '');
+    const [icon, setIcon] = useState(() => initialData?.icon || ICONS[0]);
+    const [systemPrompt, setSystemPrompt] = useState(() => initialData?.system_prompt || '');
 
-    useEffect(() => {
-        if (open) {
-            if (initialData) {
-                setName(initialData.name);
-                setIcon(initialData.icon);
-                setSystemPrompt(initialData.system_prompt);
-            } else {
-                setName('');
-                setIcon(ICONS[0]);
-                setSystemPrompt('');
-            }
-        }
-    }, [open, initialData]);
+    // Validated: No useEffect needed as component remounts on open.
 
     if (!open) return null;
 

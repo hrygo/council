@@ -117,13 +117,15 @@ export function GroupList() {
                 </div>
             )}
 
-            <CreateGroupModal
-                open={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={editingGroup ? handleUpdate : handleCreate}
-                isLoading={createGroup.isPending || updateGroup.isPending}
-                initialData={editingGroup}
-            />
+            {isModalOpen && (
+                <CreateGroupModal
+                    open={true}
+                    onClose={() => setIsModalOpen(false)}
+                    onSubmit={editingGroup ? handleUpdate : handleCreate}
+                    isLoading={createGroup.isPending || updateGroup.isPending}
+                    initialData={editingGroup}
+                />
+            )}
         </div>
     );
 }

@@ -3,9 +3,10 @@ import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useLayoutStore } from '../../stores/useLayoutStore';
 import { useWebSocketRouter } from '../../hooks/useWebSocketRouter';
-import WorkflowCanvas from '../workflow/WorkflowCanvas';
-import ChatPanel from '../chat/ChatPanel';
-import { DocumentReader } from '../modules/DocumentReader';
+
+import WorkflowCanvas from '../../components/workflow/WorkflowCanvas';
+import ChatPanel from '../../components/chat/ChatPanel';
+import { DocumentReader } from '../../components/modules/DocumentReader';
 
 const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel }) => {
     const { maximizedPanel, maximizePanel } = useLayoutStore();

@@ -1,18 +1,29 @@
 import { useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Play, Boxes, Users, Network } from 'lucide-react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Play, Boxes, Users, Network, Video, type LucideIcon } from 'lucide-react';
 import './i18n';
 import './index.css';
 import { useConfigStore } from './stores/useConfigStore';
-import { MeetingRoom } from './components/layout/MeetingRoom';
-import { WorkflowEditor } from './components/layout/WorkflowEditor';
+import { MeetingRoom } from './features/meeting/MeetingRoom';
+import { WorkflowEditor } from './features/editor/WorkflowEditor';
 import { GroupsPage } from './features/groups/pages/GroupsPage';
 import { AgentsPage } from './features/agents/pages/AgentsPage';
+
+// Simple Nav Bar for demo purposes
+const NavButton = ({ path, icon: Icon, label, onClick }: { path: string, icon: LucideIcon, label: string, onClick: (path: string) => void }) => (
+  <button
+    onClick={() => onClick(path)}
+    className="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all gap-1 group"
+    title={label}
+  >
+    <Icon size={20} className="group-hover:scale-110 transition-transform" />
+    <span className="text-[10px] font-medium">{label}</span>
+  </button>
+);
 
 function App() {
   const theme = useConfigStore((state) => state.theme);
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     document.documentElement.className = theme === 'system'
@@ -20,32 +31,24 @@ function App() {
       : theme;
   }, [theme]);
 
-  // Simple Nav Bar for demo purposes
-  const NavButton = ({ path, icon: Icon, label }: { path: string, icon: any, label: string }) => (
-    <button
-      onClick={() => navigate(path)}
-      className={`p-2 rounded-lg transition-colors ${location.pathname === path
-        ? 'bg-blue-600 text-white'
-        : 'bg-white/50 dark:bg-black/50 hover:bg-gray-200 dark:hover:bg-gray-700'
-        }`}
-      title={label}
-    >
-      <Icon size={20} />
-    </button>
-  );
-
   return (
     <div className="h-screen w-screen overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      {/* Navigation Bar */}
-      <div className="fixed bottom-4 left-4 z-50 flex gap-2 p-1 rounded shadow-lg">
-        <NavButton path="/" icon={Play} label="Run Mode" />
-        <NavButton path="/editor" icon={Boxes} label="Builder Mode" />
-        <NavButton path="/groups" icon={Users} label="Groups Management" />
-        <NavButton path="/agents" icon={Network} label="Agent Factory" />
+      {/* Sidebar / Nav */}
+      <div className="fixed left-0 top-0 h-full w-16 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center py-4 gap-4 z-50 shadow-sm">
+        <div className="mb-2 p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-500/30">
+          <Boxes size={24} />
+        </div>
+
+        <NavButton path="/" icon={Play} label="Session" onClick={navigate} />
+        <NavButton path="/meeting" icon={Video} label="Meeting" onClick={navigate} />
+        <NavButton path="/editor" icon={Boxes} label="Builder" onClick={navigate} />
+        <NavButton path="/groups" icon={Users} label="Groups" onClick={navigate} />
+        <NavButton path="/agents" icon={Network} label="Agents" onClick={navigate} />
       </div>
 
       <Routes>
         <Route path="/" element={<MeetingRoom />} />
+        <Route path="/meeting" element={<MeetingRoom />} />
         <Route path="/editor" element={<WorkflowEditor />} />
         <Route path="/groups" element={<GroupsPage />} />
         <Route path="/agents" element={<AgentsPage />} />

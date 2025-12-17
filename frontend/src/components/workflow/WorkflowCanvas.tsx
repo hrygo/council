@@ -23,6 +23,8 @@ interface WorkflowCanvasProps {
     workflowId?: string;
     graph?: BackendGraph | null;
     onInit?: (instance: ReactFlowInstance) => void;
+    onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+    onPaneClick?: (event: React.MouseEvent) => void;
 }
 
 export default function WorkflowCanvas({
@@ -31,7 +33,9 @@ export default function WorkflowCanvas({
     onExitFullscreen,
     workflowId,
     graph,
-    onInit
+    onInit,
+    onNodeClick,
+    onPaneClick
 }: WorkflowCanvasProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -122,6 +126,8 @@ export default function WorkflowCanvas({
                 nodesDraggable={!readOnly}
                 nodesConnectable={!readOnly}
                 onInit={onInit}
+                onNodeClick={onNodeClick}
+                onPaneClick={onPaneClick}
                 fitView
             >
                 <Background color="#ccc" gap={20} />

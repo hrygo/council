@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Loader2, Bot, Globe, Code } from 'lucide-react';
 import { useCreateAgent, useUpdateAgent } from '../../../hooks/useAgents';
 import { ModelSelector } from './ModelSelector';
@@ -29,38 +29,28 @@ export function AgentEditDrawer({ open, onClose, agent }: AgentEditDrawerProps) 
     const updateAgent = useUpdateAgent();
     const isLoading = createAgent.isPending || updateAgent.isPending;
 
-    const [formData, setFormData] = useState<CreateAgentInput>({
-        name: '',
-        avatar: '🤖',
-        description: '',
-        persona_prompt: '',
-        model_config: DEFAULT_MODEL_CONFIG,
-        capabilities: DEFAULT_CAPABILITIES,
+    const [formData, setFormData] = useState<CreateAgentInput>(() => {
+        if (agent) {
+            return {
+                name: agent.name,
+                avatar: agent.avatar,
+                description: agent.description,
+                persona_prompt: agent.persona_prompt,
+                model_config: agent.model_config,
+                capabilities: agent.capabilities,
+            };
+        }
+        return {
+            name: '',
+            avatar: '🤖',
+            description: '',
+            persona_prompt: '',
+            model_config: DEFAULT_MODEL_CONFIG,
+            capabilities: DEFAULT_CAPABILITIES,
+        };
     });
 
-    useEffect(() => {
-        if (open) {
-            if (agent) {
-                setFormData({
-                    name: agent.name,
-                    avatar: agent.avatar,
-                    description: agent.description,
-                    persona_prompt: agent.persona_prompt,
-                    model_config: agent.model_config,
-                    capabilities: agent.capabilities,
-                });
-            } else {
-                setFormData({
-                    name: '',
-                    avatar: '🤖',
-                    description: '',
-                    persona_prompt: '',
-                    model_config: DEFAULT_MODEL_CONFIG,
-                    capabilities: DEFAULT_CAPABILITIES,
-                });
-            }
-        }
-    }, [open, agent]);
+    // Validated: No useEffect needed as component remounts on open.
 
     if (!open) return null;
 

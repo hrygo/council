@@ -101,11 +101,13 @@ export function AgentList() {
                 </div>
             )}
 
-            <AgentEditDrawer
-                open={isDrawerOpen}
-                onClose={() => setIsDrawerOpen(false)}
-                agent={editingAgent}
-            />
+            {isDrawerOpen && (
+                <AgentEditDrawer
+                    open={true}
+                    onClose={() => setIsDrawerOpen(false)}
+                    agent={editingAgent}
+                />
+            )}
         </div>
     );
 }
