@@ -9,7 +9,8 @@
         start stop restart status \
         start-all stop-all \
         start-db stop-db start-backend stop-backend start-frontend stop-frontend \
-        build test lint fmt check clean install
+        build test test-backend test-frontend lint fmt check clean install \
+        coverage coverage-backend coverage-frontend
 
 # ============================================================================
 # 🎨 Colors
@@ -169,17 +170,57 @@ build: lint ## 🏗️ Build production binaries
 	@CGO_ENABLED=0 go build -ldflags="-s -w" -o $(GO_BIN) cmd/council/main.go
 	@echo "$(GREEN)✅ Build complete: $(GO_BIN)$(RESET)"
 
-test: ## 🧪 Run tests
-	@echo "$(CYAN)🧪 Running tests...$(RESET)"
-	@go test -v -race -coverprofile=coverage.out ./...
-	@go tool cover -func=coverage.out | tail -1
+test: test-backend test-frontend ## 🧪 Run all tests (Backend + Frontend)
 
-test-short: ## ⚡ Quick tests (no race detector)
+test-backend: ## 🔧 Run Go backend tests
+	@echo "$(CYAN)🧪 Running backend tests...$(RESET)"
+	@go test -v -race -coverprofile=coverage.out ./...
+
+test-frontend: ## 🎨 Run React frontend tests
+	@echo "$(CYAN)📅 Running frontend tests...$(RESET)"
+	@cd frontend && npm run test -- --run
+
+test-short: ## ⚡ Quick backend tests (no race detector)
 	@go test -short ./...
 
-coverage: test ## 📊 Open coverage report
+coverage: coverage-backend coverage-frontend ## 📊 Run all coverage (Dashboard)
+	@echo ""
+	@echo "$(BOLD)$(CYAN)📈 FINAL COVERAGE DASHBOARD$(RESET)"
+	@echo "════════════════════════════════════════════════════════════════"
+	@printf "  $(BOLD)%-20s$(RESET) | $(BOLD)%s$(RESET)\n" "Domain" "Coverage Score"
+	@echo "────────────────────────────────────────────────────────────────"
+	@BE_RAW=$$(go tool cover -func=coverage.out | grep total | awk '{print $$3}' | sed 's/%//'); \
+	FE_RAW=$$(grep -E "Lines" frontend/coverage_summary.txt | grep -oE "[0-9.]+" | head -1 || echo "0"); \
+	printf "  %-20s | $(GREEN)%s%%$(RESET)\n" "Backend (Go)" "$$BE_RAW"; \
+	printf "  %-20s | $(GREEN)%s%%$(RESET)\n" "Frontend (React)" "$$FE_RAW"; \
+	echo "────────────────────────────────────────────────────────────────"; \
+	AVG=$$(echo "scale=2; ($$BE_RAW + $$FE_RAW) / 2" | bc 2>/dev/null || echo "N/A"); \
+	printf "  $(BOLD)%-20s$(RESET) | $(BOLD)%s%%$(RESET)\n" "Overall Average" "$$AVG"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "$(CYAN)Detailed reports:$(RESET)"
+	@echo "  Backend  -> $(BOLD)coverage.html$(RESET)"
+	@echo "  Frontend -> $(BOLD)frontend/coverage/index.html$(RESET)"
+	@echo ""
+
+coverage-backend: test-backend ## 🔧 Run backend coverage summary (Package List)
+	@echo "$(CYAN)📊 Backend Coverage by Package:$(RESET)"
+	@echo "-------------------------------------------|---------"
+	@printf "  %-40s | %s\n" "Package" "Coverage"
+	@echo "-------------------------------------------|---------"
+	@go test -cover ./... | sed 's/github.com\/hrygo\/council\///g' | \
+		awk '/^ok/ { printf "  %-40s | %s\n", $$2, $$5 } \
+		     /^\?/ { printf "  %-40s | %s\n", $$2, "0.0%*" } \
+		     /^[[:space:]]+internal/ { printf "  %-40s | %s\n", $$1, $$3 }' | sort
+	@echo "-------------------------------------------|---------"
+	@go tool cover -func=coverage.out | grep total | awk '{printf "  $(BOLD)%-40s | %s$(RESET)\n", "TOTAL", $$3}'
+	@echo "-------------------------------------------|---------"
 	@go tool cover -html=coverage.out -o coverage.html
-	@open coverage.html 2>/dev/null || xdg-open coverage.html 2>/dev/null || echo "Open coverage.html"
+	@echo "$(CYAN)* [0.0%*] means no test files in package$(RESET)"
+
+coverage-frontend: ## 🎨 Run frontend coverage (Full Table with Color)
+	@echo "$(CYAN)📊 Frontend Coverage Detailed Report:$(RESET)"
+	@cd frontend && FORCE_COLOR=1 npx vitest run --coverage --coverage.reporter=text --coverage.reporter=text-summary | tee coverage_summary.txt
+	@echo ""
 
 lint: ## 🔍 Run linters
 	@echo "$(CYAN)🔍 Linting...$(RESET)"
@@ -241,7 +282,10 @@ help: ## ❓ Show this help
 	@echo ""
 	@echo "$(BOLD)🏗️ Build & Test:$(RESET)"
 	@echo "  $(CYAN)make build$(RESET)          Build for production"
-	@echo "  $(CYAN)make test$(RESET)           Run tests"
+	@echo "  $(CYAN)make test$(RESET)           Run all tests"
+	@echo "  $(CYAN)make test-backend$(RESET)   Run backend tests"
+	@echo "  $(CYAN)make test-frontend$(RESET)  Run frontend tests"
+	@echo "  $(CYAN)make coverage$(RESET)        Run all coverage reports"
 	@echo "  $(CYAN)make lint$(RESET)           Run linters"
 	@echo "  $(CYAN)make check$(RESET)          Run all checks"
 	@echo ""
