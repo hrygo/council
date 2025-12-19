@@ -96,6 +96,10 @@ func (h *WorkflowMgmtHandler) Update(c *gin.Context) {
 	req.ID = id
 	ctx := c.Request.Context()
 	if err := h.Repo.Update(ctx, &req); err != nil {
+		if strings.Contains(err.Error(), "workflow not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Workflow not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -166,11 +170,8 @@ Output STRICT JSON only.`
 		return
 	}
 
-	// Ensure ID is set
-	graph.ID = uuid.New().String()
-
-	// Persist it? Or just return draft? Returning draft is safer for UI builder.
-	// But let's verify if user wants it saved immediately. Usually builder pattern = return draft.
+	// Ensure ID is empty for draft so frontend knows to POST (Create) instead of PUT (Update)
+	graph.ID = ""
 
 	c.JSON(http.StatusOK, gin.H{
 		"graph":       graph,

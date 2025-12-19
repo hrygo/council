@@ -190,7 +190,7 @@ export const MeetingRoom: FC = () => {
                     <div className="relative h-full w-full group">
                         <PanelMaximizeButton panel="left" />
                         {!leftCollapsed && <SidebarCollapseTrigger side="left" onCollapse={handleToggleLeft} />}
-                        <WorkflowCanvas readOnly={isRunning} workflowId="1eb04085-f215-430b-9279-880c98f99e3a" />
+                        <WorkflowCanvas readOnly={isRunning} />
                     </div>
                 </Panel>
 

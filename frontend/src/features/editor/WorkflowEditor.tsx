@@ -10,6 +10,7 @@ import { WizardMode } from './components/Wizard/WizardMode';
 import type { Template } from '../../types/template';
 import { Wand2, LayoutTemplate, Save } from 'lucide-react';
 import { CostEstimator } from '../execution/components/CostEstimator';
+import { useToast } from '../../components/ui/Toast';
 
 export const WorkflowEditor: FC = () => {
     const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
@@ -63,6 +64,8 @@ export const WorkflowEditor: FC = () => {
 
 
 
+    const { success, error } = useToast();
+
     const handleSave = async () => {
         if (!rfInstance) return;
 
@@ -97,8 +100,10 @@ export const WorkflowEditor: FC = () => {
         };
 
         try {
-            const method = payload.id ? 'PUT' : 'POST';
-            const url = payload.id ? `/api/v1/workflows/${payload.id}` : '/api/v1/workflows';
+            // Determine method based on ID presence AND ensure empty string is treated as new
+            const isNew = !payload.id || payload.id === '';
+            const method = isNew ? 'POST' : 'PUT';
+            const url = isNew ? '/api/v1/workflows' : `/api/v1/workflows/${payload.id}`;
 
             const res = await fetch(url, {
                 method,
@@ -109,13 +114,21 @@ export const WorkflowEditor: FC = () => {
             if (res.ok) {
                 const saved = await res.json();
                 setGraph(saved); // Update ID if new
-                alert("Saved successfully!");
+                success("Workflow saved successfully!");
             } else {
-                alert("Save failed");
+                const errData = await res.json().catch(() => ({}));
+                // Recover from 404 on Update by creating specific ID? 
+                // Alternatively, just alert user.
+                if (res.status === 404 && !isNew) {
+                    error("Workflow not found on server. Try creating as new.");
+                    // Optionally could retry as POST here if we want to "Upsert"
+                } else {
+                    error(`Save failed: ${errData.error || res.statusText}`);
+                }
             }
         } catch (e) {
             console.error(e);
-            alert("Error saving");
+            error("Error saving workflow");
         }
     };
 
