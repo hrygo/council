@@ -1,6 +1,6 @@
-import { type FC, useRef, useState } from 'react';
+import { type FC, useRef } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
-import { Maximize2, Minimize2, ChevronLeft, ChevronRight, RotateCcw, Check } from 'lucide-react';
+import { Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLayoutStore } from '../../stores/useLayoutStore';
 import { useWebSocketRouter } from '../../hooks/useWebSocketRouter';
 import { useFullscreenShortcuts } from '../../hooks/useFullscreenShortcuts';
@@ -73,31 +73,6 @@ const CenterExpandTrigger: FC<{
     );
 };
 
-// 重置布局按钮
-const ResetLayoutButton: FC<{ onReset: () => void }> = ({ onReset }) => {
-    const [feedback, setFeedback] = useState(false);
-
-    const handleClick = () => {
-        onReset();
-        setFeedback(true);
-        setTimeout(() => setFeedback(false), 1500);
-    };
-
-    return (
-        <button
-            onClick={handleClick}
-            disabled={feedback}
-            className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 
-            ${feedback ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'} 
-            border rounded-full shadow-lg transition-all flex items-center gap-1.5 text-xs font-medium`}
-            title="重置为默认布局"
-        >
-            {feedback ? <Check size={12} /> : <RotateCcw size={12} />}
-            {feedback ? '已重置' : '重置布局'}
-        </button>
-    );
-};
-
 export const MeetingRoom: FC = () => {
     useWebSocketRouter();
     useFullscreenShortcuts();
@@ -109,8 +84,7 @@ export const MeetingRoom: FC = () => {
         setPanelSizes,
         toggleLeftPanel,
         toggleRightPanel,
-        maximizePanel,
-        resetLayout
+        maximizePanel
     } = useLayoutStore();
 
     // Refs for imperative panel control
@@ -140,19 +114,6 @@ export const MeetingRoom: FC = () => {
         }
     };
 
-    const handleReset = () => {
-        resetLayout();
-        // Imperatively reset sizes
-        if (leftPanelRef.current) {
-            leftPanelRef.current.resize(20);
-            leftPanelRef.current.expand();
-        }
-        if (centerPanelRef.current) centerPanelRef.current.resize(50);
-        if (rightPanelRef.current) {
-            rightPanelRef.current.resize(30);
-            rightPanelRef.current.expand();
-        }
-    };
 
     // Fullscreen Mode
     if (maximizedPanel) {
@@ -234,9 +195,6 @@ export const MeetingRoom: FC = () => {
                     </div>
                 </Panel>
             </PanelGroup>
-
-            {/* Reset Layout Button with Callback */}
-            <ResetLayoutButton onReset={handleReset} />
 
             <HumanReviewModal />
         </div>
