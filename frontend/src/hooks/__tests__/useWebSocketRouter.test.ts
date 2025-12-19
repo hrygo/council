@@ -75,4 +75,68 @@ describe('useWebSocketRouter', () => {
         expect(useSessionStore.getState().currentSession?.nodes.get('node-1')?.status).toBe('running');
         unmount();
     });
+
+    it('should route node_state_change for completion', () => {
+        renderHook(() => useWebSocketRouter());
+        const msg: WSMessage = {
+            event: 'node_state_change',
+            data: { node_id: 'node-1', status: 'completed' }
+        };
+
+        act(() => { useConnectStore.setState({ _lastMessage: msg }); });
+
+        expect(useWorkflowRunStore.getState().nodes[0].data.status).toBe('completed');
+        expect(useWorkflowRunStore.getState().activeNodeIds.has('node-1')).toBe(false);
+    });
+
+    it('should route parallel_start', () => {
+        renderHook(() => useWebSocketRouter());
+        const msg: WSMessage = {
+            event: 'node:parallel_start',
+            data: { node_id: 'node-root', branches: ['br-1', 'br-2'] }
+        };
+
+        act(() => { useConnectStore.setState({ _lastMessage: msg }); });
+
+        expect(useWorkflowRunStore.getState().activeNodeIds.size).toBe(2);
+    });
+
+    it('should route token_usage', () => {
+        renderHook(() => useWebSocketRouter());
+        const msg: WSMessage = {
+            event: 'token_usage',
+            data: {
+                node_id: 'node-1',
+                agent_id: 'a-1',
+                input_tokens: 10,
+                output_tokens: 20,
+                estimated_cost_usd: 0.001
+            }
+        };
+
+        act(() => { useConnectStore.setState({ _lastMessage: msg }); });
+
+        expect(useWorkflowRunStore.getState().stats.totalTokens).toBe(30);
+    });
+
+    it('should handle execution:completed', () => {
+        renderHook(() => useWebSocketRouter());
+        act(() => {
+            useConnectStore.setState({ _lastMessage: { event: 'execution:completed' } as any });
+        });
+        expect(useWorkflowRunStore.getState().executionStatus).toBe('completed');
+    });
+
+    it('should handle error events', () => {
+        renderHook(() => useWebSocketRouter());
+        act(() => {
+            useConnectStore.setState({
+                _lastMessage: {
+                    event: 'error',
+                    data: { node_id: 'node-1', error: 'Boom' }
+                } as any
+            });
+        });
+        expect(useWorkflowRunStore.getState().nodes[0].data.status).toBe('failed');
+    });
 });

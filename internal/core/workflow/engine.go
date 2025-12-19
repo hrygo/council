@@ -164,6 +164,12 @@ func (e *Engine) updateStatus(nodeID string, status NodeStatus) {
 	e.Status[nodeID] = status
 }
 
+func (e *Engine) GetStatus(nodeID string) NodeStatus {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	return e.Status[nodeID]
+}
+
 func (e *Engine) emitError(nodeID string, err error) {
 	log.Printf("Error in node %s: %v", nodeID, err)
 	e.StreamChannel <- StreamEvent{

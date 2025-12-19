@@ -7,14 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/workflow"
-	"github.com/hrygo/council/internal/infrastructure/persistence"
 )
 
 type TemplateHandler struct {
-	Repo *persistence.TemplateRepository
+	Repo workflow.TemplateRepository
 }
 
-func NewTemplateHandler(repo *persistence.TemplateRepository) *TemplateHandler {
+func NewTemplateHandler(repo workflow.TemplateRepository) *TemplateHandler {
 	return &TemplateHandler{Repo: repo}
 }
 

@@ -7,16 +7,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/agent"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // AgentRepository implements agent.Repository using Postgres.
 type AgentRepository struct {
-	pool *pgxpool.Pool
+	pool DB
 }
 
 // NewAgentRepository creates a new AgentRepository.
-func NewAgentRepository(pool *pgxpool.Pool) *AgentRepository {
+func NewAgentRepository(pool DB) *AgentRepository {
 	return &AgentRepository{pool: pool}
 }
 

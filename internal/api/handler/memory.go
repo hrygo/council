@@ -10,11 +10,11 @@ import (
 )
 
 type MemoryHandler struct {
-	Service *memory.Service
+	Manager memory.MemoryManager
 }
 
-func NewMemoryHandler(service *memory.Service) *MemoryHandler {
-	return &MemoryHandler{Service: service}
+func NewMemoryHandler(manager memory.MemoryManager) *MemoryHandler {
+	return &MemoryHandler{Manager: manager}
 }
 
 type IngestRequest struct {
@@ -34,7 +34,7 @@ func (h *MemoryHandler) Ingest(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := h.Service.Promote(ctx, req.GroupID, req.Content); err != nil {
+	if err := h.Manager.Promote(ctx, req.GroupID, req.Content); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -57,7 +57,7 @@ func (h *MemoryHandler) Query(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	results, err := h.Service.Retrieve(ctx, req.Query, req.GroupID)
+	results, err := h.Manager.Retrieve(ctx, req.Query, req.GroupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

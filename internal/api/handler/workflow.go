@@ -11,6 +11,8 @@ import (
 	"github.com/hrygo/council/internal/core/middleware"
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/core/workflow/nodes"
+	"github.com/hrygo/council/internal/infrastructure/cache"
+	"github.com/hrygo/council/internal/infrastructure/db"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
@@ -63,7 +65,8 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	if e, ok := h.LLM.(llm.Embedder); ok {
 		embedder = e
 	}
-	memService := memory.NewService(embedder) // Using default global pools
+	// Note: We use global getters here for simplicity, but ideally these would be in WorkflowHandler
+	memService := memory.NewService(embedder, db.GetPool(), cache.GetClient())
 	engine.Middlewares = []workflow.Middleware{
 		middleware.NewCircuitBreaker(10),           // Logic Circuit Breaker (Depth > 10)
 		middleware.NewFactCheckTrigger(),           // Anti-Hallucination

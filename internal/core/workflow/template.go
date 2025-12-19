@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"context"
 	"time"
 )
 
@@ -23,4 +24,11 @@ type Template struct {
 	Graph       GraphDefinition  `json:"graph"`
 	CreatedAt   time.Time        `json:"created_at"`
 	UpdatedAt   time.Time        `json:"updated_at"`
+}
+
+type TemplateRepository interface {
+	List(ctx context.Context) ([]Template, error)
+	Create(ctx context.Context, t *Template) error
+	Get(ctx context.Context, id string) (*Template, error)
+	Delete(ctx context.Context, id string) error
 }

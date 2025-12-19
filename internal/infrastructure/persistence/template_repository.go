@@ -8,14 +8,13 @@ import (
 
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type TemplateRepository struct {
-	pool *pgxpool.Pool
+	pool DB
 }
 
-func NewTemplateRepository(pool *pgxpool.Pool) *TemplateRepository {
+func NewTemplateRepository(pool DB) *TemplateRepository {
 	return &TemplateRepository{pool: pool}
 }
 

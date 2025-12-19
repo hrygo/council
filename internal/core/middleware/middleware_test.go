@@ -3,6 +3,9 @@ package middleware
 import (
 	"context"
 	"testing"
+
+	"github.com/hrygo/council/internal/core/workflow"
+	"github.com/hrygo/council/internal/infrastructure/mocks"
 )
 
 func TestCircuitBreaker(t *testing.T) {
@@ -32,5 +35,28 @@ func TestFactCheck(t *testing.T) {
 	meta := newOutput["metadata"].(map[string]interface{})
 	if !meta["verify_pending"].(bool) {
 		t.Error("Expected verify_pending flag")
+	}
+}
+
+func TestMemoryMiddleware(t *testing.T) {
+	mockManager := &mocks.MemoryMockManager{}
+	mw := NewMemoryMiddleware(mockManager)
+
+	session := &workflow.Session{
+		ID:     "s1",
+		Inputs: map[string]interface{}{"group_id": "g1"},
+	}
+	node := &workflow.Node{ID: "n1"}
+	output := map[string]interface{}{
+		"content": "Secret message",
+	}
+
+	_, err := mw.AfterNodeExecution(context.Background(), session, node, output)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(mockManager.CapturedQuarantine) != 1 || mockManager.CapturedQuarantine[0] != "Secret message" {
+		t.Errorf("Expected quarantine log, got %v", mockManager.CapturedQuarantine)
 	}
 }

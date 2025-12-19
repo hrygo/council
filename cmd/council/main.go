@@ -70,7 +70,7 @@ func main() {
 	if !ok {
 		log.Fatalf("Selected LLM provider does not support embeddings")
 	}
-	memoryService := memory.NewService(embedder)
+	memoryService := memory.NewService(embedder, pool, cache.GetClient())
 
 	// Handlers
 	groupHandler := handler.NewGroupHandler(groupRepo)

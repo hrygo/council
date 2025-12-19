@@ -6,23 +6,28 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hrygo/council/internal/infrastructure/cache"
-	"github.com/hrygo/council/internal/infrastructure/db"
 	"github.com/hrygo/council/internal/infrastructure/llm"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type Service struct {
 	Embedder llm.Embedder
+	pool     *pgxpool.Pool
+	cache    *redis.Client
 }
 
-func NewService(embedder llm.Embedder) *Service {
-	return &Service{Embedder: embedder}
+func NewService(embedder llm.Embedder, pool *pgxpool.Pool, cache *redis.Client) *Service {
+	return &Service{
+		Embedder: embedder,
+		pool:     pool,
+		cache:    cache,
+	}
 }
 
 // LogQuarantine writes to PostgreSQL quarantine_logs table (Tier 1)
 func (s *Service) LogQuarantine(ctx context.Context, sessionID string, nodeID string, content string, metadata map[string]interface{}) error {
-	pool := db.GetPool()
-	if pool == nil {
+	if s.pool == nil {
 		return fmt.Errorf("database pool not initialized")
 	}
 
@@ -45,7 +50,7 @@ func (s *Service) LogQuarantine(ctx context.Context, sessionID string, nodeID st
 	}
 	metadata["node_id"] = nodeID
 
-	_, err = pool.Exec(ctx, query, sessionID, content, metaJSON)
+	_, err = s.pool.Exec(ctx, query, sessionID, content, metaJSON)
 	if err != nil {
 		return fmt.Errorf("failed to insert quarantine log: %w", err)
 	}
@@ -54,8 +59,7 @@ func (s *Service) LogQuarantine(ctx context.Context, sessionID string, nodeID st
 
 // UpdateWorkingMemory writes to Redis with Ingress Filter (Tier 2)
 func (s *Service) UpdateWorkingMemory(ctx context.Context, groupID string, content string, metadata map[string]interface{}) error {
-	client := cache.GetClient()
-	if client == nil {
+	if s.cache == nil {
 		return fmt.Errorf("redis client not initialized")
 	}
 
@@ -79,23 +83,22 @@ func (s *Service) UpdateWorkingMemory(ctx context.Context, groupID string, conte
 	// 3. Write to Redis List
 	key := fmt.Sprintf("wm:%s", groupID)
 
-	if err := client.LPush(ctx, key, content).Err(); err != nil {
+	if err := s.cache.LPush(ctx, key, content).Err(); err != nil {
 		return fmt.Errorf("failed to push to working memory: %w", err)
 	}
 
 	// Set TTL (24h)
-	client.Expire(ctx, key, 24*time.Hour)
+	s.cache.Expire(ctx, key, 24*time.Hour)
 
 	// Cap list size: keep last 50 items
-	client.LTrim(ctx, key, 0, 49)
+	s.cache.LTrim(ctx, key, 0, 49)
 
 	return nil
 }
 
 // CleanupWorkingMemory removes expired entries (called by scheduler)
 func (s *Service) CleanupWorkingMemory(ctx context.Context) error {
-	client := cache.GetClient()
-	if client == nil {
+	if s.cache == nil {
 		return fmt.Errorf("redis client not initialized")
 	}
 
@@ -118,8 +121,7 @@ func (s *Service) Promote(ctx context.Context, groupID string, content string) e
 		return nil
 	}
 
-	pool := db.GetPool()
-	if pool == nil {
+	if s.pool == nil {
 		return fmt.Errorf("database pool not initialized")
 	}
 
@@ -145,7 +147,7 @@ func (s *Service) Promote(ctx context.Context, groupID string, content string) e
 		}
 		metaJSON, _ := json.Marshal(meta)
 
-		_, err = pool.Exec(ctx, query, groupID, chunk, vecStr, metaJSON)
+		_, err = s.pool.Exec(ctx, query, groupID, chunk, vecStr, metaJSON)
 		if err != nil {
 			return fmt.Errorf("failed to store memory chunk: %w", err)
 		}
@@ -158,10 +160,10 @@ func (s *Service) Retrieve(ctx context.Context, query string, groupID string) ([
 	var items []ContextItem
 
 	// 1. Hot Working Memory (Redis)
-	if client := cache.GetClient(); client != nil {
+	if s.cache != nil {
 		key := fmt.Sprintf("wm:%s", groupID)
 		// Get last 10 items
-		vals, err := client.LRange(ctx, key, 0, 10).Result()
+		vals, err := s.cache.LRange(ctx, key, 0, 10).Result()
 		if err == nil {
 			for _, v := range vals {
 				items = append(items, ContextItem{Content: v, Source: "hot", Score: 1.0})
@@ -170,7 +172,7 @@ func (s *Service) Retrieve(ctx context.Context, query string, groupID string) ([
 	}
 
 	// 2. Cold LTM (PGVector)
-	if pool := db.GetPool(); pool != nil && s.Embedder != nil {
+	if s.pool != nil && s.Embedder != nil {
 		// Generate Embedding
 		// Default model: text-embedding-ada-002 or compatible
 		embedding, err := s.Embedder.Embed(ctx, "text-embedding-ada-002", query)
@@ -188,7 +190,7 @@ func (s *Service) Retrieve(ctx context.Context, query string, groupID string) ([
 			// Cosine distance is 1 - Cosine Similarity.
 			q := `SELECT content, 1 - (embedding <=> $1) as score FROM memories WHERE group_id = $2::uuid ORDER BY embedding <=> $1 LIMIT 5`
 
-			rows, err := pool.Query(ctx, q, vecStr, groupID)
+			rows, err := s.pool.Query(ctx, q, vecStr, groupID)
 			if err == nil {
 				defer rows.Close()
 				for rows.Next() {

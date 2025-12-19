@@ -8,14 +8,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/workflow"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type WorkflowRepository struct {
-	pool *pgxpool.Pool
+	pool DB
 }
 
-func NewWorkflowRepository(pool *pgxpool.Pool) *WorkflowRepository {
+func NewWorkflowRepository(pool DB) *WorkflowRepository {
 	return &WorkflowRepository{pool: pool}
 }
 

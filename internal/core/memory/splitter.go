@@ -46,43 +46,54 @@ func (s *RecursiveCharacterSplitter) split(text string, separators []string) []s
 
 	// Now merge splits that occur to fit chunk size
 	goodSplits := []string{}
-	currentDoc := ""
+	currentDocs := []string{}
+	currentLen := 0
 
 	for _, split := range splits {
-		sepLen := len(separator)
-		if currentDoc != "" {
-			// Check if we can add
-			if len(currentDoc)+sepLen+len(split) > s.ChunkSize {
-				// Cannot add, flush currentDoc
-				if currentDoc != "" {
-					goodSplits = append(goodSplits, currentDoc)
+		sepLen := 0
+		if len(currentDocs) > 0 {
+			sepLen = len(separator)
+		}
+
+		if currentLen+sepLen+len(split) > s.ChunkSize && currentLen > 0 {
+			// Flush current docs
+			doc := strings.Join(currentDocs, separator)
+			goodSplits = append(goodSplits, doc)
+
+			// Handle overlap: keep last N characters or last M segments?
+			// LangChain style: keep segments until overlapping length is reached.
+			for currentLen > s.ChunkOverlap && len(currentDocs) > 0 {
+				removed := currentDocs[0]
+				currentDocs = currentDocs[1:]
+				currentLen -= len(removed)
+				if len(currentDocs) > 0 {
+					currentLen -= len(separator)
 				}
-				// If this single split is too big, recurse on it
-				if len(split) > s.ChunkSize && len(newSeparators) > 0 {
-					subSplits := s.split(split, newSeparators)
-					goodSplits = append(goodSplits, subSplits...)
-					currentDoc = ""
-				} else {
-					// Otherwise start new doc
-					currentDoc = split
-				}
-			} else {
-				// Can add
-				currentDoc += separator + split
 			}
-		} else {
-			// First entry
-			if len(split) > s.ChunkSize && len(newSeparators) > 0 {
+		}
+
+		if len(split) > s.ChunkSize {
+			if len(newSeparators) > 0 {
 				subSplits := s.split(split, newSeparators)
 				goodSplits = append(goodSplits, subSplits...)
 			} else {
-				currentDoc = split
+				goodSplits = append(goodSplits, split)
+			}
+			// Reset current since we just flushed a giant chunk
+			currentDocs = []string{}
+			currentLen = 0
+		} else {
+			currentDocs = append(currentDocs, split)
+			if currentLen == 0 {
+				currentLen = len(split)
+			} else {
+				currentLen += len(separator) + len(split)
 			}
 		}
 	}
 
-	if currentDoc != "" {
-		goodSplits = append(goodSplits, currentDoc)
+	if len(currentDocs) > 0 {
+		goodSplits = append(goodSplits, strings.Join(currentDocs, separator))
 	}
 
 	return goodSplits

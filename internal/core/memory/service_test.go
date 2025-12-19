@@ -12,7 +12,7 @@ func (m *MockEmbedder) Embed(ctx context.Context, model string, text string) ([]
 }
 
 func TestMemoryRetrieval(t *testing.T) {
-	service := NewService(&MockEmbedder{})
+	service := NewService(&MockEmbedder{}, nil, nil)
 
 	// We can't easily test real Redis/PG connections in unit test without mocking DB/Cache drivers
 	// But we can test the logic flow if we could inject mocks for cache/db.
@@ -23,8 +23,20 @@ func TestMemoryRetrieval(t *testing.T) {
 	if service.Embedder == nil {
 		t.Error("Embedder not injected")
 	}
+}
 
-	// Test logic of Retrieve (partially)
-	// Actually Retrieve calls global db.GetPool() immediately.
-	// We skip deep testing here without a complex mock setup or integration environment.
+func TestUpdateWorkingMemory(t *testing.T) {
+	// Since s.cache is a concrete *redis.Client, we need a way to mock it.
+	// We can't easily mock *redis.Client without a real server or miniredis.
+	// But we can at least test the guard clauses.
+	service := NewService(nil, nil, nil)
+
+	err := service.UpdateWorkingMemory(context.Background(), "g1", "content", map[string]interface{}{})
+	if err == nil || err.Error() != "redis client not initialized" {
+		t.Errorf("Expected error for nil cache, got %v", err)
+	}
+
+	err = service.UpdateWorkingMemory(context.Background(), "g1", "short", map[string]interface{}{"confidence": 0.5})
+	// This should return nil (gatekeeper reject)
+	// But wait, it checks cache init FIRST.
 }

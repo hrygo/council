@@ -7,16 +7,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/group"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // GroupRepository implements group.Repository using Postgres.
 type GroupRepository struct {
-	pool *pgxpool.Pool
+	pool DB
 }
 
 // NewGroupRepository creates a new GroupRepository.
-func NewGroupRepository(pool *pgxpool.Pool) *GroupRepository {
+func NewGroupRepository(pool DB) *GroupRepository {
 	return &GroupRepository{pool: pool}
 }
 
