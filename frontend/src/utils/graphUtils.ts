@@ -103,9 +103,23 @@ export const transformToReactFlow = (graph: BackendGraph): { nodes: Node[]; edge
 };
 
 const mapNodeType = (backendType: string): string => {
+    // Map backend types directly to registered custom node types
+    // 'agent', 'vote', 'loop', 'fact_check', 'human_review' match 1:1
     switch (backendType) {
-        case 'start': return 'input';
-        case 'end': return 'output';
-        default: return 'default';
+        // Core/Flow types
+        case 'start': return 'start';
+        case 'end': return 'end';
+
+        // Task types (pass through or explicit map if keys differ)
+        case 'agent': return 'agent';
+        case 'vote': return 'vote';
+        case 'loop': return 'loop';
+        case 'fact_check': return 'fact_check';
+        case 'human_review': return 'human_review';
+
+        // Fallback for visual safety, though 'default' brings the white-node issue.
+        // Better to fallback to 'agent' if unknown to get the BaseNode style?
+        // Or keep 'default' but we must ensure we don't use it for known types.
+        default: return 'agent'; // Fallback to agent (generic node) to ensure styles
     }
 };
