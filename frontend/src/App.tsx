@@ -9,6 +9,7 @@ import { MeetingRoom } from './features/meeting/MeetingRoom';
 import { WorkflowEditor } from './features/editor/WorkflowEditor';
 import { GroupsPage } from './features/groups/pages/GroupsPage';
 import { AgentsPage } from './features/agents/pages/AgentsPage';
+import { HomePage } from './features/home/HomePage';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ToastProvider } from './components/ui/Toast';
 
@@ -47,7 +48,7 @@ function App() {
             <Boxes size={24} />
           </div>
 
-          <NavButton path="/" icon={Play} label={t('chat.title')} onClick={navigate} />
+          <NavButton path="/chat" icon={Play} label={t('chat.title')} onClick={navigate} />
           <NavButton path="/editor" icon={Boxes} label={t('workflow.builder.title', { defaultValue: 'Builder' })} onClick={navigate} />
           <NavButton path="/groups" icon={Users} label={t('nav.groups')} onClick={navigate} />
           <NavButton path="/agents" icon={Network} label={t('nav.agents')} onClick={navigate} />
@@ -62,8 +63,10 @@ function App() {
         </div>
 
         <div className="ml-16 h-full w-[calc(100vw-4rem)]">
+
           <Routes>
-            <Route path="/" element={<MeetingRoom />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/chat" element={<MeetingRoom />} />
             <Route path="/editor" element={<WorkflowEditor />} />
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/agents" element={<AgentsPage />} />
