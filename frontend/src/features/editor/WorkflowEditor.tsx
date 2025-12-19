@@ -141,14 +141,25 @@ export const WorkflowEditor: FC = () => {
 
     const handleApplyTemplate = (template: Template) => {
         // Load template graph into editor
-        setGraph(template.graph);
+        // IMPORTANT: Strip ID so it saves as a NEW workflow, not overwriting the template source ID
+        const newGraph = {
+            ...template.graph,
+            id: '', // Reset ID for new creation
+            name: `${template.graph.name} (Copy)`
+        };
+        setGraph(newGraph);
         // Also need to reset rfInstance nodes/edges via transform?
         // Actually WorkflowCanvas handles graph prop change via useEffect.
         setShowTemplates(false);
     };
 
     const handleWizardComplete = (generatedGraph: BackendGraph) => {
-        setGraph(generatedGraph);
+        // Ensure generated graph is treated as new
+        const newGraph = {
+            ...generatedGraph,
+            id: '',
+        };
+        setGraph(newGraph);
         setShowWizard(false);
     };
 
