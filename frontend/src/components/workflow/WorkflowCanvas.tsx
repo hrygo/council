@@ -13,6 +13,7 @@ import {
     type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { useConfigStore } from '../../stores/useConfigStore';
 import { useWorkflow } from '../../hooks/useWorkflow';
 import { transformToReactFlow, type BackendGraph } from '../../utils/graphUtils';
 import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
@@ -60,6 +61,8 @@ export default function WorkflowCanvas({
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const { workflow: fetchedWorkflow, fetchWorkflow } = useWorkflow();
+    const theme = useConfigStore((state) => state.theme);
+
     // Determine effective workflow to display: prop > fetched
     const displayWorkflow = graph || fetchedWorkflow;
 
@@ -79,17 +82,6 @@ export default function WorkflowCanvas({
         }
     }, [displayWorkflow, setNodes, setEdges]);
 
-    // Listen for WebSocket Events via hook (should be called in parent or here? better in parent or high level layout)
-    // But since this is a presentation component, maybe the hook should be used in the page.
-    // However, for highlighting, we need to merge passed `nodes` with `activeNodeIds` or usage `runNodes` if in readOnly mode.
-
-    // Strategy:
-    // If readOnly (Run Mode), we use `runNodes` from store which are synchronized with execution state.
-    // If not readOnly (Edit Mode), we use local `nodes`.
-
-    // Actually, `runNodes` in store are populated via `loadWorkflow`.
-    // Let's assume onInit or prop update triggers `loadWorkflow`.
-
     useEffect(() => {
         if (readOnly && displayWorkflow) {
             const { nodes: initNodes, edges: initEdges } = transformToReactFlow(displayWorkflow);
@@ -97,19 +89,10 @@ export default function WorkflowCanvas({
         }
     }, [readOnly, displayWorkflow]);
 
-    // Use store nodes if readOnly, otherwise local state
-    // But wait, React Flow needs `nodes` passed to it.
-    // If readOnly, we should sync `nodes` from store or just derive styles?
-    // Using store nodes directly might be cleaner for ReadOnly mode.
-
     const storeNodes = useWorkflowRunStore(state => state.nodes);
     const storeEdges = useWorkflowRunStore(state => state.edges);
     const activeIds = useWorkflowRunStore(state => state.activeNodeIds);
 
-    // Merge styles for active nodes if using local nodes (hybrid approach) OR just use store nodes.
-    // Let's use storeNodes for readOnly mode.
-
-    // We need to type cast or ensure runtime nodes are compatible with ReactFlow Node type
     const displayedNodes = readOnly ? storeNodes.map((node) => ({
         ...node,
         className: activeIds.has(node.id) ? 'node-active-pulse' : '',
@@ -117,9 +100,6 @@ export default function WorkflowCanvas({
     })) : nodes;
 
     const displayedEdges = readOnly ? storeEdges : edges;
-
-    // Remove old WebSocket effect since we use useWorkflowEvents hook globally or at page level
-    // But wait, the previous code had local effect. We are replacing it.
 
     const onConnect = useCallback(
         (params: Connection) => {
@@ -129,6 +109,11 @@ export default function WorkflowCanvas({
         },
         [setEdges, readOnly],
     );
+
+    // Determine grid color based on theme
+    const isSystemDark = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
+    const isDark = theme === 'dark' || (theme === 'system' && isSystemDark);
+    const gridColor = isDark ? '#374151' : '#ccc'; // gray-700 : gray-300
 
     return (
         <div className={`h-full w-full bg-gray-50 dark:bg-gray-900 flex flex-col ${fullscreen ? 'fixed inset-0 z-50' : ''}`}>
@@ -151,7 +136,7 @@ export default function WorkflowCanvas({
                 onPaneClick={onPaneClick}
                 fitView
             >
-                <Background color="#ccc" gap={20} />
+                <Background color={gridColor} gap={20} />
                 <Controls showInteractive={!readOnly} />
             </ReactFlow>
         </div>

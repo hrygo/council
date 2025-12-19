@@ -65,3 +65,33 @@
 .react-flow__node.node-failed {
   border: 2px solid #EF4444;
 }
+
+/* React Flow Dark Mode Overrides */
+.dark .react-flow__controls {
+  background-color: #1f2937; /* gray-800 */
+  border: 1px solid #374151; /* gray-700 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+.dark .react-flow__controls-button {
+  background-color: #1f2937;
+  border-bottom: 1px solid #374151;
+  color: #9ca3af;
+}
+
+.dark .react-flow__controls-button:hover {
+  background-color: #374151; /* gray-700 */
+}
+
+.dark .react-flow__controls-button svg {
+  fill: #9ca3af; /* gray-400 */
+}
+
+.dark .react-flow__attribution {
+  background: rgba(31, 41, 55, 0.5); /* gray-800 transparent */
+  color: #6b7280; /* gray-500 */
+}
+
+.dark .react-flow__attribution a {
+  color: #6b7280;
+}
