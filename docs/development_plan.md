@@ -289,11 +289,11 @@
 | 任务                         | Spec ID  | 优先级 | 状态     |
 | :--------------------------- | :------- | :----- | :------- |
 | **i18n 国际化完整实现**      | SPEC-501 | **P0** | [ ] Todo |
-| - 支持 EN/ZH/JP 多语言切换   |          |        |          |
+| - 支持 EN/ZH 多语言切换      |          |        |          |
 | - 提取所有硬编码字符串       |          |        |          |
 | - 翻译管理流程               |          |        |          |
 | **端到端测试 (E2E)**         | SPEC-502 | P1     | [ ] Todo |
-| - 集成 Cypress 或 Playwright |          |        |          |
+| - 集成 Playwright            |          |        |          |
 | - 覆盖核心工作流             |          |        |          |
 | **性能优化**                 | SPEC-503 | P2     | [ ] Todo |
 | - Route-based code splitting |          |        |          |
@@ -302,3 +302,13 @@
 | - 细粒度 RBAC 权限控制       |          |        |          |
 | - API Rate Limiting          |          |        |          |
 
+### 📚 详细规格文档
+
+> **[Sprint 5 Specs 目录](./specs/sprint5/README.md)**
+
+| Spec ID  | 文档                                                             | 类型     | 优先级 |
+| :------- | :--------------------------------------------------------------- | :------- | :----- |
+| SPEC-501 | [i18n 国际化](./specs/sprint5/SPEC-501-i18n.md)                  | Feature  | **P0** |
+| SPEC-502 | [E2E 测试](./specs/sprint5/SPEC-502-e2e-testing.md)              | QA       | P1     |
+| SPEC-503 | [性能优化](./specs/sprint5/SPEC-503-performance-optimization.md) | Refactor | P2     |
+| SPEC-504 | [安全强化](./specs/sprint5/SPEC-504-security-hardening.md)       | Security | P1     |
