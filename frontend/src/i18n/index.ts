@@ -1,26 +1,31 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 
-// In a real app, these would be imported from JSON files
+import enTranslation from './locales/en/translation.json';
+import zhCNTranslation from './locales/zh-CN/translation.json';
+
 const resources = {
-    'zh-CN': {
-        translation: {
-            "welcome": "欢迎来到理事会",
-        }
+    en: {
+        translation: enTranslation,
     },
-    'en-US': {
-        translation: {
-            "welcome": "Welcome to The Council",
-        }
-    }
+    'zh-CN': {
+        translation: zhCNTranslation,
+    },
 };
 
 i18n
+    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
         resources,
-        lng: 'zh-CN',
-        fallbackLng: 'en-US',
+        fallbackLng: 'en',
+        supportedLngs: ['en', 'zh-CN'],
+        detection: {
+            order: ['localStorage', 'navigator', 'htmlTag'],
+            caches: ['localStorage'],
+            lookupLocalStorage: 'council-language',
+        },
         interpolation: {
             escapeValue: false,
         },

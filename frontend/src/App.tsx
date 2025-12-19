@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Play, Boxes, Users, Network, Video, type LucideIcon } from 'lucide-react';
 import './i18n';
 import './index.css';
@@ -8,6 +9,7 @@ import { MeetingRoom } from './features/meeting/MeetingRoom';
 import { WorkflowEditor } from './features/editor/WorkflowEditor';
 import { GroupsPage } from './features/groups/pages/GroupsPage';
 import { AgentsPage } from './features/agents/pages/AgentsPage';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 
 // Simple Nav Bar for demo purposes
 const NavButton = ({ path, icon: Icon, label, onClick }: { path: string, icon: LucideIcon, label: string, onClick: (path: string) => void }) => (
@@ -22,6 +24,7 @@ const NavButton = ({ path, icon: Icon, label, onClick }: { path: string, icon: L
 );
 
 function App() {
+  const { t } = useTranslation();
   const theme = useConfigStore((state) => state.theme);
   const navigate = useNavigate();
 
@@ -39,11 +42,19 @@ function App() {
           <Boxes size={24} />
         </div>
 
-        <NavButton path="/" icon={Play} label="Session" onClick={navigate} />
+        <NavButton path="/" icon={Play} label={t('chat.title')} onClick={navigate} />
         <NavButton path="/meeting" icon={Video} label="Meeting" onClick={navigate} />
-        <NavButton path="/editor" icon={Boxes} label="Builder" onClick={navigate} />
-        <NavButton path="/groups" icon={Users} label="Groups" onClick={navigate} />
-        <NavButton path="/agents" icon={Network} label="Agents" onClick={navigate} />
+        <NavButton path="/editor" icon={Boxes} label={t('workflow.builder.title', { defaultValue: 'Builder' })} onClick={navigate} />
+        <NavButton path="/groups" icon={Users} label={t('nav.groups')} onClick={navigate} />
+        <NavButton path="/agents" icon={Network} label={t('nav.agents')} onClick={navigate} />
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Bottom section */}
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <LanguageSwitcher />
+        </div>
       </div>
 
       <Routes>

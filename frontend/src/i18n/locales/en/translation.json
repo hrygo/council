@@ -1,0 +1,158 @@
+{
+    "common": {
+        "actions": {
+            "save": "Save",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "edit": "Edit",
+            "create": "Create",
+            "confirm": "Confirm",
+            "close": "Close",
+            "back": "Back",
+            "next": "Next",
+            "submit": "Submit",
+            "refresh": "Refresh",
+            "search": "Search",
+            "filter": "Filter",
+            "clear": "Clear",
+            "copy": "Copy",
+            "download": "Download",
+            "upload": "Upload"
+        },
+        "status": {
+            "loading": "Loading...",
+            "error": "Error",
+            "success": "Success",
+            "pending": "Pending",
+            "running": "Running",
+            "completed": "Completed",
+            "failed": "Failed",
+            "paused": "Paused"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure you want to delete this item?",
+            "saveSuccess": "Saved successfully",
+            "deleteSuccess": "Deleted successfully",
+            "operationFailed": "Operation failed, please try again"
+        }
+    },
+    "nav": {
+        "home": "Home",
+        "groups": "Groups",
+        "agents": "Agents",
+        "workflows": "Workflows",
+        "templates": "Templates",
+        "settings": "Settings"
+    },
+    "workflow": {
+        "title": "Workflow",
+        "builder": {
+            "title": "Workflow Builder",
+            "save": "Save Workflow",
+            "run": "Run",
+            "estimate": "Estimate Cost",
+            "wizard": "AI Wizard",
+            "addNode": "Add Node",
+            "deleteNode": "Delete Node",
+            "connectNodes": "Connect Nodes"
+        },
+        "nodes": {
+            "start": "Start",
+            "end": "End",
+            "agent": "Agent",
+            "vote": "Vote",
+            "loop": "Loop",
+            "factCheck": "Fact Check",
+            "humanReview": "Human Review",
+            "parallel": "Parallel",
+            "sequence": "Sequence"
+        },
+        "status": {
+            "idle": "Idle",
+            "running": "Running",
+            "paused": "Paused",
+            "completed": "Completed",
+            "failed": "Failed"
+        },
+        "estimate": {
+            "title": "Cost Estimation",
+            "tokens": "Estimated Tokens",
+            "cost": "Estimated Cost",
+            "agents": "Agents",
+            "nodes": "Nodes"
+        }
+    },
+    "chat": {
+        "title": "Chat",
+        "inputPlaceholder": "Type a message...",
+        "send": "Send",
+        "thinking": "Thinking...",
+        "generating": "Generating...",
+        "regenerate": "Regenerate",
+        "copyMessage": "Copy Message",
+        "noMessages": "No messages yet"
+    },
+    "agent": {
+        "title": "Agent",
+        "list": {
+            "title": "Agents",
+            "empty": "No agents yet",
+            "create": "Create Agent"
+        },
+        "form": {
+            "name": "Name",
+            "namePlaceholder": "Enter agent name",
+            "description": "Description",
+            "descriptionPlaceholder": "Describe the agent's role",
+            "persona": "Persona Prompt",
+            "personaPlaceholder": "Define the agent's personality and behavior",
+            "model": "Model",
+            "provider": "Provider",
+            "capabilities": "Capabilities",
+            "webSearch": "Web Search",
+            "codeExecution": "Code Execution"
+        }
+    },
+    "group": {
+        "title": "Group",
+        "list": {
+            "title": "Groups",
+            "empty": "No groups yet",
+            "create": "Create Group"
+        },
+        "form": {
+            "name": "Name",
+            "namePlaceholder": "Enter group name",
+            "icon": "Icon",
+            "systemPrompt": "System Prompt",
+            "systemPromptPlaceholder": "Define the group's context"
+        }
+    },
+    "humanReview": {
+        "title": "Human Review Required",
+        "reason": "Review Reason",
+        "content": "Content to Review",
+        "approve": "Approve",
+        "reject": "Reject",
+        "modify": "Modify",
+        "timeout": "Time Remaining",
+        "expired": "Review Expired"
+    },
+    "settings": {
+        "title": "Settings",
+        "language": "Language",
+        "theme": "Theme",
+        "themes": {
+            "light": "Light",
+            "dark": "Dark",
+            "system": "System"
+        }
+    },
+    "errors": {
+        "networkError": "Network error, please check your connection",
+        "serverError": "Server error, please try again later",
+        "notFound": "Resource not found",
+        "unauthorized": "Please login first",
+        "forbidden": "You don't have permission to perform this action"
+    }
+}

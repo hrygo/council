@@ -1,0 +1,158 @@
+{
+    "common": {
+        "actions": {
+            "save": "保存",
+            "cancel": "取消",
+            "delete": "删除",
+            "edit": "编辑",
+            "create": "创建",
+            "confirm": "确认",
+            "close": "关闭",
+            "back": "返回",
+            "next": "下一步",
+            "submit": "提交",
+            "refresh": "刷新",
+            "search": "搜索",
+            "filter": "筛选",
+            "clear": "清除",
+            "copy": "复制",
+            "download": "下载",
+            "upload": "上传"
+        },
+        "status": {
+            "loading": "加载中...",
+            "error": "错误",
+            "success": "成功",
+            "pending": "等待中",
+            "running": "运行中",
+            "completed": "已完成",
+            "failed": "失败",
+            "paused": "已暂停"
+        },
+        "messages": {
+            "confirmDelete": "确定要删除此项吗？",
+            "saveSuccess": "保存成功",
+            "deleteSuccess": "删除成功",
+            "operationFailed": "操作失败，请重试"
+        }
+    },
+    "nav": {
+        "home": "首页",
+        "groups": "群组",
+        "agents": "智能体",
+        "workflows": "工作流",
+        "templates": "模板",
+        "settings": "设置"
+    },
+    "workflow": {
+        "title": "工作流",
+        "builder": {
+            "title": "工作流编辑器",
+            "save": "保存工作流",
+            "run": "运行",
+            "estimate": "估算成本",
+            "wizard": "AI 向导",
+            "addNode": "添加节点",
+            "deleteNode": "删除节点",
+            "connectNodes": "连接节点"
+        },
+        "nodes": {
+            "start": "开始",
+            "end": "结束",
+            "agent": "智能体",
+            "vote": "投票",
+            "loop": "循环",
+            "factCheck": "事实核查",
+            "humanReview": "人工审核",
+            "parallel": "并行",
+            "sequence": "顺序"
+        },
+        "status": {
+            "idle": "空闲",
+            "running": "运行中",
+            "paused": "已暂停",
+            "completed": "已完成",
+            "failed": "失败"
+        },
+        "estimate": {
+            "title": "成本估算",
+            "tokens": "预估 Token 数",
+            "cost": "预估费用",
+            "agents": "智能体数",
+            "nodes": "节点数"
+        }
+    },
+    "chat": {
+        "title": "对话",
+        "inputPlaceholder": "输入消息...",
+        "send": "发送",
+        "thinking": "思考中...",
+        "generating": "生成中...",
+        "regenerate": "重新生成",
+        "copyMessage": "复制消息",
+        "noMessages": "暂无消息"
+    },
+    "agent": {
+        "title": "智能体",
+        "list": {
+            "title": "智能体列表",
+            "empty": "暂无智能体",
+            "create": "创建智能体"
+        },
+        "form": {
+            "name": "名称",
+            "namePlaceholder": "请输入智能体名称",
+            "description": "描述",
+            "descriptionPlaceholder": "描述智能体的角色",
+            "persona": "人设提示词",
+            "personaPlaceholder": "定义智能体的性格和行为",
+            "model": "模型",
+            "provider": "服务商",
+            "capabilities": "能力",
+            "webSearch": "联网搜索",
+            "codeExecution": "代码执行"
+        }
+    },
+    "group": {
+        "title": "群组",
+        "list": {
+            "title": "群组列表",
+            "empty": "暂无群组",
+            "create": "创建群组"
+        },
+        "form": {
+            "name": "名称",
+            "namePlaceholder": "请输入群组名称",
+            "icon": "图标",
+            "systemPrompt": "系统提示词",
+            "systemPromptPlaceholder": "定义群组的上下文"
+        }
+    },
+    "humanReview": {
+        "title": "需要人工审核",
+        "reason": "审核原因",
+        "content": "待审核内容",
+        "approve": "通过",
+        "reject": "拒绝",
+        "modify": "修改",
+        "timeout": "剩余时间",
+        "expired": "审核已过期"
+    },
+    "settings": {
+        "title": "设置",
+        "language": "语言",
+        "theme": "主题",
+        "themes": {
+            "light": "浅色",
+            "dark": "深色",
+            "system": "跟随系统"
+        }
+    },
+    "errors": {
+        "networkError": "网络错误，请检查您的连接",
+        "serverError": "服务器错误，请稍后重试",
+        "notFound": "资源未找到",
+        "unauthorized": "请先登录",
+        "forbidden": "您没有权限执行此操作"
+    }
+}
