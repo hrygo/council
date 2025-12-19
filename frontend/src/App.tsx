@@ -16,7 +16,7 @@ import { ToastProvider } from './components/ui/Toast';
 const NavButton = ({ path, icon: Icon, label, onClick }: { path: string, icon: LucideIcon, label: string, onClick: (path: string) => void }) => (
   <button
     onClick={() => onClick(path)}
-    className="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all gap-1 group"
+    className="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all gap-1 group select-none"
     title={label}
   >
     <Icon size={20} className="group-hover:scale-110 transition-transform" />
