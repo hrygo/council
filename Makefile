@@ -227,22 +227,30 @@ coverage-frontend: ## 🎨 Run frontend coverage (Full Table with Color)
 # 🧪 E2E TESTING (Playwright)
 # ============================================================================
 
-e2e: ## 🎭 Run E2E tests (with progress)
+e2e: e2e-check ## 🎭 Run E2E tests (with progress)
 	@echo "$(CYAN)🎭 Running E2E tests...$(RESET)"
-	@echo "$(YELLOW)📋 Test suites: navigation, workflow-builder, groups, agents, meeting-room$(RESET)"
+	@echo "$(YELLOW)📋 Suites: navigation | workflow-builder | groups | agents | meeting-room$(RESET)"
 	@echo ""
-	@cd e2e && npx playwright test --reporter=list
+	@cd e2e && npx playwright test
 	@echo ""
-	@echo "$(GREEN)✅ E2E tests completed! Run 'make e2e-report' to view detailed report.$(RESET)"
+	@echo "$(GREEN)✅ E2E tests completed! Run 'make e2e-report' for detailed report.$(RESET)"
 
-e2e-ui: ## 🎭 Run E2E tests with Playwright UI
-	@cd e2e && npm run test:ui
+e2e-check: ## ✅ Check if frontend is running
+	@lsof -ti:5173 >/dev/null 2>&1 || { \
+		echo "$(RED)❌ Frontend not running on port 5173$(RESET)"; \
+		echo "$(YELLOW)💡 Run 'make start-frontend' first, then retry$(RESET)"; \
+		exit 1; \
+	}
+	@echo "$(GREEN)✓ Frontend detected on port 5173$(RESET)"
 
-e2e-headed: ## 🎭 Run E2E tests in headed mode (visible browser)
+e2e-ui: e2e-check ## 🎭 Run E2E tests with Playwright UI
+	@cd e2e && npx playwright test --ui
+
+e2e-headed: e2e-check ## 🎭 Run E2E tests in headed mode (visible browser)
 	@cd e2e && npx playwright test --headed
 
 e2e-report: ## 📊 Open E2E test report
-	@cd e2e && npm run report
+	@cd e2e && npx playwright show-report
 
 lint: ## 🔍 Run linters
 	@echo "$(CYAN)🔍 Linting...$(RESET)"

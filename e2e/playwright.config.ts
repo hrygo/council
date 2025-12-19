@@ -1,37 +1,53 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/**
+ * Playwright E2E Test Configuration
+ * 
+ * 优化重点:
+ * 1. 移除 webServer 自动启动 - 要求先手动运行 `make start-frontend`
+ * 2. 缩短超时时间提高反馈速度
+ * 3. 使用 line reporter 实时显示进度
+ */
 export default defineConfig({
     testDir: './tests',
-    timeout: 30 * 1000,
+
+    // 超时配置 - 优化执行效率
+    timeout: 15 * 1000,        // 单个测试 15s 超时
     expect: {
-        timeout: 5000,
+        timeout: 3000,          // 断言 3s 超时
     },
-    fullyParallel: false, // Run tests sequentially for better visibility
+
+    // 执行配置
+    fullyParallel: true,        // 并行执行提高效率
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0,
-    workers: 1, // Single worker for clear progress output
+    retries: 0,                 // 本地不重试，快速失败
+    workers: 4,                 // 4 个 worker 并行
+
+    // 报告配置 - 实时进度
     reporter: [
-        ['list', { printSteps: true }], // Show each step as it runs
+        ['line'],               // 简洁的单行进度输出
         ['html', { open: 'never' }],
     ],
+
+    // 浏览器配置
     use: {
         baseURL: 'http://localhost:5173',
-        trace: 'on-first-retry',
+        trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
-        video: 'on-first-retry',
+        // 快速启动
+        launchOptions: {
+            args: ['--no-sandbox', '--disable-gpu'],
+        },
     },
+
+    // 仅 Chromium
     projects: [
         {
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
         },
     ],
-    webServer: {
-        command: 'cd ../frontend && npm run dev',
-        url: 'http://localhost:5173',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
-        stdout: 'ignore',
-        stderr: 'pipe',
-    },
+
+    // 不自动启动 webServer - 要求先运行 `make start-frontend`
+    // webServer: { ... } 已移除
 });
