@@ -3,40 +3,120 @@ package memory
 import (
 	"context"
 	"testing"
+
+	"github.com/hrygo/council/internal/infrastructure/cache"
+	"github.com/hrygo/council/internal/infrastructure/llm"
+	"github.com/pashagolub/pgxmock/v3"
+	"github.com/redis/go-redis/v9"
 )
 
-type MockEmbedder struct{}
+func TestService_LogQuarantine(t *testing.T) {
+	mockDB, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mockDB.Close()
 
-func (m *MockEmbedder) Embed(ctx context.Context, model string, text string) ([]float32, error) {
-	return []float32{0.1, 0.2, 0.3}, nil
-}
+	svc := NewService(&llm.MockProvider{}, mockDB, nil)
 
-func TestMemoryRetrieval(t *testing.T) {
-	service := NewService(&MockEmbedder{}, nil, nil)
+	sessionID := "session-1"
+	nodeID := "node-1"
+	content := "harmful content"
+	metadata := map[string]interface{}{"reason": "safety"}
 
-	// We can't easily test real Redis/PG connections in unit test without mocking DB/Cache drivers
-	// But we can test the logic flow if we could inject mocks for cache/db.
-	// Since current implementation uses global getters (cache.GetClient), unit testing is hard without running docker.
-	// We will assume integration tests cover this or manual verification.
-	// For now, testing Service instantiation.
+	mockDB.ExpectExec("INSERT INTO quarantine_logs").
+		WithArgs(sessionID, content, pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	if service.Embedder == nil {
-		t.Error("Embedder not injected")
+	err = svc.LogQuarantine(context.Background(), sessionID, nodeID, content, metadata)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	if err := mockDB.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
 	}
 }
 
-func TestUpdateWorkingMemory(t *testing.T) {
-	// Since s.cache is a concrete *redis.Client, we need a way to mock it.
-	// We can't easily mock *redis.Client without a real server or miniredis.
-	// But we can at least test the guard clauses.
-	service := NewService(nil, nil, nil)
+func TestService_UpdateWorkingMemory(t *testing.T) {
+	mockCache := &cache.MockCache{}
+	svc := NewService(nil, nil, mockCache)
 
-	err := service.UpdateWorkingMemory(context.Background(), "g1", "content", map[string]interface{}{})
-	if err == nil || err.Error() != "redis client not initialized" {
-		t.Errorf("Expected error for nil cache, got %v", err)
+	groupID := "group-1"
+	content := "This is a long enough content to pass the ingress filter of 50 chars minimum."
+	metadata := map[string]interface{}{"confidence": 0.9}
+
+	calledLPush := false
+	mockCache.LPushFunc = func(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
+		calledLPush = true
+		if key != "wm:group-1" {
+			t.Errorf("expected key wm:group-1, got %s", key)
+		}
+		return redis.NewIntCmd(ctx)
 	}
 
-	err = service.UpdateWorkingMemory(context.Background(), "g1", "short", map[string]interface{}{"confidence": 0.5})
-	// This should return nil (gatekeeper reject)
-	// But wait, it checks cache init FIRST.
+	err := svc.UpdateWorkingMemory(context.Background(), groupID, content, metadata)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	if !calledLPush {
+		t.Error("expected LPush to be called")
+	}
+}
+
+func TestService_Promote(t *testing.T) {
+	mockDB, _ := pgxmock.NewPool()
+	mockEmbedder := &llm.MockProvider{
+		EmbedResponse: []float32{0.1, 0.2, 0.3},
+	}
+	svc := NewService(mockEmbedder, mockDB, nil)
+
+	content := "Short content for single chunk"
+	groupID := "group-1"
+
+	mockDB.ExpectExec("INSERT INTO memories").
+		WithArgs(groupID, content, pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	err := svc.Promote(context.Background(), groupID, content)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
+func TestService_Retrieve(t *testing.T) {
+	mockDB, _ := pgxmock.NewPool()
+	mockCache := &cache.MockCache{}
+	mockEmbedder := &llm.MockProvider{
+		EmbedResponse: []float32{0.1, 0.2, 0.3},
+	}
+	svc := NewService(mockEmbedder, mockDB, mockCache)
+
+	groupID := "group-1"
+	query := "test query"
+
+	// Mock Cache LRange
+	mockCache.LRangeFunc = func(ctx context.Context, key string, start, stop int64) *redis.StringSliceCmd {
+		cmd := redis.NewStringSliceCmd(ctx)
+		cmd.SetVal([]string{"hot data"})
+		return cmd
+	}
+
+	// Mock DB Query for PGVector
+	mockDB.ExpectQuery("SELECT content, 1 - \\(embedding <=> \\$1\\) as score FROM memories").
+		WithArgs(pgxmock.AnyArg(), groupID).
+		WillReturnRows(pgxmock.NewRows([]string{"content", "score"}).AddRow("cold data", 0.95))
+
+	items, err := svc.Retrieve(context.Background(), query, groupID)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	if len(items) != 2 {
+		t.Errorf("expected 2 items, got %d", len(items))
+	}
+	if items[0].Source != "hot" || items[1].Source != "cold" {
+		t.Errorf("expected hot then cold, got %s, %s", items[0].Source, items[1].Source)
+	}
 }

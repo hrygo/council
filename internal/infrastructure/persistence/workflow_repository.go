@@ -4,28 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/workflow"
+	"github.com/hrygo/council/internal/infrastructure/db"
 )
 
 type WorkflowRepository struct {
-	pool DB
+	pool db.DB
 }
 
-func NewWorkflowRepository(pool DB) *WorkflowRepository {
+func NewWorkflowRepository(pool db.DB) workflow.Repository {
 	return &WorkflowRepository{pool: pool}
-}
-
-// WorkflowEntity represents the DB row
-type WorkflowEntity struct {
-	ID              string                   `json:"id"`
-	GroupID         string                   `json:"group_id"`
-	Name            string                   `json:"name"`
-	GraphDefinition workflow.GraphDefinition `json:"graph_definition"`
-	CreatedAt       time.Time                `json:"created_at"`
-	UpdatedAt       time.Time                `json:"updated_at"`
 }
 
 func (r *WorkflowRepository) Create(ctx context.Context, graph *workflow.GraphDefinition) error {
@@ -96,7 +86,7 @@ func (r *WorkflowRepository) Update(ctx context.Context, graph *workflow.GraphDe
 	return nil
 }
 
-func (r *WorkflowRepository) List(ctx context.Context) ([]*WorkflowEntity, error) {
+func (r *WorkflowRepository) List(ctx context.Context) ([]*workflow.WorkflowEntity, error) {
 	query := `
 		SELECT id, name, graph_definition, created_at, updated_at FROM workflows ORDER BY updated_at DESC
 	`
@@ -106,9 +96,9 @@ func (r *WorkflowRepository) List(ctx context.Context) ([]*WorkflowEntity, error
 	}
 	defer rows.Close()
 
-	var list []*WorkflowEntity
+	var list []*workflow.WorkflowEntity
 	for rows.Next() {
-		var w WorkflowEntity
+		var w workflow.WorkflowEntity
 		var graphJSON []byte
 		if err := rows.Scan(&w.ID, &w.Name, &graphJSON, &w.CreatedAt, &w.UpdatedAt); err != nil {
 			return nil, err

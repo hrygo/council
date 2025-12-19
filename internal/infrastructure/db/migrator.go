@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 //go:embed migrations/*.sql
@@ -18,7 +16,7 @@ var migrationFS embed.FS
 
 // Migrate runs embedded SQL migrations.
 // Note: This is a simplified migrator for MVP. For production, consider using golang-migrate.
-func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
+func Migrate(ctx context.Context, pool DB) error {
 	// Read migration files
 	files, err := fs.ReadDir(migrationFS, "migrations")
 	if err != nil {

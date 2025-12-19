@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/hrygo/council/internal/core/workflow"
+	"github.com/hrygo/council/internal/infrastructure/db"
 	"github.com/jackc/pgx/v5"
 )
 
 type TemplateRepository struct {
-	pool DB
+	pool db.DB
 }
 
-func NewTemplateRepository(pool DB) *TemplateRepository {
+func NewTemplateRepository(pool db.DB) *TemplateRepository {
 	return &TemplateRepository{pool: pool}
 }
 

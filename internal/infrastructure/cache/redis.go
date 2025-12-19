@@ -13,21 +13,28 @@ var (
 	once   sync.Once
 )
 
-// Init initializes the Redis client
+// Init initializes the Redis client (singleton)
 func Init(addr string, password string, db int) error {
 	var err error
 	once.Do(func() {
-		client = redis.NewClient(&redis.Options{
-			Addr:     addr,
-			Password: password,
-			DB:       db,
-		})
-
-		if pingErr := client.Ping(context.Background()).Err(); pingErr != nil {
-			err = fmt.Errorf("failed to connect to redis: %w", pingErr)
-		}
+		client, err = connect(addr, password, db)
 	})
 	return err
+}
+
+func connect(addr string, password string, db int) (*redis.Client, error) {
+	c := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: password,
+		DB:       db,
+	})
+
+	if pingErr := c.Ping(context.Background()).Err(); pingErr != nil {
+		c.Close()
+		return nil, fmt.Errorf("failed to connect to redis: %w", pingErr)
+	}
+
+	return c, nil
 }
 
 // GetClient returns the Redis client

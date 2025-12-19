@@ -6,18 +6,18 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hrygo/council/internal/infrastructure/cache"
+	"github.com/hrygo/council/internal/infrastructure/db"
 	"github.com/hrygo/council/internal/infrastructure/llm"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 )
 
 type Service struct {
 	Embedder llm.Embedder
-	pool     *pgxpool.Pool
-	cache    *redis.Client
+	pool     db.DB
+	cache    cache.Cache
 }
 
-func NewService(embedder llm.Embedder, pool *pgxpool.Pool, cache *redis.Client) *Service {
+func NewService(embedder llm.Embedder, pool db.DB, cache cache.Cache) *Service {
 	return &Service{
 		Embedder: embedder,
 		pool:     pool,

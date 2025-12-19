@@ -7,15 +7,16 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/agent"
+	"github.com/hrygo/council/internal/infrastructure/db"
 )
 
 // AgentRepository implements agent.Repository using Postgres.
 type AgentRepository struct {
-	pool DB
+	pool db.DB
 }
 
 // NewAgentRepository creates a new AgentRepository.
-func NewAgentRepository(pool DB) *AgentRepository {
+func NewAgentRepository(pool db.DB) *AgentRepository {
 	return &AgentRepository{pool: pool}
 }
 

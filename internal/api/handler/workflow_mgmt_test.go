@@ -2,171 +2,167 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hrygo/council/internal/core/workflow"
-	"github.com/hrygo/council/internal/infrastructure/persistence"
+	"github.com/hrygo/council/internal/infrastructure/llm"
+	"github.com/hrygo/council/internal/infrastructure/mocks"
 )
 
-func init() {
-	gin.SetMode(gin.TestMode)
-}
-
-// MockWorkflowRepository implements a simple in-memory workflow repository for testing
-type MockWorkflowRepository struct {
-	workflows map[string]*persistence.WorkflowEntity
-}
-
-func NewMockWorkflowRepository() *MockWorkflowRepository {
-	return &MockWorkflowRepository{
-		workflows: make(map[string]*persistence.WorkflowEntity),
-	}
-}
-
-func (m *MockWorkflowRepository) List(ctx interface{}) ([]*persistence.WorkflowEntity, error) {
-	var result []*persistence.WorkflowEntity
-	for _, w := range m.workflows {
-		result = append(result, w)
-	}
-	return result, nil
-}
-
-func (m *MockWorkflowRepository) Get(ctx interface{}, id string) (*persistence.WorkflowEntity, error) {
-	if w, ok := m.workflows[id]; ok {
-		return w, nil
-	}
-	return nil, nil
-}
-
-func (m *MockWorkflowRepository) Save(ctx interface{}, entity *persistence.WorkflowEntity) error {
-	m.workflows[entity.ID] = entity
-	return nil
-}
-
 func TestWorkflowMgmtHandler_List(t *testing.T) {
-	// Setup
+	gin.SetMode(gin.TestMode)
+	mockRepo := &mocks.WorkflowMockRepository{}
+	handler := NewWorkflowMgmtHandler(mockRepo, nil)
+
+	mockRepo.ListFunc = func(ctx context.Context) ([]*workflow.WorkflowEntity, error) {
+		return []*workflow.WorkflowEntity{
+			{ID: "w1", Name: "Workflow 1", UpdatedAt: time.Now()},
+		}, nil
+	}
+
 	router := gin.New()
+	router.GET("/workflows", handler.List)
 
-	// Create a minimal handler for testing
-	// Note: This test uses the real handler structure but with mock-like behavior
-	// For full mock testing, we'd need to refactor WorkflowMgmtHandler to use an interface
-
-	router.GET("/api/v1/workflows", func(c *gin.Context) {
-		// Simulate empty list response
-		c.JSON(http.StatusOK, []interface{}{})
-	})
-
-	// Execute
-	req, _ := http.NewRequest("GET", "/api/v1/workflows", nil)
+	req, _ := http.NewRequest("GET", "/workflows", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// Verify
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
+
+	var resp []ListWorkflowsResponse
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp) != 1 || resp[0].ID != "w1" {
+		t.Errorf("Unexpected response: %+v", resp)
+	}
+}
+
+func TestWorkflowMgmtHandler_Get(t *testing.T) {
+	mockRepo := &mocks.WorkflowMockRepository{}
+	handler := NewWorkflowMgmtHandler(mockRepo, nil)
+
+	mockRepo.GetFunc = func(ctx context.Context, id string) (*workflow.GraphDefinition, error) {
+		if id == "w1" {
+			return &workflow.GraphDefinition{ID: "w1", Name: "Workflow 1"}, nil
+		}
+		return nil, nil // Error case usually handled by Get returning err
+	}
+
+	router := gin.New()
+	router.GET("/workflows/:id", handler.Get)
+
+	t.Run("Found", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/workflows/w1", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected 200, got %d", w.Code)
+		}
+	})
 }
 
 func TestWorkflowMgmtHandler_Create(t *testing.T) {
+	mockRepo := &mocks.WorkflowMockRepository{}
+	handler := NewWorkflowMgmtHandler(mockRepo, nil)
+
 	router := gin.New()
+	router.POST("/workflows", handler.Create)
 
-	router.POST("/api/v1/workflows", func(c *gin.Context) {
-		var input struct {
-			Name        string                 `json:"name"`
-			Description string                 `json:"description"`
-			StartNodeID string                 `json:"start_node_id"`
-			Nodes       map[string]interface{} `json:"nodes"`
-		}
-		if err := c.ShouldBindJSON(&input); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Return mock created workflow
-		c.JSON(http.StatusCreated, gin.H{
-			"id":          "test-workflow-id",
-			"name":        input.Name,
-			"description": input.Description,
-		})
-	})
-
-	// Test payload
-	payload := map[string]interface{}{
-		"name":          "Test Workflow",
-		"description":   "A test workflow",
-		"start_node_id": "start-1",
-		"nodes": map[string]interface{}{
-			"start-1": map[string]interface{}{
-				"id":   "start-1",
-				"type": "start",
-				"name": "Start",
-			},
-		},
-	}
+	payload := workflow.GraphDefinition{Name: "New Workflow"}
 	body, _ := json.Marshal(payload)
 
-	req, _ := http.NewRequest("POST", "/api/v1/workflows", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req, _ := http.NewRequest("POST", "/workflows", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
-		t.Errorf("Expected status 201, got %d", w.Code)
+		t.Errorf("Expected 201, got %d", w.Code)
 	}
 }
 
-func TestWorkflowMgmtHandler_EstimateCost(t *testing.T) {
-	router := gin.New()
+func TestWorkflowMgmtHandler_Update(t *testing.T) {
+	mockRepo := &mocks.WorkflowMockRepository{}
+	handler := NewWorkflowMgmtHandler(mockRepo, nil)
 
-	router.POST("/api/v1/workflows/estimate", func(c *gin.Context) {
-		var graph workflow.GraphDefinition
-		if err := c.ShouldBindJSON(&graph); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Use the real cost estimation function
-		estimate := workflow.EstimateWorkflowCost(&graph)
-		c.JSON(http.StatusOK, estimate)
-	})
-
-	// Test payload with agent nodes
-	payload := map[string]interface{}{
-		"id":            "draft",
-		"name":          "Draft",
-		"start_node_id": "start",
-		"nodes": map[string]interface{}{
-			"start": map[string]interface{}{
-				"id":   "start",
-				"type": "start",
-			},
-			"agent1": map[string]interface{}{
-				"id":   "agent1",
-				"type": "agent",
-				"properties": map[string]interface{}{
-					"model": "gpt-4",
-				},
-			},
-		},
+	mockRepo.UpdateFunc = func(ctx context.Context, graph *workflow.GraphDefinition) error {
+		return nil
 	}
+
+	router := gin.New()
+	router.PUT("/workflows/:id", handler.Update)
+
+	payload := workflow.GraphDefinition{Name: "Updated Workflow"}
 	body, _ := json.Marshal(payload)
 
-	req, _ := http.NewRequest("POST", "/api/v1/workflows/estimate", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	req, _ := http.NewRequest("PUT", "/workflows/w1", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+		t.Errorf("Expected 200, got %d", w.Code)
 	}
+}
 
-	var result map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &result)
-	if result["total_cost_usd"] == nil {
-		t.Error("Expected total_cost_usd in response")
+func TestWorkflowMgmtHandler_EstimateCost(t *testing.T) {
+	mockRepo := &mocks.WorkflowMockRepository{}
+	handler := NewWorkflowMgmtHandler(mockRepo, nil)
+
+	router := gin.New()
+	router.POST("/workflows/estimate", handler.EstimateCost)
+	router.POST("/workflows/:id/estimate", handler.EstimateCost)
+
+	t.Run("Draft", func(t *testing.T) {
+		graph := workflow.GraphDefinition{
+			Nodes: map[string]*workflow.Node{
+				"n1": {ID: "n1", Type: "agent", Properties: map[string]interface{}{"model": "gpt-4"}},
+			},
+		}
+		body, _ := json.Marshal(graph)
+		req, _ := http.NewRequest("POST", "/workflows/estimate", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected 200, got %d", w.Code)
+		}
+	})
+
+	t.Run("Saved", func(t *testing.T) {
+		mockRepo.GetFunc = func(ctx context.Context, id string) (*workflow.GraphDefinition, error) {
+			return &workflow.GraphDefinition{ID: id, Nodes: map[string]*workflow.Node{}}, nil
+		}
+		req, _ := http.NewRequest("POST", "/workflows/w1/estimate", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected 200, got %d", w.Code)
+		}
+	})
+}
+
+func TestWorkflowMgmtHandler_Generate(t *testing.T) {
+	mockLLM := &llm.MockProvider{
+		GenerateResponse: &llm.CompletionResponse{
+			Content: `{"id": "gen-1", "name": "Generated"}`,
+		},
+	}
+	handler := NewWorkflowMgmtHandler(nil, mockLLM)
+
+	router := gin.New()
+	router.POST("/workflows/generate", handler.Generate)
+
+	body, _ := json.Marshal(map[string]string{"prompt": "make a workflow"})
+	req, _ := http.NewRequest("POST", "/workflows/generate", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Code)
 	}
 }

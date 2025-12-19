@@ -1,6 +1,6 @@
 # 🛠️ The Council - 开发与交付规约 (v0.11.0)
 
-> **原则**: 前端驱动 (Contract First) | 模拟优先 (Mock First) | 渐进交付 (Atomic Delivery) | TDD 开发
+> **原则**: 务求实效 (Pragmatism) | 前端驱动 (Contract First) | 模拟优先 (Mock First) | 渐进交付 (Atomic Delivery) | TDD 开发
 
 ## 1. 核心架构与目录 (Architecture)
 

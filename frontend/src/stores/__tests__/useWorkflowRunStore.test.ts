@@ -94,6 +94,7 @@ describe('useWorkflowRunStore', () => {
         describe('updateNodeTokenUsage', () => {
             it('should update token usage for a node and global stats', () => {
                 const { loadWorkflow } = useWorkflowRunStore.getState();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 loadWorkflow([{ id: 'node-1', position: { x: 0, y: 0 }, data: {} as any }], []);
 
                 useWorkflowRunStore.getState().updateNodeTokenUsage('node-1', {
@@ -114,7 +115,8 @@ describe('useWorkflowRunStore', () => {
                 vi.stubGlobal('fetch', vi.fn());
             });
 
-            it('sendControl should call API and update state', async () => {
+            it('sendControl pause should call API and update state', async () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (fetch as any).mockResolvedValue({ ok: true });
 
                 await useWorkflowRunStore.getState().sendControl('session-1', 'pause');
@@ -123,7 +125,35 @@ describe('useWorkflowRunStore', () => {
                 expect(useWorkflowRunStore.getState().executionStatus).toBe('paused');
             });
 
+            it('sendControl resume should set running', async () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (fetch as any).mockResolvedValue({ ok: true });
+
+                await useWorkflowRunStore.getState().sendControl('session-1', 'resume');
+
+                expect(useWorkflowRunStore.getState().executionStatus).toBe('running');
+            });
+
+            it('sendControl stop should set failed', async () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (fetch as any).mockResolvedValue({ ok: true });
+
+                await useWorkflowRunStore.getState().sendControl('session-1', 'stop');
+
+                expect(useWorkflowRunStore.getState().executionStatus).toBe('failed');
+            });
+
+            it('sendControl should throw on API error', async () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (fetch as any).mockResolvedValue({ ok: false, statusText: 'Server Error' });
+
+                await expect(
+                    useWorkflowRunStore.getState().sendControl('session-1', 'pause')
+                ).rejects.toThrow('Control action failed');
+            });
+
             it('submitHumanReview should call API and clear review request', async () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (fetch as any).mockResolvedValue({ ok: true });
 
                 const request = { sessionId: 's1', nodeId: 'n1', reason: 'test', timeout: 30 };
@@ -134,6 +164,36 @@ describe('useWorkflowRunStore', () => {
                 expect(fetch).toHaveBeenCalledWith('/api/v1/sessions/s1/review', expect.any(Object));
                 expect(useWorkflowRunStore.getState().humanReview).toBeNull();
             });
+
+            it('submitHumanReview should throw on API error', async () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (fetch as any).mockResolvedValue({ ok: false, statusText: 'Bad Request' });
+
+                const request = { sessionId: 's1', nodeId: 'n1', reason: 'test', timeout: 30 };
+                useWorkflowRunStore.getState().setHumanReview(request);
+
+                await expect(
+                    useWorkflowRunStore.getState().submitHumanReview(request, 'reject')
+                ).rejects.toThrow('Review submission failed');
+            });
+        });
+
+        describe('stopTimer', () => {
+            it('stopTimer should be idempotent', () => {
+                useWorkflowRunStore.getState().stopTimer();
+                useWorkflowRunStore.getState().stopTimer();
+                // No error
+            });
+        });
+    });
+
+    describe('setExecutionStatus', () => {
+        it('should set execution status', () => {
+            useWorkflowRunStore.getState().setExecutionStatus('running');
+            expect(useWorkflowRunStore.getState().executionStatus).toBe('running');
+
+            useWorkflowRunStore.getState().setExecutionStatus('completed');
+            expect(useWorkflowRunStore.getState().executionStatus).toBe('completed');
         });
     });
 });

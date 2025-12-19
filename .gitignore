@@ -2,6 +2,7 @@
 .DS_Store
 *.log
 logs/
+tmp/
 
 # IDE & Editors
 .idea/
@@ -29,9 +30,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Frontend Build
+# Frontend Build & Coverage
 frontend/dist/
 frontend/dist-ssr/
+frontend/coverage/
+frontend/coverage_summary.txt
 
 # Environment Variables
 .env
@@ -39,8 +42,8 @@ frontend/dist-ssr/
 .env.*.local
 *.local
 
-# Build Output & Tests
+# Build Output & Test Artifacts
 /council
-coverage.out
+*.out
 coverage.html
 coverage-summary.txt

@@ -122,9 +122,73 @@ describe('useWebSocketRouter', () => {
     it('should handle execution:completed', () => {
         renderHook(() => useWebSocketRouter());
         act(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             useConnectStore.setState({ _lastMessage: { event: 'execution:completed' } as any });
         });
         expect(useWorkflowRunStore.getState().executionStatus).toBe('completed');
+    });
+
+    it('should handle execution:paused', () => {
+        renderHook(() => useWebSocketRouter());
+        act(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            useConnectStore.setState({ _lastMessage: { event: 'execution:paused' } as any });
+        });
+        expect(useWorkflowRunStore.getState().executionStatus).toBe('paused');
+    });
+
+    it('should handle human_interaction_required', () => {
+        renderHook(() => useWebSocketRouter());
+        act(() => {
+            useConnectStore.setState({
+                _lastMessage: {
+                    event: 'human_interaction_required',
+                    data: { node_id: 'node-1', reason: 'Review', timeout: 60 }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any
+            });
+        });
+        expect(useWorkflowRunStore.getState().humanReview?.nodeId).toBe('node-1');
+    });
+
+    it('should handle node_resumed', () => {
+        renderHook(() => useWebSocketRouter());
+        // Preliminarily set review
+        act(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            useWorkflowRunStore.setState({ humanReview: { nodeId: 'node-1' } as any });
+        });
+        act(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            useConnectStore.setState({ _lastMessage: { event: 'node_resumed' } as any });
+        });
+        expect(useWorkflowRunStore.getState().humanReview).toBeNull();
+    });
+
+    it('should handle failed status in node_state_change', () => {
+        const { unmount } = renderHook(() => useWebSocketRouter());
+        const msg: WSMessage = {
+            event: 'node_state_change',
+            data: { node_id: 'node-1', status: 'failed' }
+        };
+        act(() => { useConnectStore.setState({ _lastMessage: msg }); });
+        expect(useWorkflowRunStore.getState().activeNodeIds.has('node-1')).toBe(false);
+        unmount();
+    });
+
+    it('should handle error without node_id', () => {
+        renderHook(() => useWebSocketRouter());
+        act(() => {
+            useConnectStore.setState({
+                _lastMessage: {
+                    event: 'error',
+                    data: { error: 'Global fail' }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any
+            });
+        });
+        // Should not crash and should log to console (which we see in stderr)
+        expect(useWorkflowRunStore.getState().nodes[0].data.status).not.toBe('failed');
     });
 
     it('should handle error events', () => {
@@ -134,6 +198,7 @@ describe('useWebSocketRouter', () => {
                 _lastMessage: {
                     event: 'error',
                     data: { node_id: 'node-1', error: 'Boom' }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any
             });
         });

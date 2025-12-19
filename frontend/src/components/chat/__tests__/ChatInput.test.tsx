@@ -10,6 +10,7 @@ vi.mock('../../../stores/useConnectStore', () => ({
 
 describe('ChatInput', () => {
     it('should update input value on change', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (useConnectStore as any).mockReturnValue(vi.fn());
         render(<ChatInput sessionId="s1" />);
 
@@ -20,6 +21,7 @@ describe('ChatInput', () => {
 
     it('should call send and clear input on send button click', () => {
         const sendMock = vi.fn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (useConnectStore as any).mockImplementation((selector: any) => selector({ send: sendMock }));
 
         render(<ChatInput sessionId="s1" />);
@@ -38,6 +40,7 @@ describe('ChatInput', () => {
 
     it('should call send on Enter key press', () => {
         const sendMock = vi.fn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (useConnectStore as any).mockImplementation((selector: any) => selector({ send: sendMock }));
 
         render(<ChatInput sessionId="s1" />);
@@ -51,6 +54,7 @@ describe('ChatInput', () => {
 
     it('should not call send on Shift + Enter', () => {
         const sendMock = vi.fn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (useConnectStore as any).mockImplementation((selector: any) => selector({ send: sendMock }));
 
         render(<ChatInput sessionId="s1" />);

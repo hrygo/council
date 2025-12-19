@@ -11,16 +11,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/llm"
-	"github.com/hrygo/council/internal/infrastructure/persistence"
 )
 
 // WorkflowMgmtHandler handles CRUD operations for workflows
 type WorkflowMgmtHandler struct {
-	Repo *persistence.WorkflowRepository
+	Repo workflow.Repository
 	LLM  llm.LLMProvider
 }
 
-func NewWorkflowMgmtHandler(repo *persistence.WorkflowRepository, llm llm.LLMProvider) *WorkflowMgmtHandler {
+func NewWorkflowMgmtHandler(repo workflow.Repository, llm llm.LLMProvider) *WorkflowMgmtHandler {
 	return &WorkflowMgmtHandler{
 		Repo: repo,
 		LLM:  llm,
