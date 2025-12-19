@@ -6,7 +6,7 @@ export const HomePage: FC = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-full w-full bg-gray-50 dark:bg-gray-900 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100 via-gray-50 to-white dark:from-slate-800 dark:via-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-y-auto">
+        <div className="min-h-full w-full bg-gray-50 dark:bg-gray-900 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100 via-gray-50 to-white dark:from-slate-800 dark:via-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-y-auto pb-20">
 
             {/* Hero Section */}
             <div className="relative pt-20 pb-16 px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
