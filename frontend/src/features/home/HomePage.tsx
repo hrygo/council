@@ -18,7 +18,7 @@ export const HomePage: FC = () => {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                         </span>
-                        Council AI v0.12.0 Active
+                        Council AI v0.13.0 Active
                     </div>
 
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900 dark:from-white dark:via-blue-200 dark:to-gray-400 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">

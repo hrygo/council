@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="https://img.shields.io/badge/version-0.12.0-blue" alt="Version" />
+<img src="https://img.shields.io/badge/version-0.13.0-blue" alt="Version" />
 <img src="https://img.shields.io/badge/Go-1.21%2B-00ADD8?logo=go" alt="Go" />
 <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React" />
 <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />

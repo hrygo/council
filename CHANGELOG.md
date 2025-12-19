@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.13.0] - 2025-12-20
+
+### Added
+- **High-End Landing Page**: New dynamic HomePage with animations, glassmorphism UI, feature grid, and statistics.
+- **Routing Overhaul**:
+  - `/` is now the HomePage (Landing).
+  - `/chat` is now the Meeting Room (Session).
+  - Navigation updated to reflect new structure.
+- **Save Notifications**: Modern `Toast` notification system for workflow save actions (replacing `alert()`).
+- **UI Enhancements**:
+  - Unified "Exit Fullscreen" button with consistent dark mode support.
+  - Clickable Logo returning to Home.
+  - Prevent accidental text selection on navigation buttons.
+
+### Fixed
+- **Workflow Save Logic**: Resolved 404/500 errors by stripping IDs from Templates/Wizard results to force reliable creation (POST).
+- **Dark Mode Visibility**: Fixed invisible text in workflow nodes by enforcing custom node mapping over React Flow defaults.
+- **Layout**: Fixed bottom styling/overflow issues in Landing Page and sidebar interactions.
+
+### Changed
+- **Navigation**: Removed redundant `/meeting` route entry.
+
 ## [0.12.0] - 2025-12-20
 
 ### Added
