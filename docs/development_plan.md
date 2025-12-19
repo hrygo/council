@@ -46,7 +46,7 @@
 | B.11                   | 联网搜索集成                  | SPEC-411      | S3-4   | P1     | [x] Done | @Backend  |
 | **Phase 2 (Post-MVP)** |
 | 5.1                    | i18n 国际化完整实现           | SPEC-501      | S5     | P0     | [x] Done | @Frontend |
-| 5.2                    | 端到端测试 (E2E Testing)      | SPEC-502      | S5     | P1     | [ ] Todo | @QA       |
+| 5.2                    | 端到端测试 (E2E Testing)      | SPEC-502      | S5     | P1     | [x] Done | @QA       |
 | 5.3                    | 性能优化 (Code Splitting)     | SPEC-503      | S5     | P2     | [ ] Todo | @Frontend |
 | 5.4                    | 安全强化 (RBAC/RateLimit)     | SPEC-504      | S5     | P1     | [ ] Todo | @Backend  |
 

@@ -10,7 +10,8 @@
         start-all stop-all \
         start-db stop-db start-backend stop-backend start-frontend stop-frontend \
         build test test-backend test-frontend lint fmt check clean install \
-        coverage coverage-backend coverage-frontend
+        coverage coverage-backend coverage-frontend \
+        e2e e2e-ui e2e-headed e2e-report
 
 # ============================================================================
 # 🎨 Colors
@@ -221,6 +222,23 @@ coverage-frontend: ## 🎨 Run frontend coverage (Full Table with Color)
 	@echo "$(CYAN)📊 Frontend Coverage Detailed Report:$(RESET)"
 	@cd frontend && FORCE_COLOR=1 npx vitest run --coverage --coverage.reporter=text --coverage.reporter=text-summary | tee coverage_summary.txt
 	@echo ""
+
+# ============================================================================
+# 🧪 E2E TESTING (Playwright)
+# ============================================================================
+
+e2e: ## 🎭 Run E2E tests
+	@echo "$(CYAN)🎭 Running E2E tests...$(RESET)"
+	@cd e2e && npm test
+
+e2e-ui: ## 🎭 Run E2E tests with UI
+	@cd e2e && npm run test:ui
+
+e2e-headed: ## 🎭 Run E2E tests in headed mode
+	@cd e2e && npm run test:headed
+
+e2e-report: ## 📊 Open E2E test report
+	@cd e2e && npm run report
 
 lint: ## 🔍 Run linters
 	@echo "$(CYAN)🔍 Linting...$(RESET)"
