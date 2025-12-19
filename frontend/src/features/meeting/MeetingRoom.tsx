@@ -26,33 +26,49 @@ const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel
     );
 };
 
-// 折叠按钮
-const CollapseButton: FC<{
+// 侧边栏内的折叠触发器 (仅在展开时显示)
+const SidebarCollapseTrigger: FC<{
     side: 'left' | 'right';
-    collapsed: boolean;
-    onToggle: () => void;
-}> = ({ side, collapsed, onToggle }) => {
+    onCollapse: () => void;
+}> = ({ side, onCollapse }) => {
     const isLeft = side === 'left';
-    // Logic: 
-    // Left Panel:  Collapsed(True) -> Show Right Arrow (to expand)
-    //              Expanded(False) -> Show Left Arrow (to collapse)
-    const Icon = isLeft
-        ? (collapsed ? ChevronRight : ChevronLeft)
-        : (collapsed ? ChevronLeft : ChevronRight);
-
     return (
         <button
             onClick={(e) => {
-                e.preventDefault(); // Prevent accidental selection
-                e.stopPropagation(); // Prevent panel focus steal
-                onToggle();
+                e.preventDefault();
+                e.stopPropagation();
+                onCollapse();
             }}
-            className={`absolute top-1/2 -translate-y-1/2 z-20 p-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 text-gray-500 dark:text-gray-400 transition-all cursor-pointer ${isLeft ? '-right-3' : '-left-3'
+            className={`absolute top-1/2 -translate-y-1/2 z-20 p-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 text-gray-500 dark:text-gray-400 transition-all cursor-pointer ${isLeft ? '-right-3' : '-left-3'
                 }`}
-            title={collapsed ? '展开面板' : '折叠面板'}
-            onMouseDown={(e) => e.stopPropagation()} // Prevent resize handle drag start if overlapping
+            title="折叠面板"
+            onMouseDown={(e) => e.stopPropagation()}
         >
-            <Icon size={14} />
+            {isLeft ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+        </button>
+    );
+};
+
+// 中间区域的展开触发器 (仅在折叠时显示)
+const CenterExpandTrigger: FC<{
+    side: 'left' | 'right';
+    onExpand: () => void;
+}> = ({ side, onExpand }) => {
+    const isLeft = side === 'left';
+    return (
+        <button
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onExpand();
+            }}
+            className={`absolute top-1/2 -translate-y-1/2 z-20 py-4 px-0.5 bg-white dark:bg-gray-800 border-y border-r border-gray-200 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 hover:w-6 transition-all group cursor-pointer flex items-center justify-center ${isLeft ? 'left-0 rounded-r-lg border-l-0' : 'right-0 rounded-l-lg border-l border-r-0'
+                }`}
+            title="展开面板"
+        >
+            <div className={`text-gray-400 hover:text-blue-500 transition-colors`}>
+                {isLeft ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            </div>
         </button>
     );
 };
@@ -127,15 +143,14 @@ export const MeetingRoom: FC = () => {
     const handleReset = () => {
         resetLayout();
         // Imperatively reset sizes
-        // react-resizable-panels API: resize(size: number)
         if (leftPanelRef.current) {
             leftPanelRef.current.resize(20);
-            leftPanelRef.current.expand(); // Make sure it is expanded
+            leftPanelRef.current.expand();
         }
         if (centerPanelRef.current) centerPanelRef.current.resize(50);
         if (rightPanelRef.current) {
             rightPanelRef.current.resize(30);
-            rightPanelRef.current.expand(); // Make sure it is expanded
+            rightPanelRef.current.expand();
         }
     };
 
@@ -174,7 +189,7 @@ export const MeetingRoom: FC = () => {
                 >
                     <div className="relative h-full w-full group">
                         <PanelMaximizeButton panel="left" />
-                        <CollapseButton side="left" collapsed={leftCollapsed} onToggle={handleToggleLeft} />
+                        {!leftCollapsed && <SidebarCollapseTrigger side="left" onCollapse={handleToggleLeft} />}
                         <WorkflowCanvas readOnly={isRunning} workflowId="1eb04085-f215-430b-9279-880c98f99e3a" />
                     </div>
                 </Panel>
@@ -190,6 +205,11 @@ export const MeetingRoom: FC = () => {
                 >
                     <div className="relative h-full w-full">
                         <PanelMaximizeButton panel="center" />
+
+                        {/* Expand Triggers for collapsed side panels */}
+                        {leftCollapsed && <CenterExpandTrigger side="left" onExpand={handleToggleLeft} />}
+                        {rightCollapsed && <CenterExpandTrigger side="right" onExpand={handleToggleRight} />}
+
                         <ChatPanel />
                     </div>
                 </Panel>
@@ -209,7 +229,7 @@ export const MeetingRoom: FC = () => {
                 >
                     <div className="relative h-full w-full">
                         <PanelMaximizeButton panel="right" />
-                        <CollapseButton side="right" collapsed={rightCollapsed} onToggle={handleToggleRight} />
+                        {!rightCollapsed && <SidebarCollapseTrigger side="right" onCollapse={handleToggleRight} />}
                         <DocumentReader />
                     </div>
                 </Panel>

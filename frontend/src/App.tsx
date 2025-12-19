@@ -57,13 +57,15 @@ function App() {
         </div>
       </div>
 
-      <Routes>
-        <Route path="/" element={<MeetingRoom />} />
-        <Route path="/meeting" element={<MeetingRoom />} />
-        <Route path="/editor" element={<WorkflowEditor />} />
-        <Route path="/groups" element={<GroupsPage />} />
-        <Route path="/agents" element={<AgentsPage />} />
-      </Routes>
+      <div className="ml-16 h-full w-[calc(100vw-4rem)]">
+        <Routes>
+          <Route path="/" element={<MeetingRoom />} />
+          <Route path="/meeting" element={<MeetingRoom />} />
+          <Route path="/editor" element={<WorkflowEditor />} />
+          <Route path="/groups" element={<GroupsPage />} />
+          <Route path="/agents" element={<AgentsPage />} />
+        </Routes>
+      </div>
     </div>
   );
 }
