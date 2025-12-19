@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+const DEFAULT_PANEL_SIZES = [20, 50, 30];
+
 interface LayoutState {
     panelSizes: number[]; // [left, center, right]
     leftCollapsed: boolean;
@@ -11,12 +13,13 @@ interface LayoutState {
     toggleLeftPanel: () => void;
     toggleRightPanel: () => void;
     maximizePanel: (panel: 'left' | 'center' | 'right' | null) => void;
+    resetLayout: () => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
     persist(
         (set) => ({
-            panelSizes: [20, 50, 30],
+            panelSizes: DEFAULT_PANEL_SIZES,
             leftCollapsed: false,
             rightCollapsed: false,
             maximizedPanel: null,
@@ -25,6 +28,12 @@ export const useLayoutStore = create<LayoutState>()(
             toggleLeftPanel: () => set((state) => ({ leftCollapsed: !state.leftCollapsed })),
             toggleRightPanel: () => set((state) => ({ rightCollapsed: !state.rightCollapsed })),
             maximizePanel: (panel) => set({ maximizedPanel: panel }),
+            resetLayout: () => set({
+                panelSizes: DEFAULT_PANEL_SIZES,
+                leftCollapsed: false,
+                rightCollapsed: false,
+                maximizedPanel: null,
+            }),
         }),
         {
             name: 'council-layout',
