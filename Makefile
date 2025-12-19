@@ -227,15 +227,19 @@ coverage-frontend: ## 🎨 Run frontend coverage (Full Table with Color)
 # 🧪 E2E TESTING (Playwright)
 # ============================================================================
 
-e2e: ## 🎭 Run E2E tests
+e2e: ## 🎭 Run E2E tests (with progress)
 	@echo "$(CYAN)🎭 Running E2E tests...$(RESET)"
-	@cd e2e && npm test
+	@echo "$(YELLOW)📋 Test suites: navigation, workflow-builder, groups, agents, meeting-room$(RESET)"
+	@echo ""
+	@cd e2e && npx playwright test --reporter=list
+	@echo ""
+	@echo "$(GREEN)✅ E2E tests completed! Run 'make e2e-report' to view detailed report.$(RESET)"
 
-e2e-ui: ## 🎭 Run E2E tests with UI
+e2e-ui: ## 🎭 Run E2E tests with Playwright UI
 	@cd e2e && npm run test:ui
 
-e2e-headed: ## 🎭 Run E2E tests in headed mode
-	@cd e2e && npm run test:headed
+e2e-headed: ## 🎭 Run E2E tests in headed mode (visible browser)
+	@cd e2e && npx playwright test --headed
 
 e2e-report: ## 📊 Open E2E test report
 	@cd e2e && npm run report
