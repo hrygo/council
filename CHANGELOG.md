@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.12.0] - 2025-12-20
+
+### Added
+- **QA Enhancement**: Comprehensive test coverage improvements across backend and frontend.
+  - Handler coverage: 81.4%
+  - Frontend stores coverage: 82%
+  - Infrastructure tests for DB, Cache, Search
+- **PDF Tooling**: Universal Markdown to PDF converter with theme support.
+- **Auth**: User sign-out with `next-auth` integration.
+- **UI**: Regenerate button and improved chat input auto-resize.
+
+### Changed
+- **GEMINI.md**: Added "Pragmatism" (务求实效) as first principle.
+- **Refactor**: `workflow.Repository` interface for better testability.
+- **.gitignore**: Optimized to exclude test artifacts.
+
+---
+
 ## [0.11.0] - 2025-12-17
 
 ### Added
