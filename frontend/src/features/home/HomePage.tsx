@@ -9,7 +9,7 @@ export const HomePage: FC = () => {
         <div className="h-full w-full bg-gray-50 dark:bg-gray-900 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100 via-gray-50 to-white dark:from-slate-800 dark:via-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-y-auto pb-20">
 
             {/* Hero Section */}
-            <div className="relative pt-20 pb-16 px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
+            <div className="relative pt-20 pb-8 px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-500/20 blur-[120px] rounded-full pointer-events-none" />
 
                 <div className="relative z-10 space-y-6">
@@ -50,7 +50,7 @@ export const HomePage: FC = () => {
             </div>
 
             {/* Feature Grid */}
-            <div className="py-12 px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="py-6 px-6 lg:px-8 max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <FeatureCard
                         icon={<Users size={24} />}
@@ -82,7 +82,7 @@ export const HomePage: FC = () => {
             </div>
 
             {/* Stats / Info Section */}
-            <div className="py-16 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-800/20 px-6">
+            <div className="py-8 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-800/20 px-6">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                     <StatItem icon={<Zap />} label="Real-time Debate" value="< 50ms" sub="Latency" />
                     <StatItem icon={<Shield />} label="Consensus Engine" value="RAFT" sub="Protocol" />
