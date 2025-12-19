@@ -131,7 +131,7 @@ export default function WorkflowCanvas({
     );
 
     return (
-        <div className={`h-full w-full bg-gray-50 flex flex-col ${fullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
+        <div className={`h-full w-full bg-gray-50 dark:bg-gray-900 flex flex-col ${fullscreen ? 'fixed inset-0 z-50' : ''}`}>
             {fullscreen && (
                 <div className="absolute top-4 right-4 z-50">
                     <button onClick={onExitFullscreen} className="bg-white/80 p-2 rounded shadow text-sm">Exit Fullscreen</button>

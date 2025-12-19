@@ -29,7 +29,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({
     return (
         <div
             className={`
-        flex flex-col h-full bg-white border-l border-gray-200 shadow-xl z-10 w-full
+        flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl z-10 w-full
         ${fullscreen ? "fixed inset-0 z-50 p-8" : ""}
       `}
         >
@@ -40,9 +40,9 @@ export const ChatPanel: FC<ChatPanelProps> = ({
             />
 
             {/* Message Groups */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 dark:bg-gray-800/50">
                 {messageGroups.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                    <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                         等待会议开始...
                     </div>
                 ) : (
