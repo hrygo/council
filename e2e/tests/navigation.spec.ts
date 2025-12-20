@@ -58,8 +58,8 @@ test.describe('Routing', () => {
         expect(page.url()).toContain('/agents');
     });
 
-    test('navigates to /meeting correctly', async ({ page }) => {
-        await page.goto('/meeting');
-        expect(page.url()).toContain('/meeting');
+    test('navigates to /chat correctly', async ({ page }) => {
+        await page.goto('/chat');
+        expect(page.url()).toContain('/chat');
     });
 });
