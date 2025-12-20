@@ -10,7 +10,7 @@ import { WizardMode } from './components/Wizard/WizardMode';
 import type { Template } from '../../types/template';
 import { Wand2, LayoutTemplate, Save } from 'lucide-react';
 import { CostEstimator } from '../execution/components/CostEstimator';
-import { useToast } from '../../components/ui/Toast';
+import { useToast } from '../../components/ui/useToast';
 
 export const WorkflowEditor: FC = () => {
     const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);

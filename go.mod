@@ -7,10 +7,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.7.6
+	github.com/lib/pq v1.10.9
 	github.com/pashagolub/pgxmock/v3 v3.4.0
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/sashabaranov/go-openai v1.41.2
 	google.golang.org/genai v1.39.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

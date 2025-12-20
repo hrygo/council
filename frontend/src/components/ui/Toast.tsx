@@ -1,34 +1,7 @@
-import { createContext, useContext, useState, useCallback, type ReactNode, useEffect } from 'react';
+import { useState, useCallback, type ReactNode, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
-
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
-
-export interface Toast {
-    id: string;
-    message: string;
-    type: ToastType;
-    duration?: number;
-}
-
-interface ToastContextValue {
-    addToast: (message: string, type: ToastType, duration?: number) => void;
-    error: (message: string, duration?: number) => void;
-    success: (message: string, duration?: number) => void;
-    info: (message: string, duration?: number) => void;
-    warning: (message: string, duration?: number) => void;
-    removeToast: (id: string) => void;
-}
-
-const ToastContext = createContext<ToastContextValue | null>(null);
-
-export function useToast() {
-    const context = useContext(ToastContext);
-    if (!context) {
-        throw new Error('useToast must be used within a ToastProvider');
-    }
-    return context;
-}
+import { ToastContext, type Toast, type ToastType } from './ToastContext';
 
 interface ToastProviderProps {
     children: ReactNode;
@@ -72,8 +45,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
     useEffect(() => {
-        // Animation handled by CSS classes for now or simple timeout
-        // Just render
+        // Animation handled by CSS classes
     }, []);
 
     const icon = {

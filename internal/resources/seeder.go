@@ -1,11 +1,11 @@
 package resources
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/lib/pq"
 )
@@ -231,7 +231,7 @@ func (s *Seeder) SeedWorkflows(ctx context.Context) error {
 
 	for _, wf := range workflows {
 		// Compact the JSON to ensure valid format
-		var compactGraph strings.Builder
+		var compactGraph bytes.Buffer
 		if err := json.Compact(&compactGraph, []byte(wf.Graph)); err != nil {
 			return fmt.Errorf("invalid workflow graph JSON for %s: %w", wf.ID, err)
 		}
