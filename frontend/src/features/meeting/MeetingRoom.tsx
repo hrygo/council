@@ -9,6 +9,8 @@ import WorkflowCanvas from '../../components/workflow/WorkflowCanvas';
 import ChatPanel from '../../components/chat/ChatPanel';
 import { DocumentReader } from '../../components/modules/DocumentReader';
 import { HumanReviewModal } from '../execution/components/HumanReviewModal';
+import { SessionStarter } from './SessionStarter';
+import { useSessionStore } from '../../stores/useSessionStore';
 
 // 面板全屏按钮
 const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel }) => {
@@ -115,6 +117,9 @@ export const MeetingRoom: FC = () => {
     };
 
 
+    // Check for active session
+    const currentSession = useSessionStore(state => state.currentSession);
+
     // Fullscreen Mode
     if (maximizedPanel) {
         const onExit = () => maximizePanel(null);
@@ -131,10 +136,16 @@ export const MeetingRoom: FC = () => {
         );
     }
 
-    const isRunning = true; // Placeholder for session status
+    const isRunning = !!currentSession; // Session exists implies running/active
 
     return (
         <div className="h-screen w-full bg-gray-100 dark:bg-gray-900 overflow-hidden relative">
+
+            {/* Session Starter Overlay */}
+            {!currentSession && (
+                <SessionStarter onStarted={() => { }} />
+            )}
+
             <PanelGroup autoSaveId="council-layout-persistence" direction="horizontal" onLayout={setPanelSizes}>
                 {/* Left Panel: Workflow Canvas */}
                 <Panel
