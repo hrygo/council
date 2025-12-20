@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.14.0] - 2025-12-21
+
+### Added
+- **Meeting Terminology Unification**: Complete migration from "Chat" to "Meeting" terminology across the entire application (UI, Routes, i18n).
+- **Dynamic LLM Registry (Sprint 7)**:
+  - Database-backed LLM provider and model management.
+  - New `llm_providers` and `llm_models` tables with automatic migrations.
+  - Dynamic Model Selector in Agent settings fetching options from API.
+- **Robust Session Initialization**:
+  - `SessionStarter` now gracefully handles missing or malformed template graph data.
+  - Added comprehensive unit tests for session startup flow.
+
+### Changed
+- **Database Driver**: Migrated from `lib/pq` to `pgx/v5` for enhanced performance and modern PostgreSQL features.
+- **Backend Routing**: Improved LLM provider name normalization (e.g., case-insensitive "Gemini").
+- **I18n**: Restructured translation keys for better "Meeting" context.
+
+### Fixed
+- **SessionStarter Crash**: Fixed a critical runtime error when accessing `nodes` on empty graph definitions.
+- **Lint & Types**: Resolved several TypeScript and Go linting warnings.
+
 ## [0.13.0] - 2025-12-20
 
 ### Added
