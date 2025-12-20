@@ -179,7 +179,7 @@ test-backend: ## 🔧 Run Go backend tests
 
 test-frontend: ## 🎨 Run React frontend tests
 	@echo "$(CYAN)📅 Running frontend tests...$(RESET)"
-	@cd frontend && npm run test -- --run
+	@cd frontend && npm test
 
 test-short: ## ⚡ Quick backend tests (no race detector)
 	@go test -short ./...

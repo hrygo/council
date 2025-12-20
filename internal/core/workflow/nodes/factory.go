@@ -4,14 +4,16 @@ import (
 	"fmt"
 
 	"github.com/hrygo/council/internal/core/agent"
+	"github.com/hrygo/council/internal/core/memory"
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
 // Dependencies for creating nodes
 type NodeDependencies struct {
-	LLM       llm.LLMProvider
-	AgentRepo agent.Repository
+	LLM           llm.LLMProvider
+	AgentRepo     agent.Repository
+	MemoryService *memory.Service // Added for MemoryRetrieval node (SPEC-609)
 }
 
 // NewNodeFactory returns a factory function compatible with workflow.Engine
@@ -54,11 +56,11 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 			}, nil
 
 		case workflow.NodeTypeLoop:
-			maxRounds, _ := node.Properties["max_rounds"].(float64) // JSON numbers often float64
-			exitCond, _ := node.Properties["exit_condition"].(string)
+			maxRounds, _ := node.Properties["max_rounds"].(float64)      // JSON numbers often float64
+			exitOnScore, _ := node.Properties["exit_on_score"].(float64) // SPEC-609 Defect-3 fix
 			return &LoopProcessor{
-				MaxRounds:     int(maxRounds),
-				ExitCondition: exitCond,
+				MaxRounds:   int(maxRounds),
+				ExitOnScore: int(exitOnScore),
 			}, nil
 
 		case workflow.NodeTypeFactCheck:
@@ -75,6 +77,10 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 				TimeoutMinutes: int(timeout),
 				AllowSkip:      allowSkip,
 			}, nil
+
+		case workflow.NodeTypeMemoryRetrieval:
+			// SPEC-607: Memory Retrieval Node
+			return NewMemoryRetrievalProcessor(deps.MemoryService), nil
 
 		default:
 			return nil, fmt.Errorf("unsupported node type: %s", node.Type)
