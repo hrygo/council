@@ -14,6 +14,7 @@ import (
 	"github.com/hrygo/council/internal/infrastructure/llm"
 	"github.com/hrygo/council/internal/infrastructure/persistence"
 	"github.com/hrygo/council/internal/pkg/config"
+	"github.com/hrygo/council/internal/resources"
 )
 
 func main() {
@@ -26,6 +27,15 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
+
+	// Seed default data (Agents, Groups, Workflows)
+	seeder := resources.NewSeeder(db.GetPool())
+	if err := seeder.SeedAll(context.Background()); err != nil {
+		log.Printf("Warning: Failed to seed default data: %v", err)
+		// Continue anyway - seeding failure shouldn't prevent server startup
+	} else {
+		log.Println("Default data seeded successfully")
+	}
 
 	// Initialize Redis
 	// Assuming no password and default DB 0 for now as per config

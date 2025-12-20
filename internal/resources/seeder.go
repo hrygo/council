@@ -3,20 +3,24 @@ package resources
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 
-	"github.com/lib/pq"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// SystemNamespace is the UUID namespace for system resources
+var SystemNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 // Seeder handles database seeding for default data.
 type Seeder struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewSeeder creates a new Seeder instance.
-func NewSeeder(db *sql.DB) *Seeder {
+func NewSeeder(db *pgxpool.Pool) *Seeder {
 	return &Seeder{db: db}
 }
 
@@ -29,6 +33,9 @@ func (s *Seeder) SeedAgents(ctx context.Context) error {
 	}
 
 	for agentID, prompt := range prompts {
+		// Generate deterministic UUID from agent ID string
+		agentUUID := uuid.NewSHA1(SystemNamespace, []byte(agentID))
+
 		modelConfig, err := json.Marshal(map[string]interface{}{
 			"provider":    prompt.Config.Provider,
 			"model":       prompt.Config.Model,
@@ -45,11 +52,11 @@ func (s *Seeder) SeedAgents(ctx context.Context) error {
 			"code_execution": false,
 		})
 
-		_, err = s.db.ExecContext(ctx, `
+		_, err = s.db.Exec(ctx, `
 			INSERT INTO agents (id, name, persona_prompt, model_config, capabilities, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
 			ON CONFLICT (id) DO NOTHING
-		`, agentID, prompt.Config.Name, prompt.Content, modelConfig, capabilities)
+		`, agentUUID, prompt.Config.Name, prompt.Content, modelConfig, capabilities)
 
 		if err != nil {
 			return fmt.Errorf("failed to seed agent %s: %w", agentID, err)
@@ -79,11 +86,23 @@ func (s *Seeder) SeedGroups(ctx context.Context) error {
 		"system_adjudicator",
 	}
 
-	_, err := s.db.ExecContext(ctx, `
+	var agentUUIDs []string
+	for _, id := range defaultAgentIDs {
+		agentUUIDs = append(agentUUIDs, uuid.NewSHA1(SystemNamespace, []byte(id)).String())
+	}
+
+	// Generate deterministic UUID for the group
+	groupID := "system_council"
+	groupUUID := uuid.NewSHA1(SystemNamespace, []byte(groupID))
+
+	// Convert agent IDs to JSON array for storage
+	agentIDsJSON, _ := json.Marshal(agentUUIDs)
+
+	_, err := s.db.Exec(ctx, `
 		INSERT INTO groups (id, name, system_prompt, default_agent_ids, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, NOW(), NOW())
 		ON CONFLICT (id) DO NOTHING
-	`, "system_council", "The Council", councilSystemPrompt, pq.Array(defaultAgentIDs))
+	`, groupUUID, "The Council", councilSystemPrompt, agentIDsJSON)
 
 	if err != nil {
 		return fmt.Errorf("failed to seed group: %w", err)
@@ -230,17 +249,26 @@ func (s *Seeder) SeedWorkflows(ctx context.Context) error {
 	}
 
 	for _, wf := range workflows {
+		// Generate deterministic UUID for workflow
+		wfUUID := uuid.NewSHA1(SystemNamespace, []byte(wf.ID))
+
+		// Replace agent IDs in graph with UUIDs
+		graph := wf.Graph
+		graph = strings.ReplaceAll(graph, "system_affirmative", uuid.NewSHA1(SystemNamespace, []byte("system_affirmative")).String())
+		graph = strings.ReplaceAll(graph, "system_negative", uuid.NewSHA1(SystemNamespace, []byte("system_negative")).String())
+		graph = strings.ReplaceAll(graph, "system_adjudicator", uuid.NewSHA1(SystemNamespace, []byte("system_adjudicator")).String())
+
 		// Compact the JSON to ensure valid format
 		var compactGraph bytes.Buffer
-		if err := json.Compact(&compactGraph, []byte(wf.Graph)); err != nil {
+		if err := json.Compact(&compactGraph, []byte(graph)); err != nil {
 			return fmt.Errorf("invalid workflow graph JSON for %s: %w", wf.ID, err)
 		}
 
-		_, err := s.db.ExecContext(ctx, `
+		_, err := s.db.Exec(ctx, `
 			INSERT INTO workflow_templates (id, name, description, graph_definition, created_at, updated_at)
 			VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW())
 			ON CONFLICT (id) DO NOTHING
-		`, wf.ID, wf.Name, wf.Description, compactGraph.String())
+		`, wfUUID, wf.Name, wf.Description, compactGraph.String())
 
 		if err != nil {
 			return fmt.Errorf("failed to seed workflow %s: %w", wf.ID, err)

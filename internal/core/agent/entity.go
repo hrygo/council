@@ -10,8 +10,8 @@ import (
 type Agent struct {
 	ID            uuid.UUID    `json:"id" db:"id"`
 	Name          string       `json:"name" db:"name"`
-	Avatar        string       `json:"avatar" db:"avatar"`
-	Description   string       `json:"description" db:"description"`
+	Avatar        *string      `json:"avatar" db:"avatar"`
+	Description   *string      `json:"description" db:"description"`
 	PersonaPrompt string       `json:"persona_prompt" db:"persona_prompt"`
 	ModelConfig   ModelConfig  `json:"model_config" db:"model_config"`
 	Capabilities  Capabilities `json:"capabilities" db:"capabilities"`

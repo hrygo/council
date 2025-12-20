@@ -40,6 +40,10 @@ func TestGroupRepository_GetByID(t *testing.T) {
 	}
 }
 
+func strPtr(s string) *string {
+	return &s
+}
+
 func TestGroupRepository_Create(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -51,8 +55,8 @@ func TestGroupRepository_Create(t *testing.T) {
 	id := uuid.New()
 	g := &group.Group{
 		Name:            "New Group",
-		Icon:            "icon",
-		SystemPrompt:    "prompt",
+		Icon:            strPtr("icon"),
+		SystemPrompt:    strPtr("prompt"),
 		DefaultAgentIDs: []uuid.UUID{},
 	}
 
