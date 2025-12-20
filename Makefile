@@ -264,6 +264,44 @@ fmt: ## 🎯 Format code
 check: lint test ## ✅ Run all checks
 
 # ============================================================================
+# 🏛️ ARCHITECTURE VERIFICATION (Open/Closed Principle)
+# ============================================================================
+
+verify-decoupling: ## 🔒 Verify skeleton is decoupled from example
+	@echo "$(CYAN)🔒 Verifying Open/Closed Principle...$(RESET)"
+	@echo ""
+	@echo "$(BOLD)1. Checking internal/core for Council-specific references...$(RESET)"
+	@if grep -rq "Council\|Debate\|Affirmative\|Negative\|Adjudicator" internal/core 2>/dev/null; then \
+		echo "$(RED)❌ FAIL: Found Council-specific code in internal/core:$(RESET)"; \
+		grep -rn "Council\|Debate\|Affirmative\|Negative\|Adjudicator" internal/core; \
+		exit 1; \
+	else \
+		echo "$(GREEN)✅ PASS: internal/core is clean$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(BOLD)2. Checking seeds directory contains only JSON...$(RESET)"
+	@if find internal/resources/seeds -name "*.go" 2>/dev/null | grep -q .; then \
+		echo "$(RED)❌ FAIL: Found .go files in seeds directory:$(RESET)"; \
+		find internal/resources/seeds -name "*.go"; \
+		exit 1; \
+	else \
+		echo "$(GREEN)✅ PASS: seeds/ contains only data files$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(BOLD)3. Verifying example/ is not imported...$(RESET)"
+	@if grep -rq "example/" internal/ cmd/ 2>/dev/null; then \
+		echo "$(RED)❌ FAIL: Found example/ import in core code:$(RESET)"; \
+		grep -rn "example/" internal/ cmd/; \
+		exit 1; \
+	else \
+		echo "$(GREEN)✅ PASS: example/ is not imported$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(GREEN)$(BOLD)════════════════════════════════════════$(RESET)"
+	@echo "$(GREEN)$(BOLD)✅ All decoupling checks passed!$(RESET)"
+	@echo "$(GREEN)$(BOLD)════════════════════════════════════════$(RESET)"
+
+# ============================================================================
 # 📦 SETUP
 # ============================================================================
 
