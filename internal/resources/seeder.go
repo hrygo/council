@@ -265,8 +265,8 @@ func (s *Seeder) SeedWorkflows(ctx context.Context) error {
 		}
 
 		_, err := s.db.Exec(ctx, `
-			INSERT INTO workflow_templates (id, name, description, graph_definition, created_at)
-			VALUES ($1, $2, $3, $4::jsonb, NOW())
+			INSERT INTO workflow_templates (id, name, description, graph_definition, created_at, updated_at)
+			VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW())
 			ON CONFLICT (id) DO NOTHING
 		`, wfUUID, wf.Name, wf.Description, compactGraph.String())
 
