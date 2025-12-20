@@ -13,6 +13,7 @@ import (
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 	"github.com/hrygo/council/internal/infrastructure/mocks"
+	"github.com/hrygo/council/internal/pkg/config"
 )
 
 func TestWorkflowMgmtHandler_List(t *testing.T) {
@@ -152,7 +153,12 @@ func TestWorkflowMgmtHandler_Generate(t *testing.T) {
 			Content: `{"id": "gen-1", "name": "Generated"}`,
 		},
 	}
-	handler := NewWorkflowMgmtHandler(nil, mockLLM)
+
+	cfg := &config.Config{}
+	registry := llm.NewRegistry(cfg)
+	registry.RegisterProvider("default", mockLLM)
+
+	handler := NewWorkflowMgmtHandler(nil, registry)
 
 	router := gin.New()
 	router.POST("/workflows/generate", handler.Generate)

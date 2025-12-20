@@ -27,69 +27,66 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
+	pool := db.GetPool()
 
 	// Seed default data (Agents, Groups, Workflows)
-	seeder := resources.NewSeeder(db.GetPool())
+	seeder := resources.NewSeeder(pool, cfg)
 	if err := seeder.SeedAll(context.Background()); err != nil {
 		log.Printf("Warning: Failed to seed default data: %v", err)
-		// Continue anyway - seeding failure shouldn't prevent server startup
 	} else {
 		log.Println("Default data seeded successfully")
 	}
 
 	// Initialize Redis
-	// Assuming no password and default DB 0 for now as per config
 	if err := cache.Init(cfg.RedisURL, "", 0); err != nil {
-		log.Printf("Warning: Redis initialization failed: %v", err)
-		// Proceeding without Redis? or fail? Implementation plan implies we need it.
-		// For MVP, maybe log fatal? TDD says "Strict Three-Tier Memory", so Redis is likely required.
-		// Let's log fatal to be safe and ensure infra is up.
 		log.Fatalf("Failed to initialize Redis: %v", err)
 	}
 	defer cache.Close()
 
 	r := gin.Default()
 
-	pool := db.GetPool()
+	// LLM Registry
+	registry := llm.NewRegistry(cfg)
 
-	// Repositories
-	groupRepo := persistence.NewGroupRepository(pool)
-	agentRepo := persistence.NewAgentRepository(pool)
-	workflowRepo := persistence.NewWorkflowRepository(pool)
-
-	// LLM Provider
-	llmRouter := llm.NewRouter()
-	// Map config.LLMConfig to llm.LLMConfig
-	llmCfg := llm.LLMConfig{
-		Type:    cfg.LLM.Provider,
-		APIKey:  cfg.LLM.APIKey,
-		BaseURL: cfg.LLM.BaseURL,
-		Model:   cfg.LLM.Model,
+	// Core Services
+	// Map config.EmbeddingConfig to llm.EmbeddingConfig
+	embedCfg := llm.EmbeddingConfig{
+		Type:    cfg.Embedding.Provider, // Mapped from Provider to Type
+		APIKey:  cfg.Embedding.APIKey,
+		BaseURL: cfg.Embedding.BaseURL,
+		Model:   cfg.Embedding.Model,
 	}
-	llmProvider, err := llmRouter.GetLLMProvider(llmCfg)
+	embedder, err := registry.NewEmbedder(embedCfg)
 	if err != nil {
-		log.Fatalf("Failed to initialize LLM provider: %v", err)
+		log.Fatalf("Failed to initialize embedder: %v", err)
 	}
+	memoryService := memory.NewService(embedder, pool, cache.GetClient())
 
 	// WebSocket Hub
 	hub := ws.NewHub()
 	go hub.Run()
 
-	// Services
-	embedder, ok := llmProvider.(llm.Embedder)
-	if !ok {
-		log.Fatalf("Selected LLM provider does not support embeddings")
-	}
-	memoryService := memory.NewService(embedder, pool, cache.GetClient())
+	// Repositories
+	groupRepo := persistence.NewGroupRepository(pool)
+	agentRepo := persistence.NewAgentRepository(pool)
+	workflowRepo := persistence.NewWorkflowRepository(pool)
+	templateRepo := persistence.NewTemplateRepository(pool)
 
 	// Handlers
-	groupHandler := handler.NewGroupHandler(groupRepo)
 	agentHandler := handler.NewAgentHandler(agentRepo)
-	workflowHandler := handler.NewWorkflowHandler(hub, agentRepo, llmProvider)
-	workflowMgmtHandler := handler.NewWorkflowMgmtHandler(workflowRepo, llmProvider)
-	templateRepo := persistence.NewTemplateRepository(pool)
+	groupHandler := handler.NewGroupHandler(groupRepo)
 	templateHandler := handler.NewTemplateHandler(templateRepo)
 	memoryHandler := handler.NewMemoryHandler(memoryService)
+	workflowMgmtHandler := handler.NewWorkflowMgmtHandler(workflowRepo, registry)
+	llmHandler := handler.NewLLMHandler(cfg, pool)
+
+	// WorkflowHandler dependency injection
+	workflowHandler := handler.NewWorkflowHandler(
+		hub,
+		agentRepo,
+		registry,
+		memoryService,
+	)
 
 	// Routes
 	r.GET("/ws", func(c *gin.Context) {
@@ -98,13 +95,6 @@ func main() {
 
 	api := r.Group("/api/v1")
 	{
-		// Groups
-		api.POST("/groups", groupHandler.Create)
-		api.GET("/groups", groupHandler.List)
-		api.GET("/groups/:id", groupHandler.Get)
-		api.PUT("/groups/:id", groupHandler.Update)
-		api.DELETE("/groups/:id", groupHandler.Delete)
-
 		// Agents
 		api.POST("/agents", agentHandler.Create)
 		api.GET("/agents", agentHandler.List)
@@ -112,19 +102,26 @@ func main() {
 		api.PUT("/agents/:id", agentHandler.Update)
 		api.DELETE("/agents/:id", agentHandler.Delete)
 
-		// Workflows
-		api.POST("/workflows/execute", workflowHandler.Execute)
-		api.POST("/sessions/:id/control", workflowHandler.Control)
-		api.POST("/sessions/:id/signal", workflowHandler.Signal)
-		api.POST("/sessions/:id/review", workflowHandler.Review)
+		// Groups
+		api.POST("/groups", groupHandler.Create)
+		api.GET("/groups", groupHandler.List)
+		api.GET("/groups/:id", groupHandler.Get)
+		api.PUT("/groups/:id", groupHandler.Update)
+		api.DELETE("/groups/:id", groupHandler.Delete)
 
-		// Workflow Management
+		// Workflows Management
 		api.GET("/workflows", workflowMgmtHandler.List)
 		api.GET("/workflows/:id", workflowMgmtHandler.Get)
 		api.POST("/workflows", workflowMgmtHandler.Create)
 		api.PUT("/workflows/:id", workflowMgmtHandler.Update)
 		api.POST("/workflows/generate", workflowMgmtHandler.Generate)
 		api.POST("/workflows/estimate", workflowMgmtHandler.EstimateCost)
+
+		// Workflows Execution
+		api.POST("/workflows/execute", workflowHandler.Execute)
+		api.POST("/sessions/:id/control", workflowHandler.Control)
+		api.POST("/sessions/:id/signal", workflowHandler.Signal)
+		api.POST("/sessions/:id/review", workflowHandler.Review)
 
 		// Templates
 		api.GET("/templates", templateHandler.List)
@@ -134,6 +131,9 @@ func main() {
 		// Memory
 		api.POST("/memory/ingest", memoryHandler.Ingest)
 		api.POST("/memory/query", memoryHandler.Query)
+
+		// LLM Options
+		api.GET("/llm/providers", llmHandler.GetProviderOptions)
 	}
 
 	fmt.Printf("Server listening on :%s\n", cfg.Port)

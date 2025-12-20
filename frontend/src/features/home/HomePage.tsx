@@ -32,7 +32,7 @@ export const HomePage: FC = () => {
 
                     <div className="flex items-center justify-center gap-4 pt-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
                         <button
-                            onClick={() => navigate('/chat')}
+                            onClick={() => navigate('/meeting')}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold text-lg shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
                         >
                             <Play className="fill-current" size={20} />

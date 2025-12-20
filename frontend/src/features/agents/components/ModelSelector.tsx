@@ -1,7 +1,8 @@
-import { useState, type FC } from 'react';
-import { ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import { useState, type FC, useEffect, useCallback } from 'react';
+import { ChevronDown, ChevronRight, Settings, Loader2 } from 'lucide-react';
 import { useConfigStore } from '../../../stores/useConfigStore';
 import type { ModelConfig } from '../../../types/agent';
+import { useLLMOptions } from '../../../hooks/useLLMOptions';
 
 interface ModelSelectorProps {
     value: ModelConfig;
@@ -9,48 +10,59 @@ interface ModelSelectorProps {
     showAdvanced?: boolean;
 }
 
-type ModelProvider = ModelConfig['provider'];
-
-const PROVIDERS: Record<ModelProvider, { name: string; icon: string; models: string[] }> = {
-    openai: {
-        name: 'OpenAI',
-        icon: '🟢',
-        models: ['gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini'],
-    },
-    anthropic: {
-        name: 'Anthropic',
-        icon: '🟠',
-        models: ['claude-3-5-sonnet-latest', 'claude-3-opus-latest', 'claude-3-haiku-20240307'],
-    },
-    google: {
-        name: 'Google',
-        icon: '🔵',
-        models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'],
-    },
-    deepseek: {
-        name: 'DeepSeek',
-        icon: '🟣',
-        models: ['deepseek-chat', 'deepseek-reasoner'],
-    },
-    dashscope: {
-        name: 'DashScope',
-        icon: '🟡',
-        models: ['qwen-max', 'qwen-plus', 'qwen-turbo'],
-    },
-};
 
 export const ModelSelector: FC<ModelSelectorProps> = ({ value, onChange, showAdvanced }) => {
     const { godMode } = useConfigStore();
     const showParams = showAdvanced || godMode;
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const handleProviderChange = (provider: ModelProvider) => {
-        onChange({
-            ...value,
-            provider,
-            model: PROVIDERS[provider].models[0],
-        });
-    };
+    // Use dynamic options
+    const { providers, isLoading } = useLLMOptions();
+
+    // Mapping for UI access
+    // Note: We use a Map or Find on render. For efficiency with small lists, find is fine.
+    const selectedProvider = providers.find(p => p.id === value.provider);
+
+    const handleProviderChange = useCallback((providerId: string) => {
+        const newProvider = providers.find(p => p.id === providerId);
+        if (newProvider && newProvider.models.length > 0) {
+            onChange({
+                ...value,
+                provider: providerId as ModelConfig['provider'],
+                model: newProvider.models[0],
+            });
+        } else {
+            onChange({
+                ...value,
+                provider: providerId as ModelConfig['provider'],
+                model: '',
+            });
+        }
+    }, [providers, value, onChange]);
+
+    // Auto-select first provider if current one is invalid or missing (optional UX improvement)
+    useEffect(() => {
+        if (!isLoading && providers.length > 0) {
+            const currentValid = providers.some(p => p.id === value.provider);
+            if (!currentValid) {
+                // If current provider is not in the list (e.g., config removed), switch to first available
+                // BUT: Be careful not to overwrite persisted data unnecessarily if API fails transiently.
+                // For now, let's just leave it, or show "Unknown".
+                // Actually, if it's "unknown", it might be safer to default to the first one available.
+                // let's default to first available
+                handleProviderChange(providers[0].id);
+            }
+        }
+    }, [isLoading, providers, value.provider, handleProviderChange]);
+
+
+    if (isLoading && providers.length === 0) {
+        return (
+            <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 flex justify-center items-center h-40">
+                <Loader2 className="animate-spin text-gray-400" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
@@ -65,14 +77,18 @@ export const ModelSelector: FC<ModelSelectorProps> = ({ value, onChange, showAdv
                     <div className="relative">
                         <select
                             value={value.provider}
-                            onChange={(e) => handleProviderChange(e.target.value as ModelProvider)}
+                            onChange={(e) => handleProviderChange(e.target.value)}
                             className="w-full appearance-none px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm"
                         >
-                            {Object.entries(PROVIDERS).map(([key, p]) => (
-                                <option key={key} value={key}>
+                            {providers.map((p) => (
+                                <option key={p.id} value={p.id}>
                                     {p.icon} {p.name}
                                 </option>
                             ))}
+                            {/* Fallback if current provider isn't in list */}
+                            {!selectedProvider && value.provider && (
+                                <option value={value.provider}>{value.provider} (Unconfigured)</option>
+                            )}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
                     </div>
@@ -86,11 +102,13 @@ export const ModelSelector: FC<ModelSelectorProps> = ({ value, onChange, showAdv
                             onChange={(e) => onChange({ ...value, model: e.target.value })}
                             className="w-full appearance-none px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm"
                         >
-                            {PROVIDERS[value.provider as ModelProvider]?.models.map((m) => (
+                            {selectedProvider?.models.map((m) => (
                                 <option key={m} value={m}>
                                     {m}
                                 </option>
-                            ))}
+                            )) || (
+                                    <option value={value.model}>{value.model}</option>
+                                )}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
                     </div>

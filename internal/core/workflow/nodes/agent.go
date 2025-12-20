@@ -15,7 +15,7 @@ import (
 type AgentProcessor struct {
 	AgentID   string
 	AgentRepo agent.Repository
-	LLM       llm.LLMProvider
+	Registry  *llm.Registry
 }
 
 func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface{}, stream chan<- workflow.StreamEvent) (map[string]interface{}, error) {
@@ -45,14 +45,23 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 		userContent = "Begin task."
 	}
 
-	// 4. Call LLM
+	// 4. Resolve LLM Provider
+	providerName := ag.ModelConfig.Provider
+	provider, err := a.Registry.GetLLMProvider(providerName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get LLM provider '%s': %w", providerName, err)
+	}
+
+	// 5. Call LLM
 	req := &llm.CompletionRequest{
 		Model: ag.ModelConfig.Model,
 		Messages: []llm.Message{
 			{Role: "system", Content: ag.PersonaPrompt},
 			{Role: "user", Content: userContent},
 		},
-		Temperature: 0.7,
+		Temperature: float32(ag.ModelConfig.Temperature),
+		MaxTokens:   ag.ModelConfig.MaxTokens,
+		TopP:        float32(ag.ModelConfig.TopP),
 		Stream:      true,
 	}
 	// Fallback model if config missing
@@ -60,7 +69,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 		req.Model = "gpt-4"
 	}
 
-	tokenStream, errChan := a.LLM.Stream(ctx, req)
+	tokenStream, errChan := provider.Stream(ctx, req)
 	var responseBuilder strings.Builder
 
 	// 5. Stream Tokens

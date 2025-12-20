@@ -10,6 +10,10 @@ import (
 	"github.com/pashagolub/pgxmock/v3"
 )
 
+func strPtr(s string) *string {
+	return &s
+}
+
 func TestAgentRepository_GetByID(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -21,7 +25,7 @@ func TestAgentRepository_GetByID(t *testing.T) {
 	id := uuid.New()
 
 	rows := pgxmock.NewRows([]string{"id", "name", "avatar", "description", "persona_prompt", "model_config", "capabilities", "created_at", "updated_at"}).
-		AddRow(id, "Agent 1", "avatar", "desc", "persona", agent.ModelConfig{}, agent.Capabilities{}, time.Now(), time.Now())
+		AddRow(id, "Agent 1", strPtr("avatar"), strPtr("desc"), strPtr("persona"), agent.ModelConfig{}, agent.Capabilities{}, time.Now(), time.Now())
 
 	mock.ExpectQuery("SELECT id, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents WHERE id = \\$1").
 		WithArgs(id).
@@ -77,7 +81,7 @@ func TestAgentRepository_List(t *testing.T) {
 
 	mock.ExpectQuery("SELECT id, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "avatar", "description", "persona_prompt", "model_config", "capabilities", "created_at", "updated_at"}).
-			AddRow(uuid.New(), "A1", "", "", "", agent.ModelConfig{}, agent.Capabilities{}, time.Now(), time.Now()))
+			AddRow(uuid.New(), "A1", nil, nil, nil, agent.ModelConfig{}, agent.Capabilities{}, time.Now(), time.Now()))
 
 	list, err := repo.List(context.Background())
 	if err != nil {

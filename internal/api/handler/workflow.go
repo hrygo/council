@@ -11,22 +11,41 @@ import (
 	"github.com/hrygo/council/internal/core/middleware"
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/core/workflow/nodes"
-	"github.com/hrygo/council/internal/infrastructure/cache"
-	"github.com/hrygo/council/internal/infrastructure/db"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
+// Note: We use global getters here for simplicity, but ideally these would be in WorkflowHandler
+// And ideally MemoryService is injected.
+// Since we don't have MemoryService injected yet, we must assume we can get one?
+// Actually, let's fix the injection in next step.
+// For this step, I'll temporarily disable the local creation if it depends on h.LLM,
+// OR try to get it from Registry if possible.
+// But `Registry` doesn't store Embedder.
+
+// DECISION: I will modify `WorkflowHandler` to accept `MemoryService` in the next tool call.
+// For this call, I will comment out the dynamic parts to allow compilation,
+// or set embedder to nil if not critical for MVP flow (it is critical for Memory).
+
+// Better: Update `Execute` to use a globally available MemoryService if I can't inject it easily right now?
+// No, I can inject it. I control `main.go`.
+
+// So:
+// 1. Update struct to have MemoryService (done in next call or this one?)
+// This call updates struct. I'll add MemoryService to struct NOW.
+
 type WorkflowHandler struct {
-	Hub       *ws.Hub
-	AgentRepo agent.Repository
-	LLM       llm.LLMProvider
+	Hub           *ws.Hub
+	AgentRepo     agent.Repository
+	Registry      *llm.Registry
+	MemoryService *memory.Service
 }
 
-func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, llmProvider llm.LLMProvider) *WorkflowHandler {
+func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memService *memory.Service) *WorkflowHandler {
 	return &WorkflowHandler{
-		Hub:       hub,
-		AgentRepo: agentRepo,
-		LLM:       llmProvider,
+		Hub:           hub,
+		AgentRepo:     agentRepo,
+		Registry:      registry,
+		MemoryService: memService,
 	}
 }
 
@@ -55,22 +74,17 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Configure Factory
 	engine.NodeFactory = nodes.NewNodeFactory(nodes.NodeDependencies{
-		LLM:       h.LLM,
-		AgentRepo: h.AgentRepo,
+		Registry:      h.Registry,
+		AgentRepo:     h.AgentRepo,
+		MemoryService: h.MemoryService,
 	})
 
-	// Inject Middleware
-	// Try to get Embedder from LLM Provider
-	var embedder llm.Embedder
-	if e, ok := h.LLM.(llm.Embedder); ok {
-		embedder = e
-	}
+	// First, create memService as it's a dependency for NodeDependencies now.
 	// Note: We use global getters here for simplicity, but ideally these would be in WorkflowHandler
-	memService := memory.NewService(embedder, db.GetPool(), cache.GetClient())
 	engine.Middlewares = []workflow.Middleware{
-		middleware.NewCircuitBreaker(10),           // Logic Circuit Breaker (Depth > 10)
-		middleware.NewFactCheckTrigger(),           // Anti-Hallucination
-		middleware.NewMemoryMiddleware(memService), // Memory Persistence
+		middleware.NewCircuitBreaker(10),                // Logic Circuit Breaker (Depth > 10)
+		middleware.NewFactCheckTrigger(),                // Anti-Hallucination
+		middleware.NewMemoryMiddleware(h.MemoryService), // Memory Persistence
 	}
 
 	// Run in Goroutine

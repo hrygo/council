@@ -11,9 +11,9 @@ import (
 
 // Dependencies for creating nodes
 type NodeDependencies struct {
-	LLM           llm.LLMProvider
+	Registry      *llm.Registry
 	AgentRepo     agent.Repository
-	MemoryService *memory.Service // Added for MemoryRetrieval node (SPEC-609)
+	MemoryService *memory.Service
 }
 
 // NewNodeFactory returns a factory function compatible with workflow.Engine
@@ -30,8 +30,19 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 			if model == "" {
 				model = "gpt-4"
 			}
+
+			// EndProcessor currently uses LLMProvider directly.
+			// We need to resolve it. Since EndProcessor logic might be simple,
+			// we can just use Default provider or resolve if it supports it.
+			// Let's assume EndProcessor needs a specific provider.
+			// For now, let's pass the Registry and let it resolve or resolve System Default here.
+			provider, err := deps.Registry.GetLLMProvider("default")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get default LLM provider: %w", err)
+			}
+
 			return &EndProcessor{
-				LLM:    deps.LLM,
+				LLM:    provider,
 				Model:  model,
 				Prompt: prompt,
 			}, nil
@@ -44,7 +55,7 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 			return &AgentProcessor{
 				AgentID:   agentID,
 				AgentRepo: deps.AgentRepo,
-				LLM:       deps.LLM,
+				Registry:  deps.Registry,
 			}, nil
 
 		case workflow.NodeTypeVote:
@@ -65,8 +76,12 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 
 		case workflow.NodeTypeFactCheck:
 			threshold, _ := node.Properties["verify_threshold"].(float64)
+			provider, err := deps.Registry.GetLLMProvider("default")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get default LLM for fact check: %w", err)
+			}
 			return &FactCheckProcessor{
-				LLM:             deps.LLM,
+				LLM:             provider,
 				VerifyThreshold: threshold,
 			}, nil
 

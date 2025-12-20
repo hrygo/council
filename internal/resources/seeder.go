@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/hrygo/council/internal/pkg/config"
 )
 
 // SystemNamespace is the UUID namespace for system resources
@@ -16,12 +18,13 @@ var SystemNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 // Seeder handles database seeding for default data.
 type Seeder struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
+	cfg *config.Config
 }
 
 // NewSeeder creates a new Seeder instance.
-func NewSeeder(db *pgxpool.Pool) *Seeder {
-	return &Seeder{db: db}
+func NewSeeder(db *pgxpool.Pool, cfg *config.Config) *Seeder {
+	return &Seeder{db: db, cfg: cfg}
 }
 
 // SeedAgents seeds default agents into the database.
@@ -36,9 +39,19 @@ func (s *Seeder) SeedAgents(ctx context.Context) error {
 		// Generate deterministic UUID from agent ID string
 		agentUUID := uuid.NewSHA1(SystemNamespace, []byte(agentID))
 
+		// Use prompt config if available, otherwise fallback to system config
+		provider := prompt.Config.Provider
+		if provider == "" {
+			provider = s.cfg.LLM.Provider
+		}
+		model := prompt.Config.Model
+		if model == "" {
+			model = s.cfg.LLM.Model
+		}
+
 		modelConfig, err := json.Marshal(map[string]interface{}{
-			"provider":    prompt.Config.Provider,
-			"model":       prompt.Config.Model,
+			"provider":    provider,
+			"model":       model,
 			"temperature": prompt.Config.Temperature,
 			"max_tokens":  prompt.Config.MaxTokens,
 			"top_p":       prompt.Config.TopP,
@@ -55,7 +68,11 @@ func (s *Seeder) SeedAgents(ctx context.Context) error {
 		_, err = s.db.Exec(ctx, `
 			INSERT INTO agents (id, name, persona_prompt, model_config, capabilities, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-			ON CONFLICT (id) DO NOTHING
+			ON CONFLICT (id) DO UPDATE SET
+				name = EXCLUDED.name,
+				persona_prompt = EXCLUDED.persona_prompt,
+				model_config = EXCLUDED.model_config,
+				updated_at = NOW()
 		`, agentUUID, prompt.Config.Name, prompt.Content, modelConfig, capabilities)
 
 		if err != nil {
@@ -295,5 +312,108 @@ func (s *Seeder) SeedAll(ctx context.Context) error {
 	if err := s.SeedWorkflows(ctx); err != nil {
 		return fmt.Errorf("seed workflows: %w", err)
 	}
+	if err := s.SeedLLMOptions(ctx); err != nil {
+		return fmt.Errorf("seed llm options: %w", err)
+	}
+	return nil
+}
+
+// SeedLLMOptions seeds the LLM providers and models from 2025 verified list.
+func (s *Seeder) SeedLLMOptions(ctx context.Context) error {
+	// 1. Create Tables if not exist (Migration replacement for robustness)
+	_, err := s.db.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS llm_providers (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			icon TEXT NOT NULL,
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			is_enabled BOOLEAN DEFAULT TRUE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		);
+
+		CREATE TABLE IF NOT EXISTS llm_models (
+			id TEXT PRIMARY KEY,
+			provider_id TEXT NOT NULL REFERENCES llm_providers(id) ON DELETE CASCADE,
+			name TEXT NOT NULL,
+			is_mainstream BOOLEAN DEFAULT FALSE,
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		);
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to ensure LLM tables: %w", err)
+	}
+
+	// 2. Define Data
+	providers := []struct {
+		ID        string
+		Name      string
+		Icon      string
+		SortOrder int
+		Models    []string
+	}{
+		{
+			ID: "openai", Name: "OpenAI", Icon: "🟢", SortOrder: 1,
+			Models: []string{"gpt-4o", "o1", "gpt-5-mini", "gpt-4.5-preview"},
+		},
+		{
+			ID: "google", Name: "Google", Icon: "🔵", SortOrder: 2,
+			Models: []string{"gemini-3-pro", "gemini-3-flash", "gemini-2.0-flash", "gemini-2.0-pro"},
+		},
+		{
+			ID: "deepseek", Name: "DeepSeek", Icon: "🟣", SortOrder: 3,
+			Models: []string{"deepseek-chat", "deepseek-reasoner"}, // verified: deepseek-chat (V3), deepseek-reasoner (R1)
+		},
+		{
+			ID: "dashscope", Name: "DashScope", Icon: "🟡", SortOrder: 4,
+			Models: []string{"qwen-max", "qwen-plus", "qwen-turbo"},
+		},
+		{
+			ID: "siliconflow", Name: "SiliconFlow", Icon: "🟠", SortOrder: 5,
+			Models: []string{
+				"zai-org/GLM-4.6", // Verified: SiliconFlow uses repo format
+				"Qwen/Qwen2.5-72B-Instruct",
+				"Qwen/Qwen2.5-Coder-32B-Instruct",
+				"deepseek-ai/DeepSeek-V3",
+				"deepseek-ai/DeepSeek-R1",
+			},
+		},
+	}
+
+	// 3. Upsert Logic
+	for _, p := range providers {
+		// Upsert Provider
+		_, err := s.db.Exec(ctx, `
+			INSERT INTO llm_providers (id, name, icon, sort_order, updated_at)
+			VALUES ($1, $2, $3, $4, NOW())
+			ON CONFLICT (id) DO UPDATE SET
+				name = EXCLUDED.name,
+				icon = EXCLUDED.icon,
+				sort_order = EXCLUDED.sort_order,
+				updated_at = NOW()
+		`, p.ID, p.Name, p.Icon, p.SortOrder)
+		if err != nil {
+			return fmt.Errorf("failed to upsert provider %s: %w", p.ID, err)
+		}
+
+		// Upsert Models
+		for i, mID := range p.Models {
+			_, err := s.db.Exec(ctx, `
+				INSERT INTO llm_models (id, provider_id, name, is_mainstream, sort_order, updated_at)
+				VALUES ($1, $2, $3, true, $4, NOW())
+				ON CONFLICT (id) DO UPDATE SET
+					name = EXCLUDED.name,
+					is_mainstream = true,
+					sort_order = EXCLUDED.sort_order,
+					updated_at = NOW()
+			`, mID, p.ID, mID, i+1)
+			if err != nil {
+				return fmt.Errorf("failed to upsert model %s for %s: %w", mID, p.ID, err)
+			}
+		}
+	}
+
 	return nil
 }

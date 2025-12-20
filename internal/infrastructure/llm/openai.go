@@ -50,6 +50,7 @@ func (c *OpenAIClient) Generate(ctx context.Context, req *CompletionRequest) (*C
 			Model:       req.Model,
 			Messages:    messages,
 			Temperature: req.Temperature,
+			TopP:        req.TopP,
 			MaxTokens:   req.MaxTokens,
 		},
 	)
@@ -98,6 +99,7 @@ func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 				Model:       req.Model,
 				Messages:    messages,
 				Temperature: req.Temperature,
+				TopP:        req.TopP,
 				MaxTokens:   req.MaxTokens,
 				Stream:      true,
 			},

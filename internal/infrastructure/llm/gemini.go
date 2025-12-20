@@ -73,6 +73,7 @@ func (c *GeminiClient) Generate(ctx context.Context, req *CompletionRequest) (*C
 	// Config
 	config := &genai.GenerateContentConfig{
 		Temperature: &req.Temperature,
+		TopP:        &req.TopP,
 	}
 	if req.MaxTokens > 0 {
 		val := int32(req.MaxTokens)
@@ -148,6 +149,7 @@ func (c *GeminiClient) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 
 		config := &genai.GenerateContentConfig{
 			Temperature: &req.Temperature,
+			TopP:        &req.TopP,
 		}
 		if req.MaxTokens > 0 {
 			val := int32(req.MaxTokens)

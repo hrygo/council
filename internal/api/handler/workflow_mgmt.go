@@ -14,15 +14,16 @@ import (
 )
 
 // WorkflowMgmtHandler handles CRUD operations for workflows
+// WorkflowMgmtHandler handles CRUD operations for workflows
 type WorkflowMgmtHandler struct {
-	Repo workflow.Repository
-	LLM  llm.LLMProvider
+	Repo     workflow.Repository
+	Registry *llm.Registry
 }
 
-func NewWorkflowMgmtHandler(repo workflow.Repository, llm llm.LLMProvider) *WorkflowMgmtHandler {
+func NewWorkflowMgmtHandler(repo workflow.Repository, registry *llm.Registry) *WorkflowMgmtHandler {
 	return &WorkflowMgmtHandler{
-		Repo: repo,
-		LLM:  llm,
+		Repo:     repo,
+		Registry: registry,
 	}
 }
 
@@ -141,7 +142,14 @@ Output STRICT JSON only.`
 		model = "gemini-1.5-flash" // Fallback
 	}
 
-	resp, err := h.LLM.Generate(ctx, &llm.CompletionRequest{
+	// Resolve Provider
+	provider, err := h.Registry.GetLLMProvider("default")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get default LLM provider"})
+		return
+	}
+
+	resp, err := provider.Generate(ctx, &llm.CompletionRequest{
 		Messages: []llm.Message{
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: req.Prompt},

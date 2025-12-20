@@ -40,10 +40,6 @@ func TestGroupRepository_GetByID(t *testing.T) {
 	}
 }
 
-func strPtr(s string) *string {
-	return &s
-}
-
 func TestGroupRepository_Create(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -86,9 +82,9 @@ func TestGroupRepository_List(t *testing.T) {
 
 	repo := NewGroupRepository(mock)
 
-	mock.ExpectQuery("SELECT id, name, icon, system_prompt, default_agent_ids, created_at, updated_at FROM groups").
+	mock.ExpectQuery("SELECT id, name, icon, system_prompt, default_agent_ids, created_at, updated_at FROM groups ORDER BY created_at DESC").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "icon", "system_prompt", "default_agent_ids", "created_at", "updated_at"}).
-			AddRow(uuid.New(), "G1", "", "", []uuid.UUID{}, time.Now(), time.Now()))
+			AddRow(uuid.New(), "G1", strPtr("icon"), strPtr("prompt"), []uuid.UUID{}, time.Now(), time.Now()))
 
 	list, err := repo.List(context.Background())
 	if err != nil {

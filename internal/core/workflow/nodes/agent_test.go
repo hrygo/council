@@ -10,6 +10,7 @@ import (
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 	"github.com/hrygo/council/internal/infrastructure/mocks"
+	"github.com/hrygo/council/internal/pkg/config"
 )
 
 func TestAgentProcessor_Process(t *testing.T) {
@@ -23,15 +24,20 @@ func TestAgentProcessor_Process(t *testing.T) {
 		ID:            agentID,
 		Name:          "TestAgent",
 		PersonaPrompt: "You are a test agent.",
-		ModelConfig:   agent.ModelConfig{Model: "gpt-4"},
+		ModelConfig:   agent.ModelConfig{Model: "gpt-4", Provider: "default"},
 	}); err != nil {
 		t.Fatalf("Failed to create mock agent: %v", err)
 	}
 
+	// Mock Registry
+	cfg := &config.Config{}
+	registry := llm.NewRegistry(cfg)
+	registry.RegisterProvider("default", mockLLM)
+
 	processor := &AgentProcessor{
 		AgentID:   agentID.String(),
 		AgentRepo: mockRepo,
-		LLM:       mockLLM,
+		Registry:  registry,
 	}
 
 	// Execute

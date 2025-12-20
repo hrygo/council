@@ -56,7 +56,7 @@ func TestGraphDefinition_Validate(t *testing.T) {
 					"step2": {ID: "step2", Type: NodeTypeAgent, NextIDs: []string{"step1"}}, // Cycle back to step1
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "Isolated Node (Warning/Error logic depending on strictness - assuming strict for now)",

@@ -3,11 +3,14 @@ import { Play, Sparkles, LayoutTemplate, MessageSquare } from 'lucide-react';
 import { useTemplates } from '../../hooks/useTemplates';
 import { useSessionStore } from '../../stores/useSessionStore';
 
+import { useNavigate } from 'react-router-dom';
+
 interface SessionStarterProps {
     onStarted: () => void;
 }
 
 export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
+    const navigate = useNavigate();
     const { data: templates, isLoading } = useTemplates();
     const initSession = useSessionStore(state => state.initSession);
 
@@ -50,7 +53,8 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
 
             // 3. Initialize Store
             // We need a flat list of nodes for the session store to track status
-            const nodes = Object.values(template.graph.nodes).map((n: any) => ({
+            const rawNodes = template.graph?.nodes || {};
+            const nodes = Object.values(rawNodes).map((n: { id: string; name?: string; type?: string }) => ({
                 id: n.id,
                 name: n.name || n.id,
                 type: n.type || 'agent'
@@ -63,12 +67,17 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                 nodes: nodes
             });
 
-            // 4. Callback
-            onStarted();
+            // 4. Navigate to Meeting
+            onStarted(); // Close modal
+            // We need to use router to navigate. 
+            // Since this component is inside a Router, we can use useNavigate.
+            // I will add the hook import and usage.
+            navigate('/meeting');
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || "Failed to start session");
+            const message = err instanceof Error ? err.message : "Failed to start session";
+            setError(message);
         } finally {
             setIsStarting(false);
         }

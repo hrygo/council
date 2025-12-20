@@ -1,4 +1,5 @@
 import { useState, type FC, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
 import { useConnectStore } from '../../stores/useConnectStore'; // Assuming connect store handles direct messages or session store handles append?
 // Spec says ChatPanel uses useSessionStore for display but ChatInput usually sends via WebSocket.
@@ -14,6 +15,7 @@ interface ChatInputProps {
 }
 
 export const ChatInput: FC<ChatInputProps> = ({ sessionId }) => {
+    const { t } = useTranslation();
     const [input, setInput] = useState('');
     const send = useConnectStore((state) => state.send);
 
@@ -47,7 +49,7 @@ export const ChatInput: FC<ChatInputProps> = ({ sessionId }) => {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={onKeyDown}
-                    placeholder="输入消息..." // i18n later
+                    placeholder={t('meeting.inputPlaceholder')}
                     rows={1}
                 />
                 <button

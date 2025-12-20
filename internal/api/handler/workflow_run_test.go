@@ -12,6 +12,7 @@ import (
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 	"github.com/hrygo/council/internal/infrastructure/mocks"
+	"github.com/hrygo/council/internal/pkg/config"
 )
 
 func TestWorkflowHandler_Execute(t *testing.T) {
@@ -21,7 +22,12 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 
 	repo := mocks.NewAgentMockRepository()
 	mockLLM := &llm.MockProvider{}
-	h := NewWorkflowHandler(hub, repo, mockLLM)
+
+	cfg := &config.Config{}
+	registry := llm.NewRegistry(cfg)
+	registry.RegisterProvider("default", mockLLM)
+
+	h := NewWorkflowHandler(hub, repo, registry, nil)
 
 	router := gin.New()
 	router.POST("/execute", h.Execute)
@@ -58,7 +64,7 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 
 func TestWorkflowHandler_Review(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewWorkflowHandler(nil, nil, nil)
+	h := NewWorkflowHandler(nil, nil, nil, nil)
 
 	router := gin.New()
 	router.POST("/sessions/:id/review", h.Review)

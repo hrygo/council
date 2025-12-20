@@ -15,6 +15,7 @@ type CompletionRequest struct {
 	Model       string    `json:"model"`
 	Messages    []Message `json:"messages"`
 	Temperature float32   `json:"temperature"`
+	TopP        float32   `json:"top_p,omitempty"`
 	MaxTokens   int       `json:"max_tokens,omitempty"`
 	Stream      bool      `json:"stream,omitempty"`
 }

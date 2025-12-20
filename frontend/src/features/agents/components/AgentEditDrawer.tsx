@@ -138,7 +138,7 @@ export function AgentEditDrawer({ open, onClose, agent }: AgentEditDrawerProps) 
                         <ModelSelector
                             value={formData.model_config}
                             onChange={(config) => setFormData({ ...formData, model_config: config })}
-                            showAdvanced={false} // Allow simple view
+                            showAdvanced={true} // Enabled advanced parameters by default
                         />
                     </section>
 

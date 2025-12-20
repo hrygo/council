@@ -48,7 +48,7 @@ function App() {
             <Boxes size={24} />
           </div>
 
-          <NavButton path="/chat" icon={Play} label={t('chat.title')} onClick={navigate} />
+          <NavButton path="/meeting" icon={Play} label={t('meeting.title')} onClick={navigate} />
           <NavButton path="/editor" icon={Boxes} label={t('workflow.builder.title', { defaultValue: 'Builder' })} onClick={navigate} />
           <NavButton path="/groups" icon={Users} label={t('nav.groups')} onClick={navigate} />
           <NavButton path="/agents" icon={Network} label={t('nav.agents')} onClick={navigate} />
@@ -63,13 +63,17 @@ function App() {
         </div>
 
         <div className="ml-16 h-full w-[calc(100vw-4rem)]">
-
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/meeting" element={<MeetingRoom />} />
+            <Route path="/meeting/:sessionId" element={<MeetingRoom />} />
+            {/* Alias /chat to /meeting for backward compatibility if needed, or remove */}
             <Route path="/chat" element={<MeetingRoom />} />
+
             <Route path="/editor" element={<WorkflowEditor />} />
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/agents" element={<AgentsPage />} />
+            <Route path="*" element={<HomePage />} />
           </Routes>
         </div>
       </div>

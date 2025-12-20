@@ -22,12 +22,10 @@ func TestTemplateRepository_Get(t *testing.T) {
 	tpl := workflow.Template{ID: id, Name: "Template 1", Category: "custom"}
 	graphJSON, _ := json.Marshal(tpl.Graph)
 
-	mock.ExpectExec("CREATE TABLE IF NOT EXISTS templates").WillReturnResult(pgxmock.NewResult("CREATE", 0))
-
-	mock.ExpectQuery("SELECT id, name, description, category, is_system, graph, created_at, updated_at FROM templates WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, name, description, is_system, graph_definition, created_at, updated_at FROM workflow_templates WHERE id = \\$1").
 		WithArgs(id).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "description", "category", "is_system", "graph", "created_at", "updated_at"}).
-			AddRow(id, "Template 1", "desc", "custom", false, graphJSON, time.Now(), time.Now()))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "description", "is_system", "graph_definition", "created_at", "updated_at"}).
+			AddRow(id, "Template 1", "desc", false, graphJSON, time.Now(), time.Now()))
 
 	t1, err := repo.Get(context.Background(), id)
 	if err != nil {
@@ -51,11 +49,9 @@ func TestTemplateRepository_List(t *testing.T) {
 
 	repo := NewTemplateRepository(mock)
 
-	mock.ExpectExec("CREATE TABLE IF NOT EXISTS templates").WillReturnResult(pgxmock.NewResult("CREATE", 0))
-
-	mock.ExpectQuery("SELECT id, name, description, category, is_system, graph, created_at, updated_at FROM templates").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "description", "category", "is_system", "graph", "created_at", "updated_at"}).
-			AddRow("1", "T1", "", "custom", false, []byte("{}"), time.Now(), time.Now()))
+	mock.ExpectQuery("SELECT id, name, description, is_system, graph_definition, created_at, updated_at FROM workflow_templates ORDER BY created_at DESC").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "description", "is_system", "graph_definition", "created_at", "updated_at"}).
+			AddRow("1", "T1", "", false, []byte("{}"), time.Now(), time.Now()))
 
 	list, err := repo.List(context.Background())
 	if err != nil {
@@ -81,12 +77,11 @@ func TestTemplateRepository_Create(t *testing.T) {
 		ID:       "tpl-1",
 		Name:     "New Template",
 		Category: "custom",
+		Graph:    workflow.GraphDefinition{},
 	}
 
-	mock.ExpectExec("CREATE TABLE IF NOT EXISTS templates").WillReturnResult(pgxmock.NewResult("CREATE", 0))
-
-	mock.ExpectExec("INSERT INTO templates").
-		WithArgs(tpl.ID, tpl.Name, tpl.Description, string(tpl.Category), tpl.IsSystem, pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+	mock.ExpectExec("INSERT INTO workflow_templates").
+		WithArgs(tpl.ID, tpl.Name, tpl.Description, tpl.IsSystem, pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 	err = repo.Create(context.Background(), tpl)
@@ -105,9 +100,7 @@ func TestTemplateRepository_Delete(t *testing.T) {
 	repo := NewTemplateRepository(mock)
 	id := "tpl-1"
 
-	mock.ExpectExec("CREATE TABLE IF NOT EXISTS templates").WillReturnResult(pgxmock.NewResult("CREATE", 0))
-
-	mock.ExpectExec("DELETE FROM templates").
+	mock.ExpectExec("DELETE FROM workflow_templates").
 		WithArgs(id).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
 

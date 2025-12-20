@@ -82,77 +82,78 @@
             "nodes": "节点数"
         }
     },
-    "chat": {
-        "title": "对话",
+    "meeting": {
+        "title": "会议",
+        "subtitle": "AI 协同议事会",
         "inputPlaceholder": "输入消息...",
         "send": "发送",
         "thinking": "思考中...",
         "generating": "生成中...",
         "regenerate": "重新生成",
         "copyMessage": "复制消息",
-        "noMessages": "暂无消息"
-    },
-    "agent": {
-        "title": "智能体",
-        "list": {
-            "title": "智能体列表",
-            "empty": "暂无智能体",
-            "create": "创建智能体"
+        "noMessages": "暂无消息",
+        "agent": {
+            "title": "智能体",
+            "list": {
+                "title": "智能体列表",
+                "empty": "暂无智能体",
+                "create": "创建智能体"
+            },
+            "form": {
+                "name": "名称",
+                "namePlaceholder": "请输入智能体名称",
+                "description": "描述",
+                "descriptionPlaceholder": "描述智能体的角色",
+                "persona": "人设提示词",
+                "personaPlaceholder": "定义智能体的性格和行为",
+                "model": "模型",
+                "provider": "服务商",
+                "capabilities": "能力",
+                "webSearch": "联网搜索",
+                "codeExecution": "代码执行"
+            }
         },
-        "form": {
-            "name": "名称",
-            "namePlaceholder": "请输入智能体名称",
-            "description": "描述",
-            "descriptionPlaceholder": "描述智能体的角色",
-            "persona": "人设提示词",
-            "personaPlaceholder": "定义智能体的性格和行为",
-            "model": "模型",
-            "provider": "服务商",
-            "capabilities": "能力",
-            "webSearch": "联网搜索",
-            "codeExecution": "代码执行"
-        }
-    },
-    "group": {
-        "title": "群组",
-        "list": {
-            "title": "群组列表",
-            "empty": "暂无群组",
-            "create": "创建群组"
+        "group": {
+            "title": "群组",
+            "list": {
+                "title": "群组列表",
+                "empty": "暂无群组",
+                "create": "创建群组"
+            },
+            "form": {
+                "name": "名称",
+                "namePlaceholder": "请输入群组名称",
+                "icon": "图标",
+                "systemPrompt": "系统提示词",
+                "systemPromptPlaceholder": "定义群组的上下文"
+            }
         },
-        "form": {
-            "name": "名称",
-            "namePlaceholder": "请输入群组名称",
-            "icon": "图标",
-            "systemPrompt": "系统提示词",
-            "systemPromptPlaceholder": "定义群组的上下文"
+        "humanReview": {
+            "title": "需要人工审核",
+            "reason": "审核原因",
+            "content": "待审核内容",
+            "approve": "通过",
+            "reject": "拒绝",
+            "modify": "修改",
+            "timeout": "剩余时间",
+            "expired": "审核已过期"
+        },
+        "settings": {
+            "title": "设置",
+            "language": "语言",
+            "theme": "主题",
+            "themes": {
+                "light": "浅色",
+                "dark": "深色",
+                "system": "跟随系统"
+            }
+        },
+        "errors": {
+            "networkError": "网络错误，请检查您的连接",
+            "serverError": "服务器错误，请稍后重试",
+            "notFound": "资源未找到",
+            "unauthorized": "请先登录",
+            "forbidden": "您没有权限执行此操作"
         }
-    },
-    "humanReview": {
-        "title": "需要人工审核",
-        "reason": "审核原因",
-        "content": "待审核内容",
-        "approve": "通过",
-        "reject": "拒绝",
-        "modify": "修改",
-        "timeout": "剩余时间",
-        "expired": "审核已过期"
-    },
-    "settings": {
-        "title": "设置",
-        "language": "语言",
-        "theme": "主题",
-        "themes": {
-            "light": "浅色",
-            "dark": "深色",
-            "system": "跟随系统"
-        }
-    },
-    "errors": {
-        "networkError": "网络错误，请检查您的连接",
-        "serverError": "服务器错误，请稍后重试",
-        "notFound": "资源未找到",
-        "unauthorized": "请先登录",
-        "forbidden": "您没有权限执行此操作"
     }
 }
