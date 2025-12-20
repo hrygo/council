@@ -91,6 +91,61 @@ make stop
 
 ---
 
+## 🏛️ The Council: Out-of-Box Experience
+
+The Council is the **built-in AI Governance Board** that comes pre-configured, allowing you to experience multi-agent collaboration immediately.
+
+### Default Agents
+
+| Agent                | Role                             | Model        | Strategy             |
+| :------------------- | :------------------------------- | :----------- | :------------------- |
+| 🛡️ **Value Defender** | Advocates for strategic value    | Gemini 3 Pro | Creative (temp: 0.9) |
+| 🔍 **Risk Auditor**   | Identifies risks and gaps        | DeepSeek     | Logical (temp: 0.6)  |
+| ⚖️ **Chief Justice**  | Synthesizes and delivers verdict | GLM-4.6      | Balanced (temp: 0.2) |
+
+### Available Workflows
+
+1. **Council Debate** - Single round three-way debate with verdict
+2. **Council Optimize** - Iterative refinement loop with human-in-the-loop review
+
+### Try It Now
+
+```bash
+# 1. Start the server
+make start
+
+# 2. Open browser
+open http://localhost:5173
+
+# 3. Select "The Council" group from sidebar
+# 4. Create a new meeting with "Council Debate" workflow
+# 5. Upload your document and watch the AI council deliberate!
+```
+
+### How the Optimize Loop Works
+
+```
+📄 Your Document
+       ↓
+🧠 Memory Retrieval (历史上下文)
+       ↓
+   ┌───┴───┐
+   ↓       ↓
+🛡️ Value  🔍 Risk
+Defender  Auditor
+   ↓       ↓
+   └───┬───┘
+       ↓
+⚖️ Chief Justice (评分裁决)
+       ↓
+👤 Human Review (继续/应用/回滚)
+       ↓
+   [Score < 90?] → 🔄 Loop Back
+   [Score ≥ 90?] → ✅ Complete
+```
+
+---
+
 ## 🏗 Architecture
 
 ```
