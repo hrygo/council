@@ -285,6 +285,7 @@ SPEC-605 ───────────────────────�
 | 9.4  | 硬编码默认值清理 & 配置化         | Refactor |   P1   | Tech Debt |
 | 9.5  | ID 命名规范审查与重构             | Refactor |   P2   | Tech Debt |
 | 9.6  | Store 类型 UI 字段完整性检查      | QA       |   P2   | Tech Debt |
+| 9.7  | Core 层解耦 (移除 Adjudicator)    | Refactor |   P1   | Tech Debt |
 
 ### 8.2 预防清单
 
