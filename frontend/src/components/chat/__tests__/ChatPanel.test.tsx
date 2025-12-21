@@ -14,7 +14,7 @@ describe('ChatPanel', () => {
 
     it('should render empty state when no messages', () => {
         render(<ChatPanel sessionId="test-session" />);
-        expect(screen.getByText('等待会议开始...')).toBeInTheDocument();
+        expect(screen.getByText('meeting.waitingForStart')).toBeInTheDocument();
     });
 
     it('should render message groups with headers', () => {
@@ -128,7 +128,7 @@ describe('ChatPanel', () => {
         // We need to check if the active class is applied.
         // Since we composed components, looking for a specific indicator or class on parent.
         // Detailed verification usually via snapshot or specific class check.
-        const groupStatus = screen.getByText('Processing');
+        const groupStatus = screen.getByText('meeting.status.processing');
         expect(groupStatus).toBeInTheDocument();
     });
 });

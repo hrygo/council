@@ -1,4 +1,5 @@
 import { type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { NodeStatus } from '../../types/session';
 import { AgentAvatar } from '../common/AgentAvatar';
 
@@ -28,6 +29,7 @@ const statusColors: Record<NodeStatus, string> = {
 };
 
 export const GroupHeader: FC<GroupHeaderProps> = ({ nodeName, nodeType, status }) => {
+    const { t } = useTranslation();
     const icon = nodeTypeIcons[nodeType] || '📍';
     const isAgent = nodeType === 'agent';
 
@@ -44,7 +46,7 @@ export const GroupHeader: FC<GroupHeaderProps> = ({ nodeName, nodeType, status }
                     {nodeName}
                 </span>
                 {isAgent && status === 'running' && (
-                    <span className="text-[10px] text-gray-400 leading-none">Thinking...</span>
+                    <span className="text-[10px] text-gray-400 leading-none">{t('meeting.status.thinking')}</span>
                 )}
             </div>
 
@@ -53,14 +55,14 @@ export const GroupHeader: FC<GroupHeaderProps> = ({ nodeName, nodeType, status }
                 {status === 'running' && (
                     <>
                         <span className="animate-spin h-3 w-3 rounded-full border-2 border-current border-t-transparent opacity-70" />
-                        <span className="hidden sm:inline">Processing</span>
+                        <span className="hidden sm:inline">{t('meeting.status.processing')}</span>
                     </>
                 )}
                 {status === 'completed' && (
-                    <span className="opacity-80">Completed</span>
+                    <span className="opacity-80">{t('meeting.status.completed')}</span>
                 )}
-                {status === 'failed' && 'Failed'}
-                {status === 'pending' && <span className="opacity-50">Pending</span>}
+                {status === 'failed' && t('meeting.status.failed')}
+                {status === 'pending' && <span className="opacity-50">{t('meeting.status.pending')}</span>}
             </span>
         </div>
     );

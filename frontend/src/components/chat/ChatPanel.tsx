@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { MessageGroupCard } from './MessageGroupCard';
 import { ChatInput } from './ChatInput';
@@ -12,6 +13,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({
     readOnly,
     sessionId
 }) => {
+    const { t } = useTranslation();
     const messageGroups = useSessionStore(state => state.messageGroups);
     const currentSession = useSessionStore(state => state.currentSession);
     const activeNodeIds = currentSession?.activeNodeIds ?? [];
@@ -39,7 +41,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 dark:bg-gray-800/50">
                 {messageGroups.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
-                        等待会议开始...
+                        {t('meeting.waitingForStart')}
                     </div>
                 ) : (
                     messageGroups.map(group => (

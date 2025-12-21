@@ -92,6 +92,15 @@
         "regenerate": "重新生成",
         "copyMessage": "复制消息",
         "noMessages": "暂无消息",
+        "waitingForStart": "等待会议开始...",
+        "councilSession": "理事会会议",
+        "status": {
+            "processing": "处理中",
+            "thinking": "思考中...",
+            "pending": "等待中",
+            "completed": "已完成",
+            "failed": "失败"
+        },
         "agent": {
             "title": "智能体",
             "list": {

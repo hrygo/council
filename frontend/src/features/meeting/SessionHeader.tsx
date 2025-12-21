@@ -1,4 +1,5 @@
 import { type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
 import { Activity, Clock, Coins, Hash, Minimize2 } from 'lucide-react';
@@ -23,6 +24,7 @@ const StatusBadge: FC<{ status: string }> = ({ status }) => {
 };
 
 export const SessionHeader: FC<SessionHeaderProps> = ({ onExitFullscreen }) => {
+    const { t } = useTranslation();
     const currentSession = useSessionStore(state => state.currentSession);
     const stats = useWorkflowRunStore(state => state.stats);
     const executionStatus = useWorkflowRunStore(state => state.executionStatus);
@@ -44,7 +46,7 @@ export const SessionHeader: FC<SessionHeaderProps> = ({ onExitFullscreen }) => {
                         <Activity size={20} className="text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                        <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Council Session</h1>
+                        <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{t('meeting.councilSession')}</h1>
                         <span className="text-xs text-gray-500 font-mono hidden sm:inline-block">{currentSession.id.slice(0, 8)}</span>
                     </div>
                 </div>

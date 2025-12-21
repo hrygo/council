@@ -92,6 +92,15 @@
         "regenerate": "Regenerate",
         "copyMessage": "Copy Message",
         "noMessages": "No messages yet",
+        "waitingForStart": "Waiting for session to start...",
+        "councilSession": "Council Session",
+        "status": {
+            "processing": "Processing",
+            "thinking": "Thinking...",
+            "pending": "Pending",
+            "completed": "Completed",
+            "failed": "Failed"
+        },
         "agent": {
             "title": "Agent",
             "list": {
