@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.1] - 2025-12-21
+
+### Changed
+- **Documentation**: Major restructuring of `docs/` directory for better organization.
+  - Created `plans/`, `references/`, `audits/`, `debates/` subdirectories.
+  - Simplified `GEMINI.md` for higher information density.
+  - Consolidated Development Plan tech debt into Sprint 9 roadmap.
+- **Project Standards**: Removed redundant code examples and refined rule definitions in `GEMINI.md`.
+
+### Fixed
+- **Debug Logs**: Removed redundant `[Workflow]` debugging logs from `workflow.go` to reduce noise.
+- **Documentation Links**: Fixed broken cross-references in `development_plan.md` and other docs resulting from directory moves.
+
 ## [0.15.0] - 2025-12-21
 
 ### Added
