@@ -139,4 +139,4 @@
 
 ## 6. 附录：PRD 文档
 
-见 ./PRD.md
+见 ../references/PRD.md

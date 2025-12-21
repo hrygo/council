@@ -51,7 +51,7 @@
 
 | 文件                                      | 作用                           |
 | :---------------------------------------- | :----------------------------- |
-| `docs/Default_Experience_Plan.md`         | 架构分层设计（骨架/实例/来源） |
+| `docs/plans/Default_Experience_Plan.md`   | 架构分层设计（骨架/实例/来源） |
 | `docs/development_plan.md`                | 总体开发计划                   |
 | `internal/core/workflow/types.go`         | 骨架层节点类型定义             |
 | `internal/core/workflow/nodes/factory.go` | 节点处理器工厂                 |
