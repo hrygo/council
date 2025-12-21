@@ -28,7 +28,7 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 			prompt, _ := node.Properties["summary_prompt"].(string)
 			model, _ := node.Properties["model"].(string)
 			if model == "" {
-				model = "gpt-4"
+				model = deps.Registry.GetDefaultModel()
 			}
 
 			// EndProcessor currently uses LLMProvider directly.
@@ -53,6 +53,7 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 				return nil, fmt.Errorf("agent_id property missing for node %s", node.ID)
 			}
 			return &AgentProcessor{
+				NodeID:    node.ID,
 				AgentID:   agentID,
 				AgentRepo: deps.AgentRepo,
 				Registry:  deps.Registry,

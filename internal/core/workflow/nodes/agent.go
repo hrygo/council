@@ -13,7 +13,8 @@ import (
 )
 
 type AgentProcessor struct {
-	AgentID   string
+	NodeID    string // Graph node ID (e.g., "agent_affirmative")
+	AgentID   string // Agent UUID from database
 	AgentRepo agent.Repository
 	Registry  *llm.Registry
 }
@@ -23,7 +24,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 	stream <- workflow.StreamEvent{
 		Type:      "node_state_change",
 		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"node_id": a.AgentID, "status": "running"},
+		Data:      map[string]interface{}{"node_id": a.NodeID, "status": "running"},
 	}
 
 	// 2. Fetch Agent Persona
@@ -66,7 +67,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 	}
 	// Fallback model if config missing
 	if req.Model == "" {
-		req.Model = "gpt-4"
+		req.Model = a.Registry.GetDefaultModel()
 	}
 
 	tokenStream, errChan := provider.Stream(ctx, req)
@@ -84,7 +85,7 @@ Loop:
 				stream <- workflow.StreamEvent{
 					Type:      "token_stream",
 					Timestamp: time.Now(),
-					Data:      map[string]interface{}{"node_id": a.AgentID, "chunk": token},
+					Data:      map[string]interface{}{"node_id": a.NodeID, "chunk": token},
 				}
 			}
 		case err, ok := <-errChan:
@@ -109,7 +110,7 @@ Loop:
 	stream <- workflow.StreamEvent{
 		Type:      "node_state_change",
 		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"node_id": a.AgentID, "status": "completed"},
+		Data:      map[string]interface{}{"node_id": a.NodeID, "status": "completed"},
 	}
 
 	return output, nil

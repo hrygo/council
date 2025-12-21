@@ -129,6 +129,26 @@ func (r *Registry) createProvider(config LLMConfig) (LLMProvider, error) {
 	}
 }
 
+// GetDefaultModel returns the system default LLM model name from config
+func (r *Registry) GetDefaultModel() string {
+	if r.cfg.LLM.Model != "" {
+		return r.cfg.LLM.Model
+	}
+	// Fallback based on provider
+	switch r.cfg.LLM.Provider {
+	case "gemini", "google":
+		return "gemini-2.0-flash"
+	case "openai":
+		return "gpt-4"
+	case "deepseek":
+		return "deepseek-chat"
+	case "dashscope":
+		return "qwen-max"
+	default:
+		return "gpt-4"
+	}
+}
+
 // NewEmbedder creates a new Embedder based on embedding config.
 // Embedder configuration is usually stricter (must match vector DB), so we keep it separate from dynamic LLM registry for now.
 func (r *Registry) NewEmbedder(config EmbeddingConfig) (Embedder, error) {

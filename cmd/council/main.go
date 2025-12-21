@@ -15,9 +15,15 @@ import (
 	"github.com/hrygo/council/internal/infrastructure/persistence"
 	"github.com/hrygo/council/internal/pkg/config"
 	"github.com/hrygo/council/internal/resources"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file (if exists)
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
 	fmt.Println("The Council Backend is starting...")
 
 	cfg := config.Load()

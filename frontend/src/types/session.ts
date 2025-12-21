@@ -8,7 +8,7 @@ export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed';
  * 会话整体状态
  * 对应后端 SessionStatus
  */
-export type SessionStatus = 
+export type SessionStatus =
   | 'idle'       // 未开始
   | 'running'    // 执行中
   | 'paused'     // 已暂停
@@ -58,6 +58,8 @@ export interface MessageGroup {
  */
 export interface NodeStateSnapshot {
   id: string;
+  name?: string;         // 节点显示名称
+  type?: string;         // 节点类型
   status: NodeStatus;
   startedAt?: Date;
   completedAt?: Date;
@@ -77,13 +79,13 @@ export interface WorkflowSession {
   status: SessionStatus;
   startedAt?: Date;
   completedAt?: Date;
-  
+
   // 工作流图
   nodes: Map<string, NodeStateSnapshot>;
-  
+
   // 当前高亮节点 (可能多个，如并行执行)
   activeNodeIds: string[];
-  
+
   // 累计统计
   totalTokens: number;
   totalCostUsd: number;

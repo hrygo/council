@@ -1,4 +1,4 @@
-import { type FC, useRef } from 'react';
+import { type FC, useRef, useEffect } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
 import { Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLayoutStore } from '../../stores/useLayoutStore';
@@ -11,6 +11,7 @@ import { DocumentReader } from '../../components/modules/DocumentReader';
 import { HumanReviewModal } from '../execution/components/HumanReviewModal';
 import { SessionStarter } from './SessionStarter';
 import { useSessionStore } from '../../stores/useSessionStore';
+import { useConnectStore } from '../../stores/useConnectStore';
 
 // 面板全屏按钮
 const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel }) => {
@@ -119,6 +120,18 @@ export const MeetingRoom: FC = () => {
 
     // Check for active session
     const currentSession = useSessionStore(state => state.currentSession);
+    const wsStatus = useConnectStore(state => state.status);
+    const wsConnect = useConnectStore(state => state.connect);
+
+    // Auto-connect WebSocket if session exists but WS is disconnected
+    useEffect(() => {
+        if (currentSession && wsStatus === 'disconnected') {
+            const wsHost = window.location.host;
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${wsHost}/ws`;  // Backend WebSocket route is /ws
+            wsConnect(wsUrl);
+        }
+    }, [currentSession, wsStatus, wsConnect]);
 
     // Fullscreen Mode
     if (maximizedPanel) {

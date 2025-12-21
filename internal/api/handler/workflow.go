@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -89,7 +90,14 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Run in Goroutine
 	go func() {
-		defer session.Complete()
+		log.Printf("[Workflow] Starting execution for session %s", session.ID)
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[Workflow] PANIC in session %s: %v", session.ID, r)
+			}
+			session.Complete()
+			log.Printf("[Workflow] Session %s completed", session.ID)
+		}()
 
 		// Bridge Engine Stream -> WS Hub
 		// We need to modify Engine to allow tapping or we just read from the stream channel
@@ -98,11 +106,14 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 			for event := range engine.StreamChannel {
 				// Augment event with SessionID?
 				event.Data["session_id"] = session.ID
+				log.Printf("[Workflow] Broadcasting event: %s for node: %v", event.Type, event.Data["node_id"])
 				h.Hub.Broadcast(event)
 			}
 		}()
 
+		log.Printf("[Workflow] Calling engine.Run() for session %s", session.ID)
 		engine.Run(session.Context())
+		log.Printf("[Workflow] engine.Run() finished for session %s", session.ID)
 		close(engine.StreamChannel)
 	}()
 

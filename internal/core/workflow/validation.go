@@ -11,6 +11,9 @@ import (
 // 3. No cycles
 // 4. All nodes are reachable from Start
 func (g *GraphDefinition) Validate() error {
+	if g == nil {
+		return errors.New("graph definition is nil")
+	}
 	if g.Nodes == nil {
 		return errors.New("nodes map is nil")
 	}

@@ -106,6 +106,8 @@ export const useSessionStore = create<SessionState>()(
             nodes.forEach(node => {
                 initialNodes.set(node.id, {
                     id: node.id,
+                    name: node.name,
+                    type: node.type,
                     status: 'pending'
                 });
             });
@@ -181,8 +183,8 @@ export const useSessionStore = create<SessionState>()(
 
                     group = {
                         nodeId: msg.nodeId,
-                        nodeName: node ? `Node ${msg.nodeId}` : 'Unknown Node', // 简化，实际应从 node 元数据获取名称
-                        nodeType: 'agent', // 默认为 agent，可以通过其他方式传递类型
+                        nodeName: node?.name || msg.nodeId || 'Unknown Node',
+                        nodeType: (node?.type as MessageGroup['nodeType']) || 'agent',
                         isParallel: false, // 默认为非并行
                         messages: [],
                         status: 'running',

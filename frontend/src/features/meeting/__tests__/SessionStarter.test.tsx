@@ -6,24 +6,30 @@ import { useSessionStore } from '../../../stores/useSessionStore';
 
 // === Global Mocks ===
 const mockNavigate = vi.fn();
+const mockConnect = vi.fn();
 
 vi.mock('react-router-dom', () => ({
     useNavigate: () => mockNavigate, // Always return our spy
 }));
 
 vi.mock('../../../hooks/useTemplates', () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useTemplates: vi.fn(),
 }));
 
 vi.mock('../../../stores/useSessionStore', () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useSessionStore: vi.fn(),
+}));
+
+vi.mock('../../../stores/useConnectStore', () => ({
+    useConnectStore: {
+        getState: () => ({ connect: mockConnect }),
+    },
 }));
 
 // Mock fetch
 const globalFetch = vi.fn();
 vi.stubGlobal('fetch', globalFetch);
+
 
 describe('SessionStarter', () => {
     const mockInitSession = vi.fn();
@@ -50,7 +56,7 @@ describe('SessionStarter', () => {
         // 2. Mock Session Store
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (useSessionStore as any).mockImplementation((selector: any) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
             if (selector && selector.name === 'initSession') return mockInitSession;
             return mockInitSession;
         });
@@ -96,6 +102,55 @@ describe('SessionStarter', () => {
                 sessionId: 'sess_123',
                 nodes: [] // Should be empty array, not crash
             }));
+        });
+    });
+
+    it('should connect to WebSocket after successful API call', async () => {
+        // 1. Mock Templates Data with valid graph
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (useTemplates as any).mockReturnValue({
+            data: [{
+                id: 't1',
+                name: 'Council Debate',
+                description: 'Test template',
+                is_system: true,
+                graph: {
+                    nodes: {
+                        start: { id: 'start', type: 'start', name: 'Start' }
+                    }
+                }
+            }],
+            isLoading: false
+        });
+
+        // 2. Mock Session Store
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (useSessionStore as any).mockReturnValue(mockInitSession);
+
+        // 3. Mock API Response
+        globalFetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({ session_id: 'sess_456', status: 'started' })
+        });
+
+        // 4. Render
+        render(<SessionStarter onStarted={mockOnStarted} />);
+
+        // 5. Select Template
+        fireEvent.click(screen.getByText('Council Debate'));
+
+        // 6. Enter Topic
+        const textarea = screen.getByRole('textbox');
+        fireEvent.change(textarea, { target: { value: 'Should AI be regulated?' } });
+
+        // 7. Click Start
+        const startBtn = screen.getByText('Start Council Session');
+        await waitFor(() => expect(startBtn).not.toBeDisabled());
+        fireEvent.click(startBtn);
+
+        // 8. Verification - WebSocket connect should be called
+        await waitFor(() => {
+            expect(mockConnect).toHaveBeenCalledWith(expect.stringMatching(/ws:.*\/ws/));
         });
     });
 });

@@ -36,6 +36,8 @@ export const useWebSocketRouter = () => {
 
                 if (data.status === 'running') {
                     workflowStore.addActiveNode(data.node_id);
+                    // Auto-update session status to running when first node starts
+                    sessionStore.updateSessionStatus('running');
                 } else if (data.status === 'completed' || data.status === 'failed') {
                     workflowStore.removeActiveNode(data.node_id);
                     sessionStore.finalizeMessage(data.node_id);

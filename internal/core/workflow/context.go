@@ -7,7 +7,7 @@ import (
 
 // StreamEvent represents a real-time event sent to the client
 type StreamEvent struct {
-	Type      string                 `json:"type"` // e.g. "node_start", "token", "node_end", "error"
+	Type      string                 `json:"event"` // e.g. "token_stream", "node_state_change", "error"
 	Timestamp time.Time              `json:"timestamp"`
 	NodeID    string                 `json:"node_id,omitempty"`
 	Data      map[string]interface{} `json:"data,omitempty"`

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.15.0] - 2025-12-21
+
+### Added
+- **Sprint 8 Planning**: Complete specification suite for Meeting Room improvements:
+  - SPEC-801: Session Startup Flow (document upload, confirmation preview)
+  - SPEC-802: Workflow Live Monitor (real-time node highlighting)
+  - SPEC-803: Meeting UX Optimization (Agent avatars, progress indicators)
+  - SPEC-804: Debate Flow Restoration (Example workflow alignment)
+
+### Fixed
+- **WebSocket JSON Field Mismatch**: Changed `StreamEvent.Type` JSON tag from `"type"` to `"event"` to match frontend expectations - messages now correctly routed.
+- **Node ID Mismatch**: Fixed `AgentProcessor` to use graph node ID instead of Agent UUID in events - messages now display correct node names.
+- **LLM Model Fallback**: Replaced hardcoded `"gpt-4"` fallback with `Registry.GetDefaultModel()` for proper provider-aware defaults.
+- **Session Status**: Auto-update session status to `running` when first node starts executing.
+- **Node Name Display**: Store and use node `name`/`type` in `NodeStateSnapshot` for proper UI display.
+
+### Changed
+- **Vite WebSocket Proxy**: Fixed `/ws` proxy target from `ws://` to `http://` protocol.
+- **Development Plan**: Updated to Sprint 8 with complete task tracking matrix.
+
 ## [0.14.0] - 2025-12-21
 
 ### Added

@@ -2,6 +2,7 @@ import { type FC, useState } from 'react';
 import { Play, Sparkles, LayoutTemplate, MessageSquare } from 'lucide-react';
 import { useTemplates } from '../../hooks/useTemplates';
 import { useSessionStore } from '../../stores/useSessionStore';
+import { useConnectStore } from '../../stores/useConnectStore';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -67,11 +68,14 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                 nodes: nodes
             });
 
-            // 4. Navigate to Meeting
+            // 4. Establish WebSocket connection
+            const wsHost = window.location.host;
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${wsHost}/ws`;  // Backend WebSocket route is /ws
+            useConnectStore.getState().connect(wsUrl);
+
+            // 5. Navigate to Meeting
             onStarted(); // Close modal
-            // We need to use router to navigate. 
-            // Since this component is inside a Router, we can use useNavigate.
-            // I will add the hook import and usage.
             navigate('/meeting');
 
         } catch (err: unknown) {

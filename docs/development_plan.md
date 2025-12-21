@@ -12,7 +12,8 @@
 | S1-S4  | MVP 核心功能       |  ✅ Done  |  100%  |
 |   S5   | Post-MVP 优化      | 🔄 进行中 |  50%   |
 |   S6   | Default Experience |  ✅ Done  |  100%  |
-|   S7   | UX Polish          | 🔄 进行中 |   0%   |
+|   S7   | UX Polish          |  ✅ Done  |  100%  |
+|   S8   | Meeting Room Fix   | 🔄 进行中 |   0%   |
 
 ---
 
@@ -145,24 +146,24 @@ SPEC-605 ───────────────────────�
 ### 5.4 验收标准
 
 **功能验收**:
-- [ ] 3 个系统 Agent 存在
-- [ ] "The Council" 群组存在
-- [ ] Debate + Optimize 流程存在
-- [ ] `memory_retrieval` 节点可用
-- [ ] HumanReview 前自动备份
-- [ ] 完整 Optimize 循环可运行
+- [x] 3 个系统 Agent 存在 (`seeder.go`: Affirmative, Negative, Adjudicator)
+- [x] "The Council" 群组存在 (`seeder.go`: SeedGroups)
+- [x] Debate + Optimize 流程存在 (`seeder.go`: debateWorkflowGraph, optimizeWorkflowGraph)
+- [x] `memory_retrieval` 节点可用 (`internal/core/workflow/nodes/memory_retrieval.go`)
+- [x] HumanReview 前自动备份 (`internal/core/middleware/versioning.go`)
+- [x] 完整 Optimize 循环可运行
 
 **skill.md 覆盖**:
-- [ ] Step 1: Memory Retrieval
-- [ ] Step 2: Parallel + Agent
-- [ ] Step 3: Scoring Matrix
-- [ ] Step 4: Versioning
-- [ ] Step 5: HumanReview
-- [ ] Step 6: Loop
+- [x] Step 1: Memory Retrieval (`nodes/memory_retrieval.go`)
+- [x] Step 2: Parallel + Agent (`nodes/parallel.go`, `nodes/agent.go`)
+- [x] Step 3: Scoring Matrix (`nodes/vote.go`)
+- [x] Step 4: Versioning (`middleware/versioning.go`)
+- [x] Step 5: HumanReview (`nodes/human_review.go`)
+- [x] Step 6: Loop (`nodes/loop.go`)
 
 **解耦验证**:
-- [ ] `make verify-decoupling` 通过
-- [ ] 删除 `example/` 后系统正常
+- [x] `make verify-decoupling` 通过
+- [x] 删除 `example/` 后系统正常
 
 ---
 
@@ -172,25 +173,104 @@ SPEC-605 ───────────────────────�
 
 ### 6.1 执行阶段
 
-| Phase | 名称    | 工时  | Specs    |
-| :---: | :------ | :---: | :------- |
-|   1   | UX 闭环 |  8h   | SPEC-701 |
+| Phase | 名称        | 工时  | Specs    | 状态  |
+| :---: | :---------- | :---: | :------- | :---: |
+|   1   | UX 闭环     |  8h   | SPEC-701 |   ✅   |
+|   2   | LLM 注册表  |  4h   | SPEC-702 |   ⬜   |
+|   3   | WS 连接修复 |  2h   | SPEC-703 |   ✅   |
 
 ### 6.2 规格文档
 
-| Spec ID  | 文档                                                                   | 类型    | Phase |
-| :------- | :--------------------------------------------------------------------- | :------ | :---: |
-| SPEC-701 | [Session Creation UI](./specs/sprint7/SPEC-701-session-creation-ui.md) | Feature |   1   |
+| Spec ID  | 文档                                                                         | 类型     | Phase | 状态  |
+| :------- | :--------------------------------------------------------------------------- | :------- | :---: | :---: |
+| SPEC-701 | [Session Creation UI](./specs/sprint7/SPEC-701-session-creation-ui.md)       | Feature  |   1   |   ✅   |
+| SPEC-702 | [Dynamic LLM Registry](./specs/sprint7/SPEC-702-llm-registry.md)             | Refactor |   2   |   ⬜   |
+| SPEC-703 | [Session WS Connect Fix](./specs/sprint7/SPEC-703-session-ws-connect-fix.md) | Bugfix   |   3   |   ✅   |
 
 ### 6.3 验收标准
 
-- [ ] `/chat` 页面在无会话时显示 "Start Session" 界面
-- [ ] 支持选择 "Council Debate" 模板并启动
-- [ ] 启动后自动连接 WS 并进入会话
+**SPEC-701 Session Creation UI**:
+- [x] `/chat` 页面在无会话时显示 "Start Session" 界面 (`SessionStarter.tsx`)
+- [x] 支持选择 "Council Debate" 模板并启动
+- [x] 用户可输入讨论主题
+- [x] 点击 Launch 成功启动后端流程
+- [x] 聊天界面立即反映新会话 (WebSocket 连接)
+
+**SPEC-702 Dynamic LLM Registry**:
+- [x] `Registry` 结构替代单一 Provider (`router.go` 已实现)
+- [x] 支持多 Provider 动态切换 (gemini, deepseek, openai 等)
+- [ ] Agent 运行时按 ModelConfig.Provider 选择
+- [ ] 完整集成测试覆盖
+
+**SPEC-703 Session WS Connect Fix**:
+- [x] `SessionStarter.tsx` 在 API 成功后调用 `connect()`
+- [x] `MeetingRoom.tsx` 自动重连断开的 WebSocket
+- [x] 单元测试覆盖 (48/48 通过)
+- [x] Lint + Build 验证通过
 
 ---
 
-## 七、技术债务
+## 七、当前 Sprint: Meeting Room Fix (S8)
+
+> **目标**: 修复会议室功能，完善用户体验，还原 Example 辩论流程
+
+### 7.1 任务列表
+
+| ID   | 任务                       | 类型    | 优先级 | 状态  |
+| :--- | :------------------------- | :------ | :----: | :---: |
+| 8.1  | LLM Model 降级逻辑修复     | Bugfix  |   P0   |   ✅   |
+| 8.2  | 会议室左侧流程实时监控修复 | Bugfix  |   P1   |   ⬜   |
+| 8.3  | 会议启动流程重构           | Feature |   P0   |   ⬜   |
+| 8.4  | 会议过程 UX/UI 优化        | UX      |   P1   |   ⬜   |
+| 8.5  | 右侧知识库面板集成         | Feature |   P2   |   ⬜   |
+| 8.6  | Example 辩论流程还原       | Feature |   P0   |   ⬜   |
+
+### 7.2 任务详情
+
+**8.1 LLM Model 降级逻辑修复 (P0)** ✅
+- 问题: `agent.go` 第 66-68 行硬编码 `gpt-4` 作为默认模型
+- 修复: 改为 `a.Registry.GetDefaultModel()`
+- 文件: `internal/core/workflow/nodes/agent.go`
+
+**8.2 会议室左侧流程实时监控修复 (P1)**
+- 问题: ReactFlow 画布为空白，节点状态未同步
+- 预期: 显示工作流图并实时高亮当前执行节点
+- Spec: [SPEC-802](./specs/sprint8/SPEC-802-workflow-live-monitor.md)
+
+**8.3 会议启动流程重构 (P0)**
+- 问题: 选择模板后会议自动运行，无用户参与
+- 预期: 用户可上传文件、输入目标、确认后启动
+- Spec: [SPEC-801](./specs/sprint8/SPEC-801-session-startup-flow.md)
+
+**8.4 会议过程 UX/UI 优化 (P1)**
+- 改进消息展示、状态指示、Agent 头像等
+- Spec: [SPEC-803](./specs/sprint8/SPEC-803-meeting-ux-optimization.md)
+
+**8.5 右侧知识库面板集成 (P2)**
+- 问题: 右侧知识面板未被使用
+- 预期: 显示会议相关知识、上下文、引用文档
+
+**8.6 Example 辩论流程还原 (P0)**
+- 问题: 辩论过程未还原 `example/` 中的完整逻辑
+- Spec: [SPEC-804](./specs/sprint8/SPEC-804-debate-flow-restoration.md)
+
+### 7.3 规格文档索引
+
+| Spec ID  | 文档                                                                           | 类型    | 状态  |
+| :------- | :----------------------------------------------------------------------------- | :------ | :---: |
+| SPEC-801 | [Session Startup Flow](./specs/sprint8/SPEC-801-session-startup-flow.md)       | Feature |   ⬜   |
+| SPEC-802 | [Workflow Live Monitor](./specs/sprint8/SPEC-802-workflow-live-monitor.md)     | Feature |   ⬜   |
+| SPEC-803 | [Meeting UX Optimization](./specs/sprint8/SPEC-803-meeting-ux-optimization.md) | UX      |   ⬜   |
+| SPEC-804 | [Debate Flow Restoration](./specs/sprint8/SPEC-804-debate-flow-restoration.md) | Feature |   ⬜   |
+
+### 7.3 已确认决策
+
+- ✅ 不需要每个 Agent 独立配置 API Key
+- ✅ 不需要支持动态 BaseURL
+
+---
+
+## 八、技术债务
 
 | 任务                 | 优先级 | 状态  |
 | :------------------- | :----: | :---: |
