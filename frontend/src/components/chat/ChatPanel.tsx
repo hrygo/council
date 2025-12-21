@@ -3,7 +3,7 @@ import type { FC } from 'react';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { MessageGroupCard } from './MessageGroupCard';
 import { ChatInput } from './ChatInput';
-import { ChatHeader } from './ChatHeader';
+import { SessionHeader } from '../../features/meeting/SessionHeader';
 import type { ChatPanelProps } from './ChatPanel.types';
 
 export const ChatPanel: FC<ChatPanelProps> = ({
@@ -22,20 +22,16 @@ export const ChatPanel: FC<ChatPanelProps> = ({
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messageGroups, messageGroups.length]);
-    // Note: Only scroll on length change or deep changes might be needed, but usually length or last group update triggers it.
-    // Ideally, track last message content length too if streaming, but auto-scroll behavior sometimes annoying if user scrolls up.
-    // For now simple behavior.
 
     return (
         <div
             className={`
-        flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl z-10 w-full
-        ${fullscreen ? "fixed inset-0 z-50 p-8" : ""}
+        flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl z-20 w-full transition-all duration-300
+        ${fullscreen ? "fixed inset-0 z-50" : ""}
       `}
         >
             {/* Header */}
-            <ChatHeader
-                sessionStatus={currentSession?.status}
+            <SessionHeader
                 onExitFullscreen={fullscreen ? onExitFullscreen : undefined}
             />
 
