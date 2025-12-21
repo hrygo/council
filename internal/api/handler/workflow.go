@@ -106,14 +106,13 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 			for event := range engine.StreamChannel {
 				// Augment event with SessionID?
 				event.Data["session_id"] = session.ID
-				log.Printf("[Workflow] Broadcasting event: %s for node: %v", event.Type, event.Data["node_id"])
+
 				h.Hub.Broadcast(event)
 			}
 		}()
 
-		log.Printf("[Workflow] Calling engine.Run() for session %s", session.ID)
 		engine.Run(session.Context())
-		log.Printf("[Workflow] engine.Run() finished for session %s", session.ID)
+
 		close(engine.StreamChannel)
 	}()
 
