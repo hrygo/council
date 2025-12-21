@@ -128,7 +128,7 @@ describe('ChatPanel', () => {
         // We need to check if the active class is applied.
         // Since we composed components, looking for a specific indicator or class on parent.
         // Detailed verification usually via snapshot or specific class check.
-        const groupStatus = screen.getByText('进行中');
+        const groupStatus = screen.getByText('Processing');
         expect(groupStatus).toBeInTheDocument();
     });
 });
