@@ -56,11 +56,9 @@ func estimateNodeCost(node *Node) NodeCostEstimate {
 	model := "default"
 	if m, ok := node.Properties["model"].(string); ok {
 		model = m
-	} else if node.Type == NodeTypeAgent {
-		// If agent node, logic usually comes from the Agent definition which isn't in the graph prop directly
-		// unless we denormalized it.
-		// For MVP, if property "model" is missing, we assume default.
 	}
+	// Note: If agent node, logic usually comes from the Agent definition. 
+	// For MVP, if property "model" is missing, we fall through to default.
 
 	price, ok := ModelPricing[model]
 	if !ok {

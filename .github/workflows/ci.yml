@@ -30,8 +30,8 @@ jobs:
         run: go build -v ./...
 
       - name: Run Tests
-        # Usage of make test ensures we use the same filtering logic as local dev
-        run: make test
+        # Run only backend tests here; frontend tests run in the frontend job
+        run: make test-backend
 
   lint:
     name: Lint
@@ -69,6 +69,10 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
+
+      - name: Test
+        working-directory: ./frontend
+        run: npm run test
 
       - name: Lint
         working-directory: ./frontend

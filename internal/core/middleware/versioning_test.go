@@ -13,7 +13,9 @@ func TestVersioningMiddleware_CreateBackup(t *testing.T) {
 	tmpDir := t.TempDir()
 	sourceDir := filepath.Join(tmpDir, "source")
 	backupDir := filepath.Join(tmpDir, "backup")
-	os.MkdirAll(sourceDir, 0755)
+	if err := os.MkdirAll(sourceDir, 0755); err != nil {
+		t.Fatalf("failed to create source dir: %v", err)
+	}
 
 	// Create a test file
 	testFile := filepath.Join(sourceDir, "test_doc.md")
@@ -53,7 +55,9 @@ func TestVersioningMiddleware_FindLatestBackup(t *testing.T) {
 	backupDir := filepath.Join(tmpDir, "backup")
 	sessionID := "session-456"
 	sessionBackupDir := filepath.Join(backupDir, sessionID)
-	os.MkdirAll(sessionBackupDir, 0755)
+	if err := os.MkdirAll(sessionBackupDir, 0755); err != nil {
+		t.Fatalf("failed to create session backup dir: %v", err)
+	}
 
 	// Create multiple backup files with different timestamps
 	backupFiles := []string{
@@ -63,7 +67,9 @@ func TestVersioningMiddleware_FindLatestBackup(t *testing.T) {
 	}
 
 	for _, f := range backupFiles {
-		os.WriteFile(filepath.Join(sessionBackupDir, f), []byte("content"), 0644)
+		if err := os.WriteFile(filepath.Join(sessionBackupDir, f), []byte("content"), 0644); err != nil {
+			t.Fatalf("failed to write test file %s: %v", f, err)
+		}
 	}
 
 	mw := NewVersioningMiddleware(backupDir)
@@ -80,11 +86,15 @@ func TestVersioningMiddleware_RestoreFromBackup(t *testing.T) {
 	// Create backup file
 	backupPath := filepath.Join(tmpDir, "backup.bak")
 	backupContent := "This is the backed up content"
-	os.WriteFile(backupPath, []byte(backupContent), 0644)
+	if err := os.WriteFile(backupPath, []byte(backupContent), 0644); err != nil {
+		t.Fatalf("failed to write backup file: %v", err)
+	}
 
 	// Create modified target file
 	targetPath := filepath.Join(tmpDir, "target.md")
-	os.WriteFile(targetPath, []byte("Modified content"), 0644)
+	if err := os.WriteFile(targetPath, []byte("Modified content"), 0644); err != nil {
+		t.Fatalf("failed to write target file: %v", err)
+	}
 
 	// Restore
 	mw := NewVersioningMiddleware(tmpDir)
@@ -113,16 +123,24 @@ func TestVersioningMiddleware_MultipleBackups(t *testing.T) {
 	sourceFile := filepath.Join(tmpDir, "doc.md")
 	backupDir := filepath.Join(tmpDir, "backup")
 
-	os.WriteFile(sourceFile, []byte("v1"), 0644)
+	if err := os.WriteFile(sourceFile, []byte("v1"), 0644); err != nil {
+		t.Fatalf("failed to write source file: %v", err)
+	}
 
 	mw := NewVersioningMiddleware(backupDir)
 	sessionID := "multi-backup-test"
 
 	// Create multiple backups with different timestamps
-	mw.CreateBackup(sessionID, sourceFile)
+	if err := mw.CreateBackup(sessionID, sourceFile); err != nil {
+		t.Fatalf("first backup failed: %v", err)
+	}
 	time.Sleep(1100 * time.Millisecond) // Ensure different timestamps (at least 1 second apart)
-	os.WriteFile(sourceFile, []byte("v2"), 0644)
-	mw.CreateBackup(sessionID, sourceFile)
+	if err := os.WriteFile(sourceFile, []byte("v2"), 0644); err != nil {
+		t.Fatalf("failed to update source file: %v", err)
+	}
+	if err := mw.CreateBackup(sessionID, sourceFile); err != nil {
+		t.Fatalf("second backup failed: %v", err)
+	}
 
 	backups, _ := mw.ListBackups(sessionID, sourceFile)
 	if len(backups) != 2 {

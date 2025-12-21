@@ -56,7 +56,9 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 	}
 
 	var resp map[string]string
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
 	if resp["status"] != "started" || resp["session_id"] == "" {
 		t.Errorf("Unexpected response: %+v", resp)
 	}

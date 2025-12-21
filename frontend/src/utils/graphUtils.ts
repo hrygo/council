@@ -35,6 +35,11 @@ export const transformToReactFlow = (graph: BackendGraph): { nodes: Node[]; edge
     // We do a first pass to traverse and establish edges and levels
     // Note: This assumes a DAG. Cycles might need special handling but for now BFS works for levels.
 
+    // Safety check for nodes
+    if (!graph.nodes) {
+        return { nodes: [], edges: [] };
+    }
+
     const nodeIds = Object.keys(graph.nodes);
     // If start_node_id is missing or invalid, just map all nodes linearly or loosely?
     // Let's assume start_node_id gives us the entry.

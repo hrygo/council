@@ -254,7 +254,7 @@ e2e-report: ## 📊 Open E2E test report
 
 lint: ## 🔍 Run linters
 	@echo "$(CYAN)🔍 Linting...$(RESET)"
-	@go vet ./...
+	@golangci-lint run ./... --timeout=5m
 	@cd frontend && npm run lint
 
 fmt: ## 🎯 Format code

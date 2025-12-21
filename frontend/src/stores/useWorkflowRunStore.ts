@@ -5,6 +5,9 @@ import { enableMapSet } from 'immer';
 import type { Node, Edge } from '@xyflow/react';
 import type { RuntimeNode, RunControlState, ControlAction, HumanReviewRequest } from '../types/workflow-run';
 import type { NodeStatus } from '../types/session';
+import type { BackendGraph } from '../utils/graphUtils';
+import { transformToReactFlow } from '../utils/graphUtils';
+import type { Template } from '../types/template';
 
 enableMapSet();
 
@@ -33,6 +36,11 @@ interface WorkflowRunState {
     humanReview: HumanReviewRequest | null;
 
     /**
+     * 原始图定义 (用于 Live Monitor)
+     */
+    graphDefinition: BackendGraph | null;
+
+    /**
      * 累计统计
      */
     stats: {
@@ -54,6 +62,7 @@ interface WorkflowRunState {
     // === Actions ===
 
     loadWorkflow: (nodes: Node[], edges: Edge[]) => void;
+    setGraphFromTemplate: (template: Template) => void;
     clearWorkflow: () => void;
     updateNodeStatus: (nodeId: string, status: NodeStatus, error?: string) => void;
     setActiveNodes: (nodeIds: string[]) => void;
@@ -79,6 +88,7 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
             activeNodeIds: new Set(),
             executionStatus: 'idle',
             humanReview: null as HumanReviewRequest | null,
+            graphDefinition: null,
             stats: {
                 totalNodes: 0,
                 completedNodes: 0,
@@ -106,12 +116,21 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 });
             },
 
+            setGraphFromTemplate: (template) => {
+                set((state) => {
+                    state.graphDefinition = template.graph;
+                });
+                const { nodes, edges } = transformToReactFlow(template.graph);
+                get().loadWorkflow(nodes, edges);
+            },
+
             clearWorkflow: () => {
                 set((state) => {
                     state.nodes = [];
                     state.edges = [];
                     state.activeNodeIds = new Set();
                     state.executionStatus = 'idle';
+                    state.graphDefinition = null;
                     state.stats = {
                         totalNodes: 0,
                         completedNodes: 0,

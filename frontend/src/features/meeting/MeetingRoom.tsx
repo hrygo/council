@@ -12,6 +12,7 @@ import { HumanReviewModal } from '../execution/components/HumanReviewModal';
 import { SessionStarter } from './SessionStarter';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useConnectStore } from '../../stores/useConnectStore';
+import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
 
 // 面板全屏按钮
 const PanelMaximizeButton: FC<{ panel: 'left' | 'center' | 'right' }> = ({ panel }) => {
@@ -122,6 +123,7 @@ export const MeetingRoom: FC = () => {
     const currentSession = useSessionStore(state => state.currentSession);
     const wsStatus = useConnectStore(state => state.status);
     const wsConnect = useConnectStore(state => state.connect);
+    const graphDefinition = useWorkflowRunStore(state => state.graphDefinition);
 
     // Auto-connect WebSocket if session exists but WS is disconnected
     useEffect(() => {
@@ -137,7 +139,7 @@ export const MeetingRoom: FC = () => {
     if (maximizedPanel) {
         const onExit = () => maximizePanel(null);
         const panelMap = {
-            left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} />,
+            left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} workflowId={currentSession?.workflowId} graph={graphDefinition} readOnly={true} />,
             center: <ChatPanel fullscreen onExitFullscreen={onExit} />,
             right: <DocumentReader fullscreen onExitFullscreen={onExit} />,
         };
@@ -175,7 +177,11 @@ export const MeetingRoom: FC = () => {
                     <div className="relative h-full w-full group">
                         <PanelMaximizeButton panel="left" />
                         {!leftCollapsed && <SidebarCollapseTrigger side="left" onCollapse={handleToggleLeft} />}
-                        <WorkflowCanvas readOnly={isRunning} />
+                        <WorkflowCanvas
+                            readOnly={isRunning}
+                            workflowId={currentSession?.workflowId}
+                            graph={graphDefinition}
+                        />
                     </div>
                 </Panel>
 

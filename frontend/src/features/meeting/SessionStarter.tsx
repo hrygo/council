@@ -6,6 +6,8 @@ import { useConnectStore } from '../../stores/useConnectStore';
 
 import { useNavigate } from 'react-router-dom';
 
+import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
+
 interface SessionStarterProps {
     onStarted: () => void;
 }
@@ -53,6 +55,8 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
             const data = await res.json(); // { session_id, status }
 
             // 3. Initialize Store
+            useWorkflowRunStore.getState().setGraphFromTemplate(template);
+
             // We need a flat list of nodes for the session store to track status
             const rawNodes = template.graph?.nodes || {};
             const nodes = Object.values(rawNodes).map((n: { id: string; name?: string; type?: string }) => ({

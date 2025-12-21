@@ -40,6 +40,7 @@ const nodeTypes: NodeTypes = {
 
 interface WorkflowCanvasProps {
     readOnly?: boolean;
+    mode?: 'edit' | 'run';
     fullscreen?: boolean;
     onExitFullscreen?: () => void;
     workflowId?: string;
@@ -50,7 +51,8 @@ interface WorkflowCanvasProps {
 }
 
 export default function WorkflowCanvas({
-    readOnly,
+    readOnly: propReadOnly,
+    mode,
     fullscreen,
     onExitFullscreen,
     workflowId,
@@ -59,6 +61,7 @@ export default function WorkflowCanvas({
     onNodeClick,
     onPaneClick
 }: WorkflowCanvasProps) {
+    const readOnly = propReadOnly || mode === 'run';
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const { workflow: fetchedWorkflow, fetchWorkflow } = useWorkflow();
