@@ -1,54 +1,42 @@
-# 🛠️ The Council - 开发与交付规约 (v0.15.0)
+# 🛠️ The Council - 开发规约 (v0.15.0)
 
-> **原则**: 务求实效 (Pragmatism) | 前端驱动 (Contract First) | 模拟优先 (Mock First) | 渐进交付 (Atomic Delivery) | TDD 开发
+> **原则**: 务求实效 | 前端驱动 | 模拟优先 | 渐进交付 | TDD
 
-## 1. 核心架构与目录 (Architecture)
+## 1. 架构 (Architecture)
 
-| 领域     | 技术栈                    | 关键目录                          |
-| :------- | :------------------------ | :-------------------------------- |
-| **App**  | **Web App (React SPA)**   | `frontend/src/` (Vite, Tailwind)  |
-| **API**  | **Go (Gin, WebSocket)**   | `cmd/council/`, `internal/api/`   |
-| **Core** | **Workflow Engine**       | `internal/core/` (Agents, Memory) |
-| **Data** | **PostgreSQL + pgvector** | `internal/infrastructure/db/`     |
-| **Docs** | **PRD / Specs**           | `docs/`                           |
+| 领域 | 技术栈                | 目录                            |
+| :--- | :-------------------- | :------------------------------ |
+| App  | React SPA             | `frontend/src/`                 |
+| API  | Go/Gin/WebSocket      | `cmd/council/`, `internal/api/` |
+| Core | Workflow Engine       | `internal/core/`                |
+| Data | PostgreSQL + pgvector | `internal/infrastructure/db/`   |
 
-**交付规约**:
-*   **Atomic Delivery**: 每次 PR 必须是完整可运行单元，禁止 Broken Build。
-*   **Atomic Commits**: 单一逻辑变更/commit，规范 message (`feat:`, `fix:`)。
-*   **Strict Quality Gates**: 每个 SPEC 完成后必须通过所有验收标准 (Acceptance Criteria) 及 CI 检查 (Lint + Test)。
-*   **Track Progress**: 任务完成后必须更新 `docs/development_plan.md` 进度矩阵。
+**交付**: Atomic Commits → Quality Gates (Lint + Test) → Update `docs/development_plan.md`
 
-## 2. 统一编码规约 (Coding Standards)
+## 2. 编码规约 (Standards)
 
-| 维度     | Go (Backend)                                   | React/TS (Frontend)                            |
-| :------- | :--------------------------------------------- | :--------------------------------------------- |
-| **风格** | `gofmt` + `goimports` (Auto-save)              | `Prettier` + `ESLint`                          |
-| **Lint** | `golangci-lint` (CI 强制)                      | No `any`, Strict Mode                          |
-| **命名** | `snake_case` (DB/JSON), `PascalCase` (Structs) | `PascalCase` (Components), `camelCase` (Props) |
-| **错误** | 必须 wrap: `fmt.Errorf("...: %w", err)`        | Error Boundary + Toast 通知                    |
-| **状态** | 接受 Interface，返回 Struct                    | Zustand Stores (`useSessionStore`)             |
-| **并发** | 必须传递 `ctx`, 禁止裸 `go func`               | `useEffect` cleanups, RQ/SWR                   |
-| **UI**   | N/A                                            | TailwindCSS 优先, `clsx` 动态类                |
-| **i18n** | N/A                                            | `react-i18next`, 禁止 Hardcode                 |
+| 维度 | Go                      | React/TS               |
+| :--- | :---------------------- | :--------------------- |
+| 风格 | `gofmt` + `goimports`   | `Prettier` + `ESLint`  |
+| Lint | `golangci-lint` (CI)    | No `any`, Strict       |
+| 命名 | `snake_case` (JSON)     | `camelCase` (Props)    |
+| 错误 | `fmt.Errorf("...: %w")` | Error Boundary + Toast |
+| 并发 | 必须传 `ctx`            | `useEffect` cleanup    |
 
-## 3. 接口与数据 (API & Data)
+## 3. API & Data
 
-**RESTful / WebSocket** (`/api/v1`)
-*   **Sync**: 后端 Struct ↔ 前端 TS 类型 (`tygo`)。
-*   **Vector DB**: PGvector (`embedding`), `uuid` 主键。
-*   **Migrations**: `golang-migrate` (`YYYYMMDDHHMMSS_name.up.sql`)。
+- **类型同步**: Go Struct ↔ TS (`tygo`)，禁止手动维护
+- **Migrations**: `golang-migrate` (`YYYYMMDDHHMMSS_name.up.sql`)
 
-## 4. 前后端协作规约 (Frontend-Backend Contract) 🆕
+## 4. 前后端协作 🆕
 
 > 基于 2025-12-21 WebSocket 调试经验总结
 
-### 4.1 消息格式一致性
-
-| 规则              | 说明                                                     |
-| :---------------- | :------------------------------------------------------- |
-| **JSON 字段命名** | 前后端必须使用**完全相同**的字段名，优先采用前端命名惯例 |
-| **类型同步**      | 所有共享类型必须通过 `tygo` 自动生成，**禁止手动维护**   |
-| **测试覆盖**      | WebSocket 消息需有**端到端格式验证测试**                 |
+| 规则              | 说明                                     |
+| :---------------- | :--------------------------------------- |
+| **JSON 字段命名** | 前后端必须**完全相同**，优先采用前端惯例 |
+| **类型同步**      | `tygo` 自动生成，禁止手动维护            |
+| **测试覆盖**      | WebSocket 消息需**端到端格式验证**       |
 
 ### 4.2 ID 语义规范
 
@@ -61,10 +49,10 @@
 
 ### 4.3 数据传递完整性
 
-*   **类型设计**: 必须包含 UI 渲染所需的全部字段（如 `name`, `type`）
-*   **信息传递**: 禁止在中间层丢弃上游传入的有效信息
+- **类型设计**: 必须包含 UI 渲染所需的全部字段（如 `name`, `type`）
+- **信息传递**: 禁止在中间层丢弃上游传入的有效信息
 
-## 5. 默认值与配置规约 (Defaults & Config) 🆕
+## 5. 默认值与配置 🆕
 
 | 规则           | 说明                                     |
 | :------------- | :--------------------------------------- |
@@ -81,17 +69,15 @@ if model == "" { model = "gpt-4" }
 if model == "" { model = registry.GetDefaultModel() }
 ```
 
-## 6. AI & Prompt Engineering
+## 6. AI & Prompt
 
-*   **Prompt Management**: 存放在 `/prompts/*.md`，禁止 Hardcode。
-*   **Template**: `{{.Context}}`, `{{.UserQuery}}` 占位符。
-*   **Safety**: 处理 Context Overflow (自动截断)，版本变更需 Review。
+- **存放**: `/prompts/*.md`，禁止 Hardcode
+- **模板**: `{{.Context}}`, `{{.UserQuery}}`
+- **安全**: Context Overflow 自动截断
 
-## 7. 测试与质量 (QA & Testing)
+## 7. 测试 (QA)
 
-*   **Command**: 使用 `make test` (自动过滤 infra 噪音)，严禁 `go test`。
-*   **Coverage**: 核心业务逻辑 (Core) **100%** 覆盖。
-*   **Mock Strategy**: 业务测试禁止连真实 DB/LLM，使用 `MockProvider`。
-*   **TDD**: 红 (Test) -> 绿 (Impl) -> 蓝 (Refactor)。
-*   **端到端测试** 🆕: WebSocket 消息格式需跨前后端验证。
-
+- **命令**: `make test`，严禁 `go test`
+- **覆盖**: Core **100%**
+- **Mock**: 禁止真实 DB/LLM
+- **端到端** 🆕: WebSocket 消息格式需跨前后端验证
