@@ -60,14 +60,6 @@
 | **降级一致性** | 降级逻辑必须与当前 Provider/环境兼容     |
 | **配置优先级** | 环境变量 > 配置文件 > 代码内默认值       |
 
-**示例**:
-```go
-// ❌ 禁止
-if model == "" { model = "gpt-4" }
-
-// ✅ 正确
-if model == "" { model = registry.GetDefaultModel() }
-```
 
 ## 6. AI & Prompt
 
