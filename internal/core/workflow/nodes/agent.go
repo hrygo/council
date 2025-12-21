@@ -3,6 +3,7 @@ package nodes
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -34,10 +35,16 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 	}
 
 	// 3. Construct Context from Input
-	// Simplified: Join all string values
+	// Simplified: Join all string values (deterministically)
+	keys := make([]string, 0, len(input))
+	for k := range input {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	var contextBuilder strings.Builder
-	for k, v := range input {
-		if str, ok := v.(string); ok {
+	for _, k := range keys {
+		if str, ok := input[k].(string); ok {
 			contextBuilder.WriteString(fmt.Sprintf("%s: %s\n", k, str))
 		}
 	}
