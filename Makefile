@@ -371,3 +371,16 @@ help: ## ❓ Show this help
 	@echo "  $(CYAN)make install$(RESET)        Install dependencies"
 	@echo "  $(CYAN)make clean$(RESET)          Clean everything"
 	@echo ""
+
+# ============================================================================
+# 📝 DOCUMENTATION
+# ============================================================================
+
+validate-plan: ## 📝 验证开发计划文档质量
+	@echo "$(CYAN)📝 验证开发计划...$(RESET)"
+	@python3 scripts/validate_dev_plan.py docs/development_plan.md
+
+check-docs: ## 📚 检查所有文档格式
+	@echo "$(CYAN)📚 检查文档格式...$(RESET)"
+	@command -v markdownlint >/dev/null 2>&1 && npx markdownlint docs/**/*.md || echo "$(YELLOW)⚠️ markdownlint 未安装$(RESET)"
+	@echo "$(GREEN)✅ 文档检查完成$(RESET)"
