@@ -7,15 +7,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hrygo/council/internal/core/memory"
+	"github.com/hrygo/council/internal/core/workflow"
 )
 
 type KnowledgeHandler struct {
-	memoryService *memory.Service
+	memoryManager memory.MemoryManager
+	sessionRepo   workflow.SessionRepository
 }
 
-func NewKnowledgeHandler(memoryService *memory.Service) *KnowledgeHandler {
+func NewKnowledgeHandler(memoryManager memory.MemoryManager, sessionRepo workflow.SessionRepository) *KnowledgeHandler {
 	return &KnowledgeHandler{
-		memoryService: memoryService,
+		memoryManager: memoryManager,
+		sessionRepo:   sessionRepo,
 	}
 }
 
@@ -42,7 +45,7 @@ type KnowledgeResponse struct {
 // GetSessionKnowledge handles GET /api/v1/sessions/:sessionID/knowledge
 func (h *KnowledgeHandler) GetSessionKnowledge(c *gin.Context) {
 	sessionID := c.Param("sessionID")
-	
+
 	// Parse query parameters
 	memoryLayer := c.DefaultQuery("layer", "all")
 	searchQuery := c.DefaultQuery("q", "")
@@ -50,9 +53,52 @@ func (h *KnowledgeHandler) GetSessionKnowledge(c *gin.Context) {
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
 	// Retrieve knowledge from memory service
-	// For MVP, we return mock data
-	// TODO: Implement actual retrieval from memory service
-	items := h.mockKnowledgeItems(sessionID, memoryLayer, searchQuery)
+	// We need GroupID for the session
+	var groupID string
+	// Strategy: check active engines first
+	if engine := activeEngines[sessionID]; engine != nil {
+		groupID, _ = engine.Session.Inputs["group_id"].(string)
+	}
+	// If not found (or inactive), check DB
+	if groupID == "" && h.sessionRepo != nil {
+		sEntity, err := h.sessionRepo.Get(c.Request.Context(), sessionID)
+		if err == nil {
+			groupID = sEntity.GroupID
+		}
+	}
+
+	rawItems, err := h.memoryManager.Retrieve(c.Request.Context(), searchQuery, groupID, sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Map raw memory items to KnowledgeItem DTO
+	var items []KnowledgeItem
+	for i, ri := range rawItems {
+		items = append(items, KnowledgeItem{
+			ID:             strconv.Itoa(i + 1),
+			Title:          "Memory Fragment",
+			Content:        ri.Content,
+			Summary:        ri.Content, // Use content as summary for now
+			MemoryLayer:    ri.Source,
+			RelevanceScore: int(ri.Score * 5), // Map 0-1 to 1-5
+			CreatedAt:      time.Now(),
+		})
+	}
+
+	// Filter by layer if not "all"
+	var filtered []KnowledgeItem
+	if memoryLayer != "all" {
+		for _, it := range items {
+			if it.MemoryLayer == memoryLayer {
+				filtered = append(filtered, it)
+			}
+		}
+	} else {
+		filtered = items
+	}
+	items = filtered
 
 	// Apply pagination
 	start := offset
@@ -71,72 +117,4 @@ func (h *KnowledgeHandler) GetSessionKnowledge(c *gin.Context) {
 		Limit:  limit,
 		Offset: offset,
 	})
-}
-
-// mockKnowledgeItems returns mock knowledge items for development
-// TODO: Replace with actual memory service integration
-func (h *KnowledgeHandler) mockKnowledgeItems(sessionID, layer, query string) []KnowledgeItem {
-	allItems := []KnowledgeItem{
-		{
-			ID:             "k1",
-			Title:          "工作流执行上下文",
-			Summary:        "当前工作流正在执行序列节点，已完成初始化步骤",
-			Content:        "详细内容：工作流引擎已启动，当前处于序列执行模式...",
-			MemoryLayer:    "sandboxed",
-			RelevanceScore: 5,
-			CreatedAt:      time.Now().Add(-5 * time.Minute),
-		},
-		{
-			ID:             "k2",
-			Title:          "Agent 配置信息",
-			Summary:        "Adjudicator agent 使用 gpt-4o 模型",
-			Content:        "配置详情：Adjudicator 角色设定、Prompt 模板...",
-			MemoryLayer:    "working",
-			RelevanceScore: 4,
-			CreatedAt:      time.Now().Add(-10 * time.Minute),
-		},
-		{
-			ID:             "k3",
-			Title:          "历史辩论记录",
-			Summary:        "上次会议讨论了 AI 伦理问题",
-			Content:        "辩论摘要：正方提出..., 反方认为...",
-			MemoryLayer:    "long-term",
-			RelevanceScore: 3,
-			CreatedAt:      time.Now().Add(-2 * time.Hour),
-		},
-		{
-			ID:             "k4",
-			Title:          "用户输入上下文",
-			Summary:        "用户提出关于模型选择策略的问题",
-			Content:        "用户问题：如何根据任务复杂度选择合适的 LLM？",
-			MemoryLayer:    "sandboxed",
-			RelevanceScore: 4,
-			CreatedAt:      time.Now().Add(-3 * time.Minute),
-		},
-		{
-			ID:             "k5",
-			Title:          "知识库检索结果",
-			Summary:        "找到 5 条与当前话题相关的文档",
-			Content:        "检索到的文档包括：模型选择指南、成本优化建议...",
-			MemoryLayer:    "working",
-			RelevanceScore: 5,
-			CreatedAt:      time.Now().Add(-1 * time.Minute),
-		},
-	}
-
-	// Filter by layer
-	var filtered []KnowledgeItem
-	for _, item := range allItems {
-		if layer == "all" || item.MemoryLayer == layer {
-			filtered = append(filtered, item)
-		}
-	}
-
-	// TODO: Implement search filtering based on query
-	if query != "" {
-		// Simple mock: return all for now
-		// Real implementation would filter by title/summary/content
-	}
-
-	return filtered
 }

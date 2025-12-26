@@ -108,7 +108,7 @@ func TestService_Retrieve(t *testing.T) {
 		WithArgs(pgxmock.AnyArg(), groupID).
 		WillReturnRows(pgxmock.NewRows([]string{"content", "score"}).AddRow("cold data", 0.95))
 
-	items, err := svc.Retrieve(context.Background(), query, groupID)
+	items, err := svc.Retrieve(context.Background(), query, groupID, "")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}

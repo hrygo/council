@@ -156,7 +156,7 @@ func (s *Service) Promote(ctx context.Context, groupID string, content string) e
 	return nil
 }
 
-func (s *Service) Retrieve(ctx context.Context, query string, groupID string) ([]ContextItem, error) {
+func (s *Service) Retrieve(ctx context.Context, query string, groupID string, sessionID string) ([]ContextItem, error) {
 	var items []ContextItem
 
 	// 1. Hot Working Memory (Redis)
@@ -188,9 +188,15 @@ func (s *Service) Retrieve(ctx context.Context, query string, groupID string) ([
 			// Query
 			// Using <-> (L2 distance) or <=> (Cosine distance).
 			// Cosine distance is 1 - Cosine Similarity.
-			q := `SELECT content, 1 - (embedding <=> $1) as score FROM memories WHERE group_id = $2::uuid ORDER BY embedding <=> $1 LIMIT 5`
+			q := `SELECT content, 1 - (embedding <=> $1) as score FROM memories WHERE group_id = $2::uuid`
+			params := []interface{}{vecStr, groupID}
+			if sessionID != "" {
+				q += ` AND session_id = $3::uuid`
+				params = append(params, sessionID)
+			}
+			q += ` ORDER BY embedding <=> $1 LIMIT 5`
 
-			rows, err := s.pool.Query(ctx, q, vecStr, groupID)
+			rows, err := s.pool.Query(ctx, q, params...)
 			if err == nil {
 				defer rows.Close()
 				for rows.Next() {

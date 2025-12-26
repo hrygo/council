@@ -39,14 +39,16 @@ type WorkflowHandler struct {
 	AgentRepo     agent.Repository
 	Registry      *llm.Registry
 	MemoryService *memory.Service
+	SessionRepo   workflow.SessionRepository
 }
 
-func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memService *memory.Service) *WorkflowHandler {
+func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memService *memory.Service, sessionRepo workflow.SessionRepository) *WorkflowHandler {
 	return &WorkflowHandler{
 		Hub:           hub,
 		AgentRepo:     agentRepo,
 		Registry:      registry,
 		MemoryService: memService,
+		SessionRepo:   sessionRepo,
 	}
 }
 
@@ -67,6 +69,18 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Create Session
 	session := workflow.NewSession(req.Graph, req.Input)
+
+	// Persist Session
+	groupID, _ := req.Input["group_id"].(string)
+	workflowID := ""
+	if req.Graph != nil {
+		workflowID = req.Graph.ID
+	}
+	if err := h.SessionRepo.Create(c.Request.Context(), session, groupID, workflowID); err != nil {
+		log.Printf("[Workflow] Failed to persist session: %v", err)
+		// We continue anyway for MVP but ideally fail here
+	}
+
 	session.Start(context.Background())
 
 	// Create Engine

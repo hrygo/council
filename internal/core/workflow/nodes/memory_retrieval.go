@@ -50,7 +50,8 @@ func (p *MemoryRetrievalProcessor) Process(
 	// 3. Retrieve from Memory system if available
 	var historyContext string
 	if p.MemoryService != nil && topic != "" {
-		items, err := p.MemoryService.Retrieve(ctx, topic, groupID)
+		sessionID, _ := input["session_id"].(string)
+		items, err := p.MemoryService.Retrieve(ctx, topic, groupID, sessionID)
 		if err != nil {
 			// Log but don't fail - memory retrieval is optional
 			stream <- workflow.StreamEvent{

@@ -97,6 +97,12 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 		}
 	}
 
+	// Inject Contextual IDs
+	if input == nil {
+		input = make(map[string]interface{})
+	}
+	input["session_id"] = e.Session.ID
+
 	// Execute Processor
 	output, err := processor.Process(ctx, input, e.StreamChannel)
 	if err != nil {

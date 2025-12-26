@@ -27,7 +27,8 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 	registry := llm.NewRegistry(cfg)
 	registry.RegisterProvider("default", mockLLM)
 
-	h := NewWorkflowHandler(hub, repo, registry, nil)
+	sessionRepo := mocks.NewSessionMockRepository()
+	h := NewWorkflowHandler(hub, repo, registry, nil, sessionRepo)
 
 	router := gin.New()
 	router.POST("/execute", h.Execute)
@@ -66,7 +67,8 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 
 func TestWorkflowHandler_Review(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewWorkflowHandler(nil, nil, nil, nil)
+	sessionRepo := mocks.NewSessionMockRepository()
+	h := NewWorkflowHandler(nil, nil, nil, nil, sessionRepo)
 
 	router := gin.New()
 	router.POST("/sessions/:id/review", h.Review)

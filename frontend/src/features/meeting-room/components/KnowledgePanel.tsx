@@ -34,8 +34,8 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
           const data = await response.json();
           setKnowledge(data.items || []);
         }
-      } catch (error) {
-        console.error('Failed to fetch knowledge:', error);
+      } catch (error: unknown) {
+        console.error('Failed to fetch knowledge:', error instanceof Error ? error.message : String(error));
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +70,7 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
         {/* Layer Filter */}
         <select
           value={layerFilter}
-          onChange={(e) => setLayerFilter(e.target.value as any)}
+          onChange={(e) => setLayerFilter(e.target.value as Knowledge['layer'] | 'all')}
           className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">全部记忆</option>

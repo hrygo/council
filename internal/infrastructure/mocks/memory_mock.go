@@ -9,6 +9,7 @@ import (
 type MemoryMockManager struct {
 	CapturedQuarantine []string
 	CapturedWM         []string
+	RetrieveResult     []memory.ContextItem
 	Err                error
 }
 
@@ -32,6 +33,6 @@ func (m *MemoryMockManager) Promote(ctx context.Context, groupID string, digest 
 	return m.Err
 }
 
-func (m *MemoryMockManager) Retrieve(ctx context.Context, query string, groupID string) ([]memory.ContextItem, error) {
-	return nil, m.Err
+func (m *MemoryMockManager) Retrieve(ctx context.Context, query string, groupID string, sessionID string) ([]memory.ContextItem, error) {
+	return m.RetrieveResult, m.Err
 }

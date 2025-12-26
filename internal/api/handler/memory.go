@@ -57,7 +57,8 @@ func (h *MemoryHandler) Query(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	results, err := h.Manager.Retrieve(ctx, req.Query, req.GroupID)
+	sessionID := c.Query("session_id")
+	results, err := h.Manager.Retrieve(ctx, req.Query, req.GroupID, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

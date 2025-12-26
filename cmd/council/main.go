@@ -77,13 +77,14 @@ func main() {
 	agentRepo := persistence.NewAgentRepository(pool)
 	workflowRepo := persistence.NewWorkflowRepository(pool)
 	templateRepo := persistence.NewTemplateRepository(pool)
+	sessionRepo := persistence.NewSessionRepository(pool)
 
 	// Handlers
 	agentHandler := handler.NewAgentHandler(agentRepo)
 	groupHandler := handler.NewGroupHandler(groupRepo)
 	templateHandler := handler.NewTemplateHandler(templateRepo)
 	memoryHandler := handler.NewMemoryHandler(memoryService)
-	knowledgeHandler := handler.NewKnowledgeHandler(memoryService)
+	knowledgeHandler := handler.NewKnowledgeHandler(memoryService, sessionRepo)
 	workflowMgmtHandler := handler.NewWorkflowMgmtHandler(workflowRepo, registry)
 	llmHandler := handler.NewLLMHandler(cfg, pool)
 
@@ -93,6 +94,7 @@ func main() {
 		agentRepo,
 		registry,
 		memoryService,
+		sessionRepo,
 	)
 
 	// Routes

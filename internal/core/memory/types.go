@@ -16,7 +16,7 @@ type MemoryManager interface {
 	Promote(ctx context.Context, groupID string, digest string) error
 
 	// Hybrid Retrieval
-	Retrieve(ctx context.Context, query string, groupID string) ([]ContextItem, error)
+	Retrieve(ctx context.Context, query string, groupID string, sessionID string) ([]ContextItem, error)
 }
 
 type ContextItem struct {
