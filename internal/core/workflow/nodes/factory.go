@@ -13,7 +13,7 @@ import (
 type NodeDependencies struct {
 	Registry      *llm.Registry
 	AgentRepo     agent.Repository
-	MemoryService *memory.Service
+	MemoryManager memory.MemoryManager
 }
 
 // NewNodeFactory returns a factory function compatible with workflow.Engine
@@ -96,7 +96,7 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 
 		case workflow.NodeTypeMemoryRetrieval:
 			// SPEC-607: Memory Retrieval Node
-			return NewMemoryRetrievalProcessor(deps.MemoryService), nil
+			return NewMemoryRetrievalProcessor(deps.MemoryManager), nil
 
 		default:
 			return nil, fmt.Errorf("unsupported node type: %s", node.Type)

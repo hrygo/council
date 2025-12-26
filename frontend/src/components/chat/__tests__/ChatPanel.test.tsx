@@ -20,9 +20,9 @@ describe('ChatPanel', () => {
     it('should render message groups with headers', () => {
         const store = useSessionStore.getState();
         store.initSession({
-            sessionId: 'test-session',
-            workflowId: 'test-workflow',
-            groupId: 'test-group',
+            session_uuid: 'test-session',
+            workflow_id: 'test-workflow',
+            group_uuid: 'test-group',
             nodes: [] // Providing empty nodes array
         });
 
@@ -30,15 +30,15 @@ describe('ChatPanel', () => {
         useSessionStore.setState({
             messageGroups: [
                 {
-                    nodeId: 'node-1',
+                    node_id: 'node-1',
                     nodeName: 'Analyst',
                     nodeType: 'agent',
                     status: 'completed',
                     isParallel: false,
                     messages: [
                         {
-                            id: 'msg-1',
-                            nodeId: 'node-1', // Add missing nodeId
+                            message_uuid: 'msg-1',
+                            node_id: 'node-1', // Add missing nodeId
                             role: 'agent',
                             agentName: 'Analyst',
                             content: 'Test message',
@@ -62,15 +62,15 @@ describe('ChatPanel', () => {
         useSessionStore.setState({
             messageGroups: [
                 {
-                    nodeId: 'node-parallel-1',
+                    node_id: 'node-parallel-1',
                     nodeName: 'ParallelReview',
                     nodeType: 'parallel',
                     status: 'running',
                     isParallel: true,
                     messages: [
                         {
-                            id: 'msg-p1',
-                            nodeId: 'node-parallel-1',
+                            message_uuid: 'msg-p1',
+                            node_id: 'node-parallel-1',
                             role: 'agent',
                             agentName: 'Security',
                             content: 'Security Check',
@@ -78,8 +78,8 @@ describe('ChatPanel', () => {
                             isStreaming: false
                         },
                         {
-                            id: 'msg-p2',
-                            nodeId: 'node-parallel-1',
+                            message_uuid: 'msg-p2',
+                            node_id: 'node-parallel-1',
                             role: 'agent',
                             agentName: 'Performance',
                             content: 'Performance Check',
@@ -102,19 +102,19 @@ describe('ChatPanel', () => {
         // const store = useSessionStore.getState();
         useSessionStore.setState({
             currentSession: {
-                id: 'sess-1',
-                workflowId: 'wf-1',
-                groupId: 'grp-1',
+                session_uuid: 'sess-1',
+                workflow_id: 'wf-1',
+                group_uuid: 'grp-1',
                 status: 'running',
                 nodes: new Map(),
-                activeNodeIds: ['node-1'],
+                active_node_ids: ['node-1'],
                 totalTokens: 0,
                 totalCostUsd: 0,
                 startedAt: new Date()
             },
             messageGroups: [
                 {
-                    nodeId: 'node-1',
+                    node_id: 'node-1',
                     nodeName: 'Analyst',
                     nodeType: 'agent',
                     status: 'running',

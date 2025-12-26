@@ -24,7 +24,7 @@ func (r *AgentRepository) Create(ctx context.Context, a *agent.Agent) error {
 	query := `
 		INSERT INTO agents (name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
-		RETURNING id, created_at, updated_at
+		RETURNING agent_uuid, created_at, updated_at
 	`
 	err := r.pool.QueryRow(ctx, query,
 		a.Name,
@@ -40,7 +40,7 @@ func (r *AgentRepository) Create(ctx context.Context, a *agent.Agent) error {
 }
 
 func (r *AgentRepository) GetByID(ctx context.Context, id uuid.UUID) (*agent.Agent, error) {
-	query := `SELECT id, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents WHERE id = $1`
+	query := `SELECT agent_uuid, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents WHERE agent_uuid = $1`
 	var a agent.Agent
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&a.ID,
@@ -60,7 +60,7 @@ func (r *AgentRepository) GetByID(ctx context.Context, id uuid.UUID) (*agent.Age
 }
 
 func (r *AgentRepository) List(ctx context.Context) ([]*agent.Agent, error) {
-	query := `SELECT id, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents ORDER BY created_at DESC`
+	query := `SELECT agent_uuid, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents ORDER BY created_at DESC`
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (r *AgentRepository) Update(ctx context.Context, a *agent.Agent) error {
 	query := `
 		UPDATE agents
 		SET name = $1, avatar = $2, description = $3, persona_prompt = $4, model_config = $5, capabilities = $6, updated_at = $7
-		WHERE id = $8
+		WHERE agent_uuid = $8
 	`
 	a.UpdatedAt = time.Now()
 	_, err := r.pool.Exec(ctx, query,
@@ -109,7 +109,7 @@ func (r *AgentRepository) Update(ctx context.Context, a *agent.Agent) error {
 }
 
 func (r *AgentRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM agents WHERE id = $1`
+	query := `DELETE FROM agents WHERE agent_uuid = $1`
 	_, err := r.pool.Exec(ctx, query, id)
 	return err
 }

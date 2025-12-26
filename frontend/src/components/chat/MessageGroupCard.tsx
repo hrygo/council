@@ -30,7 +30,7 @@ export const MessageGroupCard: FC<MessageGroupCardProps> = ({ group, isActive })
                     <ParallelMessageRow messages={group.messages} />
                 ) : (
                     group.messages.map(msg => (
-                        <SequentialMessage key={msg.id} message={msg} />
+                        <SequentialMessage key={msg.message_uuid} message={msg} />
                     ))
                 )}
             </div>

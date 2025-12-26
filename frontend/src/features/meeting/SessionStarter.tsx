@@ -20,7 +20,7 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
     const initSession = useSessionStore(state => state.initSession);
 
     const [step, setStep] = useState<Step>('template');
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+    const [selected_template_uuid, setSelectedTemplateId] = useState<string>('');
 
     // Inputs
     const [documentContent, setDocumentContent] = useState('');
@@ -29,10 +29,10 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
     const [isStarting, setIsStarting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const selectedTemplate = templates?.find(t => t.id === selectedTemplateId);
+    const selectedTemplate = templates?.find(t => t.template_uuid === selected_template_uuid);
 
     const handleNext = () => {
-        if (step === 'template' && selectedTemplateId) {
+        if (step === 'template' && selected_template_uuid) {
             setStep('input');
         } else if (step === 'input') {
             // Validate input if needed
@@ -79,16 +79,17 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
             useWorkflowRunStore.getState().setGraphFromTemplate(selectedTemplate);
 
             const rawNodes = selectedTemplate.graph?.nodes || {};
-            const nodes = Object.values(rawNodes).map((n: { id: string; name?: string; type?: string }) => ({
-                id: n.id,
-                name: n.name || n.id,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const nodes = Object.values(rawNodes).map((n: any) => ({
+                node_id: n.node_id,
+                name: n.name || n.node_id,
                 type: n.type || 'agent'
             }));
 
             initSession({
-                sessionId: data.session_id,
-                workflowId: selectedTemplate.id,
-                groupId: 'default',
+                session_uuid: data.session_uuid,
+                workflow_id: selectedTemplate.template_uuid,
+                group_uuid: 'default',
                 nodes: nodes
             });
 
@@ -129,9 +130,9 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                             <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
                                 {systemTemplates.map(t => (
                                     <div
-                                        key={t.id}
-                                        onClick={() => setSelectedTemplateId(t.id)}
-                                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${selectedTemplateId === t.id
+                                        key={t.template_uuid}
+                                        onClick={() => setSelectedTemplateId(t.template_uuid)}
+                                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${selected_template_uuid === t.template_uuid
                                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-500'
                                             : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
                                             }`}
@@ -140,7 +141,7 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                                             <div className="font-medium text-sm text-gray-900 dark:text-gray-100">{t.name}</div>
                                             <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{t.description}</div>
                                         </div>
-                                        {selectedTemplateId === t.id && (
+                                        {selected_template_uuid === t.template_uuid && (
                                             <div className="w-2 h-2 rounded-full bg-blue-500" />
                                         )}
                                     </div>
@@ -202,7 +203,7 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
 
     const isNextDisabled = () => {
         if (isStarting) return true;
-        if (step === 'template') return !selectedTemplateId;
+        if (step === 'template') return !selected_template_uuid;
         // In input step, technically inputs are optional if not enforced, 
         // but for better UX let's say at least one is needed? Or not.
         // Let's allow empty inputs for broad compatibility.
@@ -249,8 +250,8 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                         onClick={step === 'confirm' ? handleStart : handleNext}
                         disabled={isNextDisabled()}
                         className={`flex-1 py-3 rounded-xl font-semibold text-white shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all ${isNextDisabled()
-                                ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                                : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98]'
+                            ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98]'
                             }`}
                     >
                         {isStarting ? (

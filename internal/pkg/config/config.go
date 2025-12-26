@@ -42,91 +42,84 @@ type EmbeddingConfig struct {
 	Model    string // Critical: Must match the database VECTOR dimension (e.g., 1536).
 }
 
+const (
+	DefaultPort        = "8080"
+	DefaultDBURL       = "postgres://user:password@localhost:5432/council?sslmode=disable"
+	DefaultRedisURL    = "localhost:6379"
+	DefaultEmbedding   = "siliconflow"
+	DefaultVectorModel = "Qwen/Qwen3-Embedding-8B"
+)
+
 func Load() *Config {
-	port := strings.TrimSpace(os.Getenv("PORT"))
-	if port == "" {
-		port = "8080"
+	cfg := &Config{
+		Port:        getEnv("PORT", DefaultPort),
+		DatabaseURL: getEnv("DATABASE_URL", DefaultDBURL),
+		RedisURL:    getEnv("REDIS_URL", DefaultRedisURL),
 	}
 
-	dbURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
-	if dbURL == "" {
-		dbURL = "postgres://user:password@localhost:5432/council?sslmode=disable"
+	// LLM Config
+	cfg.LLM = LLMConfig{
+		Provider: getEnv("LLM_PROVIDER", "siliconflow"),
+		APIKey:   os.Getenv("LLM_API_KEY"),
+		BaseURL:  os.Getenv("LLM_BASE_URL"),
+		Model:    getEnv("LLM_MODEL", "deepseek-v3"),
 	}
 
-	redisURL := strings.TrimSpace(os.Getenv("REDIS_URL"))
-	if redisURL == "" {
-		redisURL = "localhost:6379"
+	// Embedding Config
+	provider := getEnv("EMBEDDING_PROVIDER", DefaultEmbedding)
+	cfg.Embedding = EmbeddingConfig{
+		Provider: provider,
+		APIKey:   getEnv("EMBEDDING_API_KEY", getProviderKey(provider)),
+		BaseURL:  os.Getenv("EMBEDDING_BASE_URL"),
+		Model:    getEnv("EMBEDDING_MODEL", getDefaultForProvider(provider)),
 	}
 
-	// 1536 Dimension Embedding Models Recommendation
-	// OpenAI:      text-embedding-3-small
-	// DashScope:   text-embedding-v1
-	// SiliconFlow: Qwen/Qwen3-Embedding-8B
-	// Ollama:      gte-qwen2-1.5b-instruct-embed-f16
+	// Legacy keys mapping
+	cfg.TavilyAPIKey = os.Getenv("TAVILY_API_KEY")
+	cfg.OpenAIKey = os.Getenv("OPENAI_API_KEY")
+	cfg.DeepSeekKey = os.Getenv("DEEPSEEK_API_KEY")
+	cfg.DashScopeKey = os.Getenv("DASHSCOPE_API_KEY")
+	cfg.GeminiKey = os.Getenv("GEMINI_API_KEY")
+	cfg.SiliconFlowKey = os.Getenv("SILICONFLOW_API_KEY")
 
-	embeddingProvider := strings.TrimSpace(os.Getenv("EMBEDDING_PROVIDER"))
-	if embeddingProvider == "" {
-		embeddingProvider = "siliconflow"
+	return cfg
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok && strings.TrimSpace(value) != "" {
+		return strings.TrimSpace(value)
 	}
+	return fallback
+}
 
-	embeddingModel := os.Getenv("EMBEDDING_MODEL")
-	if embeddingModel == "" {
-		switch embeddingProvider {
-		case "openai":
-			embeddingModel = "text-embedding-3-small"
-		case "dashscope":
-			embeddingModel = "text-embedding-v1"
-		case "siliconflow":
-			embeddingModel = "Qwen/Qwen3-Embedding-8B"
-		case "ollama":
-			// Note: User must pull this model manually in Ollama
-			embeddingModel = "gte-qwen2-1.5b-instruct-embed-f16"
-		case "gemini":
-			// Warning: Gemini defaults to 768.
-			// Users should use gemini-embedding-001 with explicit config if supported,
-			// or accept dimensionality mismatch (store as 1536 pad/truncate?).
-			// For now, default to text-embedding-004 as closest standard.
-			embeddingModel = "text-embedding-004"
-		}
+func getProviderKey(provider string) string {
+	switch provider {
+	case "openai":
+		return os.Getenv("OPENAI_API_KEY")
+	case "dashscope":
+		return os.Getenv("DASHSCOPE_API_KEY")
+	case "siliconflow":
+		return os.Getenv("SILICONFLOW_API_KEY")
+	case "gemini":
+		return os.Getenv("GEMINI_API_KEY")
+	default:
+		return ""
 	}
+}
 
-	embeddingKey := os.Getenv("EMBEDDING_API_KEY")
-	if embeddingKey == "" {
-		switch embeddingProvider {
-		case "openai":
-			embeddingKey = os.Getenv("OPENAI_API_KEY")
-		case "dashscope":
-			embeddingKey = os.Getenv("DASHSCOPE_API_KEY")
-		case "siliconflow":
-			embeddingKey = os.Getenv("SILICONFLOW_API_KEY")
-		case "gemini":
-			embeddingKey = os.Getenv("GEMINI_API_KEY")
-		}
-	}
-
-	return &Config{
-		Port:         port,
-		DatabaseURL:  dbURL,
-		RedisURL:     redisURL,
-		TavilyAPIKey: os.Getenv("TAVILY_API_KEY"),
-
-		LLM: LLMConfig{
-			Provider: os.Getenv("LLM_PROVIDER"),
-			APIKey:   os.Getenv("LLM_API_KEY"),
-			BaseURL:  os.Getenv("LLM_BASE_URL"),
-			Model:    os.Getenv("LLM_MODEL"),
-		},
-		Embedding: EmbeddingConfig{
-			Provider: embeddingProvider,
-			APIKey:   embeddingKey,
-			BaseURL:  os.Getenv("EMBEDDING_BASE_URL"),
-			Model:    embeddingModel,
-		},
-
-		OpenAIKey:      os.Getenv("OPENAI_API_KEY"),
-		DeepSeekKey:    os.Getenv("DEEPSEEK_API_KEY"),
-		DashScopeKey:   os.Getenv("DASHSCOPE_API_KEY"),
-		GeminiKey:      os.Getenv("GEMINI_API_KEY"),
-		SiliconFlowKey: os.Getenv("SILICONFLOW_API_KEY"),
+func getDefaultForProvider(provider string) string {
+	switch provider {
+	case "openai":
+		return "text-embedding-3-small"
+	case "dashscope":
+		return "text-embedding-v1"
+	case "siliconflow":
+		return "Qwen/Qwen3-Embedding-8B"
+	case "ollama":
+		return "gte-qwen2-1.5b-instruct-embed-f16"
+	case "gemini":
+		return "text-embedding-004"
+	default:
+		return DefaultVectorModel
 	}
 }

@@ -67,7 +67,7 @@ export const TemplateSidebar: FC<TemplateSidebarProps> = ({ open, onClose, onApp
                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">System Templates</h3>
                         {filteredSystem.map(template => (
                             <TemplateCard
-                                key={template.id}
+                                key={template.template_uuid}
                                 template={template}
                                 onApply={() => onApply(template)}
                             />
@@ -80,10 +80,10 @@ export const TemplateSidebar: FC<TemplateSidebarProps> = ({ open, onClose, onApp
                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">My Templates</h3>
                         {filteredCustom.map(template => (
                             <TemplateCard
-                                key={template.id}
+                                key={template.template_uuid}
                                 template={template}
                                 onApply={() => onApply(template)}
-                                onDelete={() => deleteTemplate.mutate(template.id)}
+                                onDelete={() => deleteTemplate.mutate(template.template_uuid)}
                             />
                         ))}
                     </div>

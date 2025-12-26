@@ -13,7 +13,7 @@ export interface Capabilities {
 }
 
 export interface Agent {
-    id: string;
+    agent_uuid: string;
     name: string;
     avatar: string; // URL or emoji char
     description: string;

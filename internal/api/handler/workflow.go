@@ -38,16 +38,16 @@ type WorkflowHandler struct {
 	Hub           *ws.Hub
 	AgentRepo     agent.Repository
 	Registry      *llm.Registry
-	MemoryService *memory.Service
+	MemoryManager memory.MemoryManager
 	SessionRepo   workflow.SessionRepository
 }
 
-func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memService *memory.Service, sessionRepo workflow.SessionRepository) *WorkflowHandler {
+func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memManager memory.MemoryManager, sessionRepo workflow.SessionRepository) *WorkflowHandler {
 	return &WorkflowHandler{
 		Hub:           hub,
 		AgentRepo:     agentRepo,
 		Registry:      registry,
-		MemoryService: memService,
+		MemoryManager: memManager,
 		SessionRepo:   sessionRepo,
 	}
 }
@@ -91,7 +91,7 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	engine.NodeFactory = nodes.NewNodeFactory(nodes.NodeDependencies{
 		Registry:      h.Registry,
 		AgentRepo:     h.AgentRepo,
-		MemoryService: h.MemoryService,
+		MemoryManager: h.MemoryManager,
 	})
 
 	// First, create memService as it's a dependency for NodeDependencies now.
@@ -99,7 +99,7 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	engine.Middlewares = []workflow.Middleware{
 		middleware.NewCircuitBreaker(10),                // Logic Circuit Breaker (Depth > 10)
 		middleware.NewFactCheckTrigger(),                // Anti-Hallucination
-		middleware.NewMemoryMiddleware(h.MemoryService), // Memory Persistence
+		middleware.NewMemoryMiddleware(h.MemoryManager), // Memory Persistence
 	}
 
 	// Run in Goroutine

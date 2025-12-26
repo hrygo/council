@@ -20,7 +20,7 @@ func NewWorkflowRepository(pool db.DB) workflow.Repository {
 
 func (r *WorkflowRepository) Create(ctx context.Context, graph *workflow.GraphDefinition) error {
 	query := `
-		INSERT INTO workflows (id, name, graph_definition)
+		INSERT INTO workflows (workflow_uuid, name, graph_definition)
 		VALUES ($1, $2, $3)
 	`
 	// For MVP, we are not strictly enforcing GroupID yet in the input GraphDefinition
@@ -48,7 +48,7 @@ func (r *WorkflowRepository) Create(ctx context.Context, graph *workflow.GraphDe
 
 func (r *WorkflowRepository) Get(ctx context.Context, id string) (*workflow.GraphDefinition, error) {
 	query := `
-		SELECT graph_definition FROM workflows WHERE id = $1
+		SELECT graph_definition FROM workflows WHERE workflow_uuid = $1
 	`
 	var graphJSON []byte
 	err := r.pool.QueryRow(ctx, query, id).Scan(&graphJSON)
@@ -69,7 +69,7 @@ func (r *WorkflowRepository) Update(ctx context.Context, graph *workflow.GraphDe
 	query := `
 		UPDATE workflows 
 		SET name = $2, graph_definition = $3, updated_at = NOW()
-		WHERE id = $1
+		WHERE workflow_uuid = $1
 	`
 	graphJSON, err := json.Marshal(graph)
 	if err != nil {
@@ -88,7 +88,7 @@ func (r *WorkflowRepository) Update(ctx context.Context, graph *workflow.GraphDe
 
 func (r *WorkflowRepository) List(ctx context.Context) ([]*workflow.WorkflowEntity, error) {
 	query := `
-		SELECT id, name, graph_definition, created_at, updated_at FROM workflows ORDER BY updated_at DESC
+		SELECT workflow_uuid, name, graph_definition, created_at, updated_at FROM workflows ORDER BY updated_at DESC
 	`
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {

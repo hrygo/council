@@ -19,8 +19,8 @@ export const useWebSocketRouter = () => {
             case 'token_stream': {
                 const data = msg.data as TokenStreamData;
                 sessionStore.appendMessage({
-                    nodeId: data.node_id,
-                    agentId: data.agent_id,
+                    node_id: data.node_id,
+                    agent_uuid: data.agent_id,
                     role: 'agent',
                     content: data.chunk,
                     isStreaming: true,
@@ -81,8 +81,8 @@ export const useWebSocketRouter = () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const data = msg.data as any;
                 workflowStore.setHumanReview({
-                    sessionId: 'current', // Logic to get current session ID needed, or passed in broadcast
-                    nodeId: msg.node_id || data.node_id, // Ensure protocol consistency
+                    session_uuid: 'current', // Logic to get current session ID needed, or passed in broadcast
+                    node_id: msg.node_id || data.node_id, // Ensure protocol consistency
                     reason: data.reason,
                     timeout: data.timeout,
                 });

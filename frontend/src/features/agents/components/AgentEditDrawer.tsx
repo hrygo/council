@@ -59,7 +59,7 @@ export function AgentEditDrawer({ open, onClose, agent }: AgentEditDrawerProps) 
         const successCallback = () => onClose();
 
         if (agent) {
-            updateAgent.mutate({ id: agent.id, ...formData } as Agent, { onSuccess: successCallback });
+            updateAgent.mutate({ agent_uuid: agent.agent_uuid, ...formData } as Agent, { onSuccess: successCallback });
         } else {
             createAgent.mutate(formData, { onSuccess: successCallback });
         }

@@ -152,7 +152,7 @@ export const WizardMode: FC<WizardModeProps> = ({ open, onClose, onComplete }) =
                             <div className="grid grid-cols-2 gap-4">
                                 {generatedResult.similar.length > 0 ? generatedResult.similar.map(tpl => (
                                     <div
-                                        key={tpl.id}
+                                        key={tpl.template_uuid}
                                         onClick={() => handleSelectGraph(tpl.graph)}
                                         className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-300 cursor-pointer transition-colors"
                                     >

@@ -47,7 +47,7 @@ export const SessionHeader: FC<SessionHeaderProps> = ({ onExitFullscreen }) => {
                     </div>
                     <div>
                         <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{t('meeting.councilSession')}</h1>
-                        <span className="text-xs text-gray-500 font-mono hidden sm:inline-block">{currentSession.id.slice(0, 8)}</span>
+                        <span className="text-xs text-gray-500 font-mono hidden sm:inline-block">{currentSession.session_uuid.slice(0, 8)}</span>
                     </div>
                 </div>
                 <StatusBadge status={executionStatus} />

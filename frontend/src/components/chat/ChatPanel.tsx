@@ -16,7 +16,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({
     const { t } = useTranslation();
     const messageGroups = useSessionStore(state => state.messageGroups);
     const currentSession = useSessionStore(state => state.currentSession);
-    const activeNodeIds = currentSession?.activeNodeIds ?? [];
+    const activeNodeIds = currentSession?.active_node_ids ?? [];
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +46,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({
                 ) : (
                     messageGroups.map(group => (
                         <MessageGroupCard
-                            key={group.nodeId} // Assuming nodeId is unique per group sequence, or use group.id if available. SPEC-001 defined group having nodeId. Using nodeId as key might be duplicate if looped? SPEC-001 says messageGroups is array.
+                            key={group.node_id} // Assuming nodeId is unique per group sequence, or use group.id if available. SPEC-001 defined group having nodeId. Using nodeId as key might be duplicate if looped? SPEC-001 says messageGroups is array.
                             // If loop visits same node, we need unique key.
                             // SPEC-001: interface MessageGroup { id: string; nodeId: string; ... } => Let's double check if we defined ID.
                             // Checked session.ts in memory: MessageGroup has `nodeId`, no `id`?
@@ -58,7 +58,7 @@ export const ChatPanel: FC<ChatPanelProps> = ({
                             // Let's use index as fallback or assume store handles unique references.
                             // To be safe, let's look at `index` in map.
                             group={group}
-                            isActive={activeNodeIds.includes(group.nodeId)}
+                            isActive={activeNodeIds.includes(group.node_id)}
                         />
                     ))
                 )}

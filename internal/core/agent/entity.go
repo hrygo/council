@@ -8,7 +8,7 @@ import (
 
 // Agent represents an AI persona.
 type Agent struct {
-	ID            uuid.UUID    `json:"id" db:"id"`
+	ID            uuid.UUID    `json:"agent_uuid" db:"agent_uuid"`
 	Name          string       `json:"name" db:"name"`
 	Avatar        *string      `json:"avatar" db:"avatar"`
 	Description   *string      `json:"description" db:"description"`

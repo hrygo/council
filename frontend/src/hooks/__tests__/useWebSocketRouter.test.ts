@@ -19,10 +19,10 @@ describe('useWebSocketRouter', () => {
 
         // Mock init session to have a valid session to update
         useSessionStore.getState().initSession({
-            sessionId: 'sess-1',
-            workflowId: 'wf-1',
-            groupId: 'g-1',
-            nodes: [{ id: 'node-1', name: 'Node 1', type: 'agent' }]
+            session_uuid: 'sess-1',
+            workflow_id: 'wf-1',
+            group_uuid: 'g-1',
+            nodes: [{ node_id: 'node-1', name: 'Node 1', type: 'agent' }]
         });
         // Mock workflow load
         useWorkflowRunStore.getState().loadWorkflow(
@@ -71,7 +71,7 @@ describe('useWebSocketRouter', () => {
 
         // Check Workflow Store
         expect(useWorkflowRunStore.getState().nodes[0].data.status).toBe('running');
-        expect(useWorkflowRunStore.getState().activeNodeIds.has('node-1')).toBe(true);
+        expect(useWorkflowRunStore.getState().active_node_ids.has('node-1')).toBe(true);
         expect(useSessionStore.getState().currentSession?.nodes.get('node-1')?.status).toBe('running');
         unmount();
     });
@@ -86,7 +86,7 @@ describe('useWebSocketRouter', () => {
         act(() => { useConnectStore.setState({ _lastMessage: msg }); });
 
         expect(useWorkflowRunStore.getState().nodes[0].data.status).toBe('completed');
-        expect(useWorkflowRunStore.getState().activeNodeIds.has('node-1')).toBe(false);
+        expect(useWorkflowRunStore.getState().active_node_ids.has('node-1')).toBe(false);
     });
 
     it('should route parallel_start', () => {
@@ -98,7 +98,7 @@ describe('useWebSocketRouter', () => {
 
         act(() => { useConnectStore.setState({ _lastMessage: msg }); });
 
-        expect(useWorkflowRunStore.getState().activeNodeIds.size).toBe(2);
+        expect(useWorkflowRunStore.getState().active_node_ids.size).toBe(2);
     });
 
     it('should route token_usage', () => {
@@ -148,7 +148,7 @@ describe('useWebSocketRouter', () => {
                 } as any
             });
         });
-        expect(useWorkflowRunStore.getState().humanReview?.nodeId).toBe('node-1');
+        expect(useWorkflowRunStore.getState().humanReview?.node_id).toBe('node-1');
     });
 
     it('should handle node_resumed', () => {
@@ -156,7 +156,7 @@ describe('useWebSocketRouter', () => {
         // Preliminarily set review
         act(() => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            useWorkflowRunStore.setState({ humanReview: { nodeId: 'node-1' } as any });
+            useWorkflowRunStore.setState({ humanReview: { node_id: 'node-1' } as any });
         });
         act(() => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -172,7 +172,7 @@ describe('useWebSocketRouter', () => {
             data: { node_id: 'node-1', status: 'failed' }
         };
         act(() => { useConnectStore.setState({ _lastMessage: msg }); });
-        expect(useWorkflowRunStore.getState().activeNodeIds.has('node-1')).toBe(false);
+        expect(useWorkflowRunStore.getState().active_node_ids.has('node-1')).toBe(false);
         unmount();
     });
 

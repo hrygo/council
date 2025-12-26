@@ -11,8 +11,8 @@ async function fetchGroups(): Promise<Group[]> {
     return res.json();
 }
 
-async function fetchGroup(id: string): Promise<Group> {
-    const res = await fetch(`${API_BASE}/${id}`);
+async function fetchGroup(group_uuid: string): Promise<Group> {
+    const res = await fetch(`${API_BASE}/${group_uuid}`);
     if (!res.ok) {
         throw new Error('Failed to fetch group');
     }
@@ -35,7 +35,7 @@ async function createGroup(data: CreateGroupInput): Promise<Group> {
 }
 
 async function updateGroup(group: Group): Promise<Group> {
-    const res = await fetch(`${API_BASE}/${group.id}`, {
+    const res = await fetch(`${API_BASE}/${group.group_uuid}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -49,8 +49,8 @@ async function updateGroup(group: Group): Promise<Group> {
     return res.json();
 }
 
-async function deleteGroup(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE}/${id}`, {
+async function deleteGroup(group_uuid: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/${group_uuid}`, {
         method: 'DELETE',
     });
     if (!res.ok) {
@@ -66,11 +66,11 @@ export function useGroups() {
     });
 }
 
-export function useGroup(id: string) {
+export function useGroup(group_uuid: string) {
     return useQuery({
-        queryKey: ['groups', id],
-        queryFn: () => fetchGroup(id),
-        enabled: !!id,
+        queryKey: ['groups', group_uuid],
+        queryFn: () => fetchGroup(group_uuid),
+        enabled: !!group_uuid,
     });
 }
 
@@ -90,7 +90,7 @@ export function useUpdateGroup() {
         mutationFn: updateGroup,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['groups'] });
-            queryClient.invalidateQueries({ queryKey: ['groups', data.id] });
+            queryClient.invalidateQueries({ queryKey: ['groups', data.group_uuid] });
         },
     });
 }

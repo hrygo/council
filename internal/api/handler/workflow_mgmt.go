@@ -28,7 +28,7 @@ func NewWorkflowMgmtHandler(repo workflow.Repository, registry *llm.Registry) *W
 }
 
 type ListWorkflowsResponse struct {
-	ID        string `json:"id"`
+	ID        string `json:"workflow_uuid"`
 	Name      string `json:"name"`
 	UpdatedAt string `json:"updated_at"`
 }
@@ -121,14 +121,14 @@ func (h *WorkflowMgmtHandler) Generate(c *gin.Context) {
 Your goal is to generate a valid JSON GraphDefinition based on the user's request.
 Ref:
 type GraphDefinition struct {
-    ID          string              json:"id"
+    ID          string              json:"workflow_id"
     Name        string              json:"name"
     Description string              json:"description"
     StartNodeID string              json:"start_node_id"
     Nodes       map[string]Node     json:"nodes"
 }
 type Node struct {
-    ID         string                 json:"id"
+    ID         string                 json:"node_id"
     Type       NodeType               json:"type" // start, end, agent, llm, tool, parallel, sequence
     Name       string                 json:"name"
     NextIDs    []string               json:"next_ids,omitempty"

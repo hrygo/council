@@ -22,9 +22,9 @@ func TestTemplateRepository_Get(t *testing.T) {
 	tpl := workflow.Template{ID: id, Name: "Template 1", Category: "custom"}
 	graphJSON, _ := json.Marshal(tpl.Graph)
 
-	mock.ExpectQuery("SELECT id, name, description, is_system, graph_definition, created_at, updated_at FROM workflow_templates WHERE id = \\$1").
+	mock.ExpectQuery("SELECT template_uuid, name, description, is_system, graph_definition, created_at, updated_at FROM workflow_templates WHERE template_uuid = \\$1").
 		WithArgs(id).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "description", "is_system", "graph_definition", "created_at", "updated_at"}).
+		WillReturnRows(pgxmock.NewRows([]string{"template_uuid", "name", "description", "is_system", "graph_definition", "created_at", "updated_at"}).
 			AddRow(id, "Template 1", "desc", false, graphJSON, time.Now(), time.Now()))
 
 	t1, err := repo.Get(context.Background(), id)
@@ -49,8 +49,8 @@ func TestTemplateRepository_List(t *testing.T) {
 
 	repo := NewTemplateRepository(mock)
 
-	mock.ExpectQuery("SELECT id, name, description, is_system, graph_definition, created_at, updated_at FROM workflow_templates ORDER BY created_at DESC").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "description", "is_system", "graph_definition", "created_at", "updated_at"}).
+	mock.ExpectQuery("SELECT template_uuid, name, description, is_system, graph_definition, created_at, updated_at FROM workflow_templates ORDER BY created_at DESC").
+		WillReturnRows(pgxmock.NewRows([]string{"template_uuid", "name", "description", "is_system", "graph_definition", "created_at", "updated_at"}).
 			AddRow("1", "T1", "", false, []byte("{}"), time.Now(), time.Now()))
 
 	list, err := repo.List(context.Background())
@@ -100,7 +100,7 @@ func TestTemplateRepository_Delete(t *testing.T) {
 	repo := NewTemplateRepository(mock)
 	id := "tpl-1"
 
-	mock.ExpectExec("DELETE FROM workflow_templates").
+	mock.ExpectExec("DELETE FROM workflow_templates WHERE template_uuid = \\$1").
 		WithArgs(id).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
 

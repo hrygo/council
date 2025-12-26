@@ -76,7 +76,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/meeting" element={<MeetingRoom />} />
-              <Route path="/meeting/:sessionId" element={<MeetingRoom />} />
+              <Route path="/meeting/:session_uuid" element={<MeetingRoom />} />
               {/* Alias /chat to /meeting for backward compatibility if needed, or remove */}
               <Route path="/chat" element={<MeetingRoom />} />
 

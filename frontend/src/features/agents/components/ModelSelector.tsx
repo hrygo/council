@@ -21,20 +21,20 @@ export const ModelSelector: FC<ModelSelectorProps> = ({ value, onChange, showAdv
 
     // Mapping for UI access
     // Note: We use a Map or Find on render. For efficiency with small lists, find is fine.
-    const selectedProvider = providers.find(p => p.id === value.provider);
+    const selectedProvider = providers.find(p => p.provider_id === value.provider);
 
-    const handleProviderChange = useCallback((providerId: string) => {
-        const newProvider = providers.find(p => p.id === providerId);
+    const handleProviderChange = useCallback((provider_id: string) => {
+        const newProvider = providers.find(p => p.provider_id === provider_id);
         if (newProvider && newProvider.models.length > 0) {
             onChange({
                 ...value,
-                provider: providerId as ModelConfig['provider'],
+                provider: provider_id as ModelConfig['provider'],
                 model: newProvider.models[0],
             });
         } else {
             onChange({
                 ...value,
-                provider: providerId as ModelConfig['provider'],
+                provider: provider_id as ModelConfig['provider'],
                 model: '',
             });
         }
@@ -43,14 +43,14 @@ export const ModelSelector: FC<ModelSelectorProps> = ({ value, onChange, showAdv
     // Auto-select first provider if current one is invalid or missing (optional UX improvement)
     useEffect(() => {
         if (!isLoading && providers.length > 0) {
-            const currentValid = providers.some(p => p.id === value.provider);
+            const currentValid = providers.some(p => p.provider_id === value.provider);
             if (!currentValid) {
                 // If current provider is not in the list (e.g., config removed), switch to first available
                 // BUT: Be careful not to overwrite persisted data unnecessarily if API fails transiently.
                 // For now, let's just leave it, or show "Unknown".
                 // Actually, if it's "unknown", it might be safer to default to the first one available.
                 // let's default to first available
-                handleProviderChange(providers[0].id);
+                handleProviderChange(providers[0].provider_id);
             }
         }
     }, [isLoading, providers, value.provider, handleProviderChange]);
@@ -81,7 +81,7 @@ export const ModelSelector: FC<ModelSelectorProps> = ({ value, onChange, showAdv
                             className="w-full appearance-none px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm"
                         >
                             {providers.map((p) => (
-                                <option key={p.id} value={p.id}>
+                                <option key={p.provider_id} value={p.provider_id}>
                                     {p.icon} {p.name}
                                 </option>
                             ))}

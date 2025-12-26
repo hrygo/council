@@ -32,7 +32,7 @@ type ProviderOption struct {
 func (h *LLMHandler) GetProviderOptions(c *gin.Context) {
 	// 1. Fetch all enabled providers from DB
 	rows, err := h.DB.Query(c.Request.Context(),
-		"SELECT id, name, icon FROM llm_providers WHERE is_enabled = true ORDER BY sort_order ASC")
+		"SELECT provider_id, name, icon FROM llm_providers WHERE is_enabled = true ORDER BY sort_order ASC")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch providers"})
 		return
@@ -64,7 +64,7 @@ func (h *LLMHandler) GetProviderOptions(c *gin.Context) {
 	for _, p := range dbOptions {
 		// Fetch models for this provider (All stored models)
 		modelRows, err := h.DB.Query(c.Request.Context(),
-			"SELECT id FROM llm_models WHERE provider_id = $1 AND is_mainstream = true ORDER BY sort_order ASC", p.ID)
+			"SELECT model_id FROM llm_models WHERE provider_id = $1 AND is_mainstream = true ORDER BY sort_order ASC", p.ID)
 		if err != nil {
 			continue
 		}

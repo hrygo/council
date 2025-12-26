@@ -1,41 +1,14 @@
-# 📊 Reports Index
+# 📄 技术报告与复盘 (Reports & Retrospectives)
 
-> 文档归档说明：所有项目报告、审计记录、辩论存档及方法论文章均统一归档于此。
+本目录用于归档项目过程中的关键技术文档，包括但不限于：
 
-## 📁 目录结构
+- **架构决策记录 (ADR)**: 重大技术选型与架构变更的理由。
+- **标准化总结**: 如 ID 命名规范、代码风格统一等治理行动的总结。
+- **复盘报告 (Retrospective)**: 阶段性冲刺的回顾、教训与改进计划。
+- **性能分析**: 性能测试报告与优化方案。
 
-| 目录                                 | 说明               | 包含内容                                |
-| :----------------------------------- | :----------------- | :-------------------------------------- |
-| **[`/audits`](./audits/)**           | **审计与验收报告** | 版本发布验收、架构审查、Sprint 验收报告 |
-| **[`/debugging`](./debugging/)**     | **调试与复盘**     | Bug 根因分析、故障复盘、调试经验总结    |
-| **[`/methodology`](./methodology/)** | **方法论与文章**   | 核心设计理念、架构方法论、开箱即用指南  |
-| **[`/debates`](./debates/)**         | **会议辩论存档**   | Council 辩论过程的完整记录与归档        |
+## 索引 (Index)
 
-## 🎯 任务追踪报告 (2025-12-26 新增)
-
-### 📊 快速查阅
-
-如果你只有 1 分钟时间，请查看:
-- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - 开发进度快速参考
-
-### 📋 详细报告
-
-如果你需要全面了解项目进展，请查看:
-- **[task_progress_report.md](./task_progress_report.md)** - 任务进度追踪报告 (详细版)
-- **[task_board.md](./task_board.md)** - 任务看板 (可视化)
-- **[../plans/Sprint9_Execution_Plan.md](../plans/Sprint9_Execution_Plan.md)** - Sprint 9 执行计划
-
----
-
-## 🌟 关键报告推荐
-
-### 🛠️ 调试与技术复盘
-- [**WebSocket 调试与 Bug 根因深度分析**](./debugging/2025-12-21-websocket-debugging-report.md) (2025-12-21) - *强烈推荐阅读*
-
-### 🏛️ 架构与审计
-- [Sprint 6 终极审计报告 (Ultimate)](./audits/sprint6_audit_report_v6_ultimate.md) - 全面架构审查
-- [v0.10.0 Final QC Audit](./audits/v0.10.0_final_qc_audit.md) - 版本质量验收
-
-### 📖 方法论
-- [The Council 开箱即用方法论](./methodology/council_outofbox_methodology.md) - 核心使用指南
-- [Council 设计方法论](./methodology/council_methodology_article.md) - 设计哲学
+| 日期       | 标题                                                                    | 类型            | 状态   |
+| :--------- | :---------------------------------------------------------------------- | :-------------- | :----- |
+| 2025-12-26 | [架构标准化总结报告](./20251226_architecture_standardization_report.md) | Standardization | ✅ Done |

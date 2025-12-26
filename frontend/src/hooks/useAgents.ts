@@ -11,8 +11,8 @@ async function fetchAgents(): Promise<Agent[]> {
     return res.json();
 }
 
-async function fetchAgent(id: string): Promise<Agent> {
-    const res = await fetch(`${API_BASE}/${id}`);
+async function fetchAgent(agent_uuid: string): Promise<Agent> {
+    const res = await fetch(`${API_BASE}/${agent_uuid}`);
     if (!res.ok) {
         throw new Error('Failed to fetch agent');
     }
@@ -33,7 +33,7 @@ async function createAgent(data: CreateAgentInput): Promise<Agent> {
 }
 
 async function updateAgent(agent: Agent): Promise<Agent> {
-    const res = await fetch(`${API_BASE}/${agent.id}`, {
+    const res = await fetch(`${API_BASE}/${agent.agent_uuid}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(agent),
@@ -45,8 +45,8 @@ async function updateAgent(agent: Agent): Promise<Agent> {
     return res.json();
 }
 
-async function deleteAgent(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE}/${id}`, {
+async function deleteAgent(agent_uuid: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/${agent_uuid}`, {
         method: 'DELETE',
     });
     if (!res.ok) {
@@ -62,11 +62,11 @@ export function useAgents() {
     });
 }
 
-export function useAgent(id: string) {
+export function useAgent(agent_uuid: string) {
     return useQuery({
-        queryKey: ['agents', id],
-        queryFn: () => fetchAgent(id),
-        enabled: !!id,
+        queryKey: ['agents', agent_uuid],
+        queryFn: () => fetchAgent(agent_uuid),
+        enabled: !!agent_uuid,
     });
 }
 
@@ -86,7 +86,7 @@ export function useUpdateAgent() {
         mutationFn: updateAgent,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['agents'] });
-            queryClient.invalidateQueries({ queryKey: ['agents', data.id] });
+            queryClient.invalidateQueries({ queryKey: ['agents', data.agent_uuid] });
         },
     });
 }

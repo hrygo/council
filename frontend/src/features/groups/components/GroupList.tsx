@@ -33,7 +33,7 @@ export function GroupList() {
 
     const handleDelete = (group: Group) => {
         if (confirm(`Are you sure you want to delete group "${group.name}"?`)) {
-            deleteGroup.mutate(group.id);
+            deleteGroup.mutate(group.group_uuid);
         }
     };
 
@@ -108,7 +108,7 @@ export function GroupList() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredGroups?.map(group => (
                         <GroupCard
-                            key={group.id}
+                            key={group.group_uuid}
                             group={group}
                             onEdit={openEditModal}
                             onDelete={handleDelete}

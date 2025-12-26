@@ -36,10 +36,10 @@ interface SessionState {
      * 初始化新会话
      */
     initSession: (params: {
-        sessionId: string;
-        workflowId: string;
-        groupId: string;
-        nodes: Array<{ id: string; name: string; type: string }>;
+        session_uuid: string;
+        workflow_id: string;
+        group_uuid: string;
+        nodes: Array<{ node_id: string; name: string; type: string }>;
     }) => void;
 
     /**
@@ -50,28 +50,28 @@ interface SessionState {
     /**
      * 更新节点状态
      */
-    updateNodeStatus: (nodeId: string, status: NodeStatus) => void;
+    updateNodeStatus: (node_id: string, status: NodeStatus) => void;
 
     /**
      * 设置当前活跃节点
      */
-    setActiveNodes: (nodeIds: string[]) => void;
+    setActiveNodes: (node_ids: string[]) => void;
 
     /**
      * 追加/更新消息 (处理流式输出)
      * @param isStreaming - 如果为 true且isChunk为true，则追加到最后一条消息；否则创建新消息
      */
-    appendMessage: (message: Omit<Message, 'id' | 'timestamp'> & { isChunk?: boolean }) => void;
+    appendMessage: (message: Omit<Message, 'message_uuid' | 'timestamp'> & { isChunk?: boolean }) => void;
 
     /**
      * 标记消息流式完成
      */
-    finalizeMessage: (nodeId: string, agentId?: string) => void;
+    finalizeMessage: (node_id: string, agent_uuid?: string) => void;
 
     /**
      * 更新 Token 使用量
      */
-    updateTokenUsage: (nodeId: string, agentId: string, usage: {
+    updateTokenUsage: (node_id: string, agent_uuid: string, usage: {
         inputTokens: number;
         outputTokens: number;
         estimatedCostUsd: number;
@@ -90,7 +90,7 @@ interface SessionState {
     /**
      * 处理并行开始 (helper action)
      */
-    handleParallelStart: (nodeId: string, branchIds: string[]) => void;
+    handleParallelStart: (node_id: string, branchIds: string[]) => void;
 }
 
 export const useSessionStore = create<SessionState>()(
@@ -101,11 +101,11 @@ export const useSessionStore = create<SessionState>()(
         connectionStatus: 'disconnected',
 
         // Actions
-        initSession: ({ sessionId, workflowId, groupId, nodes }) => {
+        initSession: ({ session_uuid, workflow_id, group_uuid, nodes }) => {
             const initialNodes = new Map();
             nodes.forEach(node => {
-                initialNodes.set(node.id, {
-                    id: node.id,
+                initialNodes.set(node.node_id, {
+                    node_id: node.node_id,
                     name: node.name,
                     type: node.type,
                     status: 'pending'
@@ -114,12 +114,12 @@ export const useSessionStore = create<SessionState>()(
 
             set({
                 currentSession: {
-                    id: sessionId,
-                    workflowId,
-                    groupId,
+                    session_uuid,
+                    workflow_id,
+                    group_uuid,
                     status: 'idle',
                     nodes: initialNodes,
-                    activeNodeIds: [],
+                    active_node_ids: [],
                     totalTokens: 0,
                     totalCostUsd: 0,
                 },
@@ -142,10 +142,10 @@ export const useSessionStore = create<SessionState>()(
             });
         },
 
-        updateNodeStatus: (nodeId, status) => {
+        updateNodeStatus: (node_id, status) => {
             set(state => {
                 if (state.currentSession) {
-                    const node = state.currentSession.nodes.get(nodeId);
+                    const node = state.currentSession.nodes.get(node_id);
                     if (node) {
                         node.status = status;
                         if (status === 'running') node.startedAt = new Date();
@@ -154,17 +154,17 @@ export const useSessionStore = create<SessionState>()(
                 }
 
                 // 同时更新 MessageGroup 的状态
-                const group = state.messageGroups.find(g => g.nodeId === nodeId);
+                const group = state.messageGroups.find(g => g.node_id === node_id);
                 if (group) {
                     group.status = status;
                 }
             });
         },
 
-        setActiveNodes: (nodeIds) => {
+        setActiveNodes: (node_ids) => {
             set(state => {
                 if (state.currentSession) {
-                    state.currentSession.activeNodeIds = nodeIds;
+                    state.currentSession.active_node_ids = node_ids;
                 }
             });
         },
@@ -172,18 +172,18 @@ export const useSessionStore = create<SessionState>()(
         appendMessage: (msg) => {
             set(state => {
                 // 1. 查找对应的消息组
-                let group = state.messageGroups.find(g => g.nodeId === msg.nodeId);
+                let group = state.messageGroups.find(g => g.node_id === msg.node_id);
 
                 // 2. 如果不存在，创建新组
                 if (!group) {
                     // 尝试从 nodes 中获取节点信息
                     // 注意：Immer draft Map 需要特殊处理，这里简单假定如果 session 存在则 node 存在
                     // 这里的 Map 是 Immer 代理后的，可以直接 get
-                    const node = state.currentSession?.nodes.get(msg.nodeId);
+                    const node = state.currentSession?.nodes.get(msg.node_id);
 
                     group = {
-                        nodeId: msg.nodeId,
-                        nodeName: node?.name || msg.nodeId || 'Unknown Node',
+                        node_id: msg.node_id,
+                        nodeName: node?.name || msg.node_id || 'Unknown Node',
                         nodeType: (node?.type as MessageGroup['nodeType']) || 'agent',
                         isParallel: false, // 默认为非并行
                         messages: [],
@@ -197,7 +197,7 @@ export const useSessionStore = create<SessionState>()(
                     // 查找同一 Agent 的最后一条流式消息
 
                     const existingMsg = group.messages.findLast(
-                        (m: Message) => m.agentId === msg.agentId && m.isStreaming
+                        (m: Message) => m.agent_uuid === msg.agent_uuid && m.isStreaming
                     );
 
                     if (existingMsg) {
@@ -209,9 +209,9 @@ export const useSessionStore = create<SessionState>()(
 
                 // 4. 创建新消息
                 group.messages.push({
-                    id: crypto.randomUUID(),
-                    nodeId: msg.nodeId,
-                    agentId: msg.agentId,
+                    message_uuid: crypto.randomUUID(),
+                    node_id: msg.node_id,
+                    agent_uuid: msg.agent_uuid,
                     agentName: msg.agentName,
                     agentAvatar: msg.agentAvatar,
                     role: msg.role,
@@ -222,18 +222,18 @@ export const useSessionStore = create<SessionState>()(
             });
         },
 
-        finalizeMessage: (nodeId, agentId) => {
+        finalizeMessage: (node_id, agent_uuid) => {
             set(state => {
-                const group = state.messageGroups.find(g => g.nodeId === nodeId);
+                const group = state.messageGroups.find(g => g.node_id === node_id);
                 if (group) {
 
-                    const msgs = group.messages.filter((m: Message) => m.agentId === agentId && m.isStreaming);
+                    const msgs = group.messages.filter((m: Message) => m.agent_uuid === agent_uuid && m.isStreaming);
                     msgs.forEach((m: Message) => { m.isStreaming = false; });
                 }
             });
         },
 
-        updateTokenUsage: (nodeId, agentId, usage) => {
+        updateTokenUsage: (node_id, agent_uuid, usage) => {
             set(state => {
                 // 更新会话总成本
                 if (state.currentSession) {
@@ -241,7 +241,7 @@ export const useSessionStore = create<SessionState>()(
                     state.currentSession.totalCostUsd += usage.estimatedCostUsd;
 
                     // 更新节点成本
-                    const node = state.currentSession.nodes.get(nodeId);
+                    const node = state.currentSession.nodes.get(node_id);
                     if (node) {
                         if (!node.tokenUsage) {
                             node.tokenUsage = { inputTokens: 0, outputTokens: 0 };
@@ -252,9 +252,9 @@ export const useSessionStore = create<SessionState>()(
                 }
 
                 // 更新单条消息或最近一条消息的 token usage (Optional, not specified in detail but good to have)
-                const group = state.messageGroups.find(g => g.nodeId === nodeId);
+                const group = state.messageGroups.find(g => g.node_id === node_id);
                 if (group) {
-                    const lastMsg = group.messages.findLast((m: Message) => m.agentId === agentId);
+                    const lastMsg = group.messages.findLast((m: Message) => m.agent_uuid === agent_uuid);
                     if (lastMsg) {
                         if (!lastMsg.tokenUsage) lastMsg.tokenUsage = { inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
                         lastMsg.tokenUsage.inputTokens += usage.inputTokens;
@@ -277,13 +277,13 @@ export const useSessionStore = create<SessionState>()(
             set({ connectionStatus: status });
         },
 
-        handleParallelStart: (nodeId, branchIds) => {
+        handleParallelStart: (node_id, branchIds) => {
             set(state => {
                 // 创建并行消息组
                 state.messageGroups.push({
-                    nodeId,
+                    node_id,
                     nodeName: 'Parallel Execution',
-                    nodeType: 'parallel', // 这里需要根据 nodeId 对应类型来定，简化处理
+                    nodeType: 'parallel', // 这里需要根据 node_id 对应类型来定，简化处理
                     isParallel: true,
                     messages: [], // 并行消息将被收集到这里 (或者是其子节点各自有 group? 这是一个设计点，Spec 似乎暗示并行组是一个容器)
                     // 根据 SPEC-001 4.2: state.messageGroups.push({ ... messages: [] })
@@ -294,7 +294,7 @@ export const useSessionStore = create<SessionState>()(
 
                 // 标记分支节点为活跃
                 if (state.currentSession) {
-                    state.currentSession.activeNodeIds = branchIds;
+                    state.currentSession.active_node_ids = branchIds;
                 }
             });
         }
@@ -310,17 +310,17 @@ export const useSessionStore = create<SessionState>()(
 export const selectActiveMessageGroups = (state: SessionState): MessageGroup[] => {
     if (!state.currentSession) return [];
     // 如果当前是并行节点，可能直接显示并行组？
-    // 或者显示 activeNodeIds 对应的所有组
+    // 或者显示 active_node_ids 对应的所有组
     return state.messageGroups.filter(
-        g => state.currentSession!.activeNodeIds.includes(g.nodeId) || (g.isParallel && g.status === 'running')
+        g => state.currentSession!.active_node_ids.includes(g.node_id) || (g.isParallel && g.status === 'running')
     );
 };
 
 /**
  * 获取指定节点的状态
  */
-export const selectNodeStatus = (nodeId: string) => (state: SessionState): NodeStatus | null => {
-    return state.currentSession?.nodes.get(nodeId)?.status ?? null;
+export const selectNodeStatus = (node_id: string) => (state: SessionState): NodeStatus | null => {
+    return state.currentSession?.nodes.get(node_id)?.status ?? null;
 };
 
 /**

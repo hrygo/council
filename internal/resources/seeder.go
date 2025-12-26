@@ -66,9 +66,9 @@ func (s *Seeder) SeedAgents(ctx context.Context) error {
 		})
 
 		_, err = s.db.Exec(ctx, `
-			INSERT INTO agents (id, name, persona_prompt, model_config, capabilities, created_at, updated_at)
+			INSERT INTO agents (agent_uuid, name, persona_prompt, model_config, capabilities, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-			ON CONFLICT (id) DO UPDATE SET
+			ON CONFLICT (agent_uuid) DO UPDATE SET
 				name = EXCLUDED.name,
 				persona_prompt = EXCLUDED.persona_prompt,
 				model_config = EXCLUDED.model_config,
@@ -116,9 +116,9 @@ func (s *Seeder) SeedGroups(ctx context.Context) error {
 	agentIDsJSON, _ := json.Marshal(agentUUIDs)
 
 	_, err := s.db.Exec(ctx, `
-		INSERT INTO groups (id, name, system_prompt, default_agent_ids, created_at, updated_at)
+		INSERT INTO groups (group_uuid, name, system_prompt, default_agent_ids, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, NOW(), NOW())
-		ON CONFLICT (id) DO NOTHING
+		ON CONFLICT (group_uuid) DO NOTHING
 	`, groupUUID, "The Council", councilSystemPrompt, agentIDsJSON)
 
 	if err != nil {
@@ -130,43 +130,43 @@ func (s *Seeder) SeedGroups(ctx context.Context) error {
 
 // debateWorkflowGraph is the JSON graph definition for council_debate workflow.
 const debateWorkflowGraph = `{
-	"start_node_id": "start",
+	"workflow_id": "council_debate", "start_node_id": "start",
 	"nodes": {
 		"start": {
-			"id": "start",
+			"node_id": "start",
 			"type": "start",
 			"name": "Input Document",
 			"next_ids": ["parallel_analysis"]
 		},
 		"parallel_analysis": {
-			"id": "parallel_analysis",
+			"node_id": "parallel_analysis",
 			"type": "parallel",
 			"name": "Parallel Analysis",
 			"next_ids": ["agent_affirmative", "agent_negative"]
 		},
 		"agent_affirmative": {
-			"id": "agent_affirmative",
+			"node_id": "agent_affirmative",
 			"type": "agent",
 			"name": "Affirmative",
 			"properties": {"agent_id": "system_affirmative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_negative": {
-			"id": "agent_negative",
+			"node_id": "agent_negative",
 			"type": "agent",
 			"name": "Negative",
 			"properties": {"agent_id": "system_negative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_adjudicator": {
-			"id": "agent_adjudicator",
+			"node_id": "agent_adjudicator",
 			"type": "agent",
 			"name": "Adjudicator",
 			"properties": {"agent_id": "system_adjudicator"},
 			"next_ids": ["end"]
 		},
 		"end": {
-			"id": "end",
+			"node_id": "end",
 			"type": "end",
 			"name": "Generate Report"
 		}
@@ -175,16 +175,16 @@ const debateWorkflowGraph = `{
 
 // optimizeWorkflowGraph is the JSON graph definition for council_optimize workflow.
 const optimizeWorkflowGraph = `{
-	"start_node_id": "start",
+	"workflow_id": "council_optimize", "start_node_id": "start",
 	"nodes": {
 		"start": {
-			"id": "start",
+			"node_id": "start",
 			"type": "start",
 			"name": "Input Document",
 			"next_ids": ["memory_retrieval"]
 		},
 		"memory_retrieval": {
-			"id": "memory_retrieval",
+			"node_id": "memory_retrieval",
 			"type": "memory_retrieval",
 			"name": "Load History",
 			"properties": {
@@ -195,48 +195,48 @@ const optimizeWorkflowGraph = `{
 			"next_ids": ["parallel_debate"]
 		},
 		"parallel_debate": {
-			"id": "parallel_debate",
+			"node_id": "parallel_debate",
 			"type": "parallel",
 			"name": "Debate Round",
 			"next_ids": ["agent_affirmative", "agent_negative"]
 		},
 		"agent_affirmative": {
-			"id": "agent_affirmative",
+			"node_id": "agent_affirmative",
 			"type": "agent",
 			"name": "Affirmative",
 			"properties": {"agent_id": "system_affirmative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_negative": {
-			"id": "agent_negative",
+			"node_id": "agent_negative",
 			"type": "agent",
 			"name": "Negative",
 			"properties": {"agent_id": "system_negative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_adjudicator": {
-			"id": "agent_adjudicator",
+			"node_id": "agent_adjudicator",
 			"type": "agent",
 			"name": "Adjudicator",
 			"properties": {"agent_id": "system_adjudicator", "output_format": "structured_verdict"},
 			"next_ids": ["human_review"]
 		},
 		"human_review": {
-			"id": "human_review",
+			"node_id": "human_review",
 			"type": "human_review",
 			"name": "Review & Apply",
 			"properties": {"show_score": true, "actions": ["continue", "apply", "exit", "rollback"]},
 			"next_ids": ["loop_decision"]
 		},
 		"loop_decision": {
-			"id": "loop_decision",
+			"node_id": "loop_decision",
 			"type": "loop",
 			"name": "Continue?",
 			"properties": {"max_rounds": 5, "exit_on_score": 90},
 			"next_ids": ["memory_retrieval", "end"]
 		},
 		"end": {
-			"id": "end",
+			"node_id": "end",
 			"type": "end",
 			"name": "Final Report"
 		}
@@ -282,9 +282,9 @@ func (s *Seeder) SeedWorkflows(ctx context.Context) error {
 		}
 
 		_, err := s.db.Exec(ctx, `
-			INSERT INTO workflow_templates (id, name, description, graph_definition, is_system, created_at, updated_at)
+			INSERT INTO workflow_templates (template_uuid, name, description, graph_definition, is_system, created_at, updated_at)
 			VALUES ($1, $2, $3, $4::jsonb, true, NOW(), NOW())
-			ON CONFLICT (id) DO UPDATE SET
+			ON CONFLICT (template_uuid) DO UPDATE SET
 				name = EXCLUDED.name,
 				description = EXCLUDED.description,
 				graph_definition = EXCLUDED.graph_definition,
@@ -323,7 +323,7 @@ func (s *Seeder) SeedLLMOptions(ctx context.Context) error {
 	// 1. Create Tables if not exist (Migration replacement for robustness)
 	_, err := s.db.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS llm_providers (
-			id TEXT PRIMARY KEY,
+			provider_id TEXT PRIMARY KEY,
 			name TEXT NOT NULL,
 			icon TEXT NOT NULL,
 			sort_order INTEGER NOT NULL DEFAULT 0,
@@ -333,8 +333,8 @@ func (s *Seeder) SeedLLMOptions(ctx context.Context) error {
 		);
 
 		CREATE TABLE IF NOT EXISTS llm_models (
-			id TEXT PRIMARY KEY,
-			provider_id TEXT NOT NULL REFERENCES llm_providers(id) ON DELETE CASCADE,
+			model_id TEXT PRIMARY KEY,
+			provider_id TEXT NOT NULL REFERENCES llm_providers(provider_id) ON DELETE CASCADE,
 			name TEXT NOT NULL,
 			is_mainstream BOOLEAN DEFAULT FALSE,
 			sort_order INTEGER NOT NULL DEFAULT 0,
@@ -386,9 +386,9 @@ func (s *Seeder) SeedLLMOptions(ctx context.Context) error {
 	for _, p := range providers {
 		// Upsert Provider
 		_, err := s.db.Exec(ctx, `
-			INSERT INTO llm_providers (id, name, icon, sort_order, updated_at)
+			INSERT INTO llm_providers (provider_id, name, icon, sort_order, updated_at)
 			VALUES ($1, $2, $3, $4, NOW())
-			ON CONFLICT (id) DO UPDATE SET
+			ON CONFLICT (provider_id) DO UPDATE SET
 				name = EXCLUDED.name,
 				icon = EXCLUDED.icon,
 				sort_order = EXCLUDED.sort_order,
@@ -401,9 +401,9 @@ func (s *Seeder) SeedLLMOptions(ctx context.Context) error {
 		// Upsert Models
 		for i, mID := range p.Models {
 			_, err := s.db.Exec(ctx, `
-				INSERT INTO llm_models (id, provider_id, name, is_mainstream, sort_order, updated_at)
+				INSERT INTO llm_models (model_id, provider_id, name, is_mainstream, sort_order, updated_at)
 				VALUES ($1, $2, $3, true, $4, NOW())
-				ON CONFLICT (id) DO UPDATE SET
+				ON CONFLICT (model_id) DO UPDATE SET
 					name = EXCLUDED.name,
 					is_mainstream = true,
 					sort_order = EXCLUDED.sort_order,

@@ -4,7 +4,7 @@ import type { NodeStatus } from '../types/session';
  * 运行时节点数据 (覆盖 React Flow Node)
  */
 export interface RuntimeNode {
-    id: string;
+    node_id: string;
     type: string;
     label: string;
     status: NodeStatus;
@@ -33,8 +33,8 @@ export interface RunControlState {
 }
 
 export interface HumanReviewRequest {
-    sessionId: string;
-    nodeId: string;
+    session_uuid: string;
+    node_id: string;
     reason: string;
     timeout: number;
 }

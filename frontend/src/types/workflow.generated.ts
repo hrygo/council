@@ -66,8 +66,8 @@ export type NodeProcessor = any;
  * WorkflowEntity represents the persistent storage for a workflow.
  */
 export interface WorkflowEntity {
-  id: string;
-  group_id: string;
+  workflow_uuid: string;
+  group_uuid: string;
   name: string;
   graph_definition: GraphDefinition;
   created_at: string;
@@ -92,16 +92,36 @@ export const SessionCancelled: SessionStatus = "cancelled";
  * Session represents a single execution instance of a workflow
  */
 export interface Session {
-  ID: string;
+  session_uuid: string;
   Graph?: GraphDefinition;
   Status: SessionStatus;
   StartTime: string;
   EndTime: string;
   Inputs: { [key: string]: any};
   Outputs: { [key: string]: any};
-  Error: Error | null;
+  Error: any;
   SignalChannels: { [key: string]: any};
 }
+
+//////////
+// source: session_repository.go
+
+/**
+ * SessionEntity represents the persistent state of a session.
+ */
+export interface SessionEntity {
+  session_uuid: string;
+  group_uuid: string;
+  workflow_uuid: string;
+  status: SessionStatus;
+  proposal: { [key: string]: any};
+  started_at?: any; // Simplified for now
+  ended_at?: any;
+}
+/**
+ * SessionRepository defines the interface for session persistence.
+ */
+export type SessionRepository = any;
 
 //////////
 // source: template.go
@@ -113,7 +133,7 @@ export const TemplateCategoryQuickDecision: TemplateCategory = "quick_decision";
 export const TemplateCategoryCustom: TemplateCategory = "custom";
 export const TemplateCategoryOther: TemplateCategory = "other";
 export interface Template {
-  id: string;
+  template_uuid: string;
   name: string;
   description: string;
   category: TemplateCategory;
@@ -157,7 +177,7 @@ export const NodeTypeMemoryRetrieval: NodeType = "memory_retrieval"; // Logic no
  * GraphDefinition represents the static definition of a workflow
  */
 export interface GraphDefinition {
-  id: string;
+  workflow_id: string;
   name: string;
   description: string;
   nodes: { [key: string]: Node | undefined};
@@ -167,7 +187,7 @@ export interface GraphDefinition {
  * Node represents a single step in the workflow
  */
 export interface Node {
-  id: string;
+  node_id: string;
   type: NodeType;
   name: string;
   next_ids?: string[]; // Adjacency list for next steps

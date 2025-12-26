@@ -1,8 +1,38 @@
 packages:
   - path: "github.com/hrygo/council/internal/core/workflow"
     type_mappings:
-      time.Time: "string"
-      interface{}: "any"
+      "time.Time": "string"
+      "interface{}": "any"
+      "uuid.UUID": "string"
+      "error": "any"
     output_path: "frontend/src/types/workflow.generated.ts"
     include:
       - StreamEvent
+      - GraphDefinition
+      - Node
+      - NodeStatus
+      - NodeType
+      - Session
+      - SessionStatus
+      - SessionEntity
+      - WorkflowEntity
+      - CostEstimate
+      - NodeCostEstimate
+
+  - path: "github.com/hrygo/council/internal/core/agent"
+    type_mappings:
+      time.Time: "string"
+      uuid.UUID: "string"
+    output_path: "frontend/src/types/agent.generated.ts"
+    include:
+      - Agent
+      - ModelConfig
+      - Capabilities
+
+  - path: "github.com/hrygo/council/internal/core/group"
+    type_mappings:
+      time.Time: "string"
+      uuid.UUID: "string"
+    output_path: "frontend/src/types/group.generated.ts"
+    include:
+      - Group

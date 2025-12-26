@@ -3,7 +3,7 @@ import type { BackendGraph } from '../utils/graphUtils';
 export type TemplateCategory = 'code_review' | 'business_plan' | 'quick_decision' | 'custom' | 'other';
 
 export interface Template {
-    id: string;
+    template_uuid: string;
     name: string;
     description: string;
     category: TemplateCategory;

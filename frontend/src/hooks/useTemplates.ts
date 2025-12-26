@@ -24,8 +24,8 @@ async function createTemplate(data: CreateTemplateInput): Promise<Template> {
     return res.json();
 }
 
-async function deleteTemplate(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE}/${id}`, {
+async function deleteTemplate(template_uuid: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/${template_uuid}`, {
         method: 'DELETE',
     });
     if (!res.ok) {

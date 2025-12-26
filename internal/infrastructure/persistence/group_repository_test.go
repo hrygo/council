@@ -20,10 +20,10 @@ func TestGroupRepository_GetByID(t *testing.T) {
 	repo := NewGroupRepository(mock)
 	id := uuid.New()
 
-	rows := pgxmock.NewRows([]string{"id", "name", "icon", "system_prompt", "default_agent_ids", "created_at", "updated_at"}).
+	rows := pgxmock.NewRows([]string{"group_uuid", "name", "icon", "system_prompt", "default_agent_uuids", "created_at", "updated_at"}).
 		AddRow(id, "Group 1", "icon", "prompt", []uuid.UUID{}, time.Now(), time.Now())
 
-	mock.ExpectQuery("SELECT id, name, icon, system_prompt, default_agent_ids, created_at, updated_at FROM groups WHERE id = \\$1").
+	mock.ExpectQuery("SELECT group_uuid, name, icon, system_prompt, default_agent_uuids, created_at, updated_at FROM groups WHERE group_uuid = \\$1").
 		WithArgs(id).
 		WillReturnRows(rows)
 
@@ -50,15 +50,15 @@ func TestGroupRepository_Create(t *testing.T) {
 	repo := NewGroupRepository(mock)
 	id := uuid.New()
 	g := &group.Group{
-		Name:            "New Group",
-		Icon:            strPtr("icon"),
-		SystemPrompt:    strPtr("prompt"),
-		DefaultAgentIDs: []uuid.UUID{},
+		Name:              "New Group",
+		Icon:              strPtr("icon"),
+		SystemPrompt:      strPtr("prompt"),
+		DefaultAgentUUIDs: []uuid.UUID{},
 	}
 
 	mock.ExpectQuery("INSERT INTO groups").
-		WithArgs(g.Name, g.Icon, g.SystemPrompt, g.DefaultAgentIDs, pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "created_at", "updated_at"}).AddRow(id, time.Now(), time.Now()))
+		WithArgs(g.Name, g.Icon, g.SystemPrompt, g.DefaultAgentUUIDs, pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"group_uuid", "created_at", "updated_at"}).AddRow(id, time.Now(), time.Now()))
 
 	err = repo.Create(context.Background(), g)
 	if err != nil {
@@ -82,8 +82,8 @@ func TestGroupRepository_List(t *testing.T) {
 
 	repo := NewGroupRepository(mock)
 
-	mock.ExpectQuery("SELECT id, name, icon, system_prompt, default_agent_ids, created_at, updated_at FROM groups ORDER BY created_at DESC").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "icon", "system_prompt", "default_agent_ids", "created_at", "updated_at"}).
+	mock.ExpectQuery("SELECT group_uuid, name, icon, system_prompt, default_agent_uuids, created_at, updated_at FROM groups ORDER BY created_at DESC").
+		WillReturnRows(pgxmock.NewRows([]string{"group_uuid", "name", "icon", "system_prompt", "default_agent_uuids", "created_at", "updated_at"}).
 			AddRow(uuid.New(), "G1", strPtr("icon"), strPtr("prompt"), []uuid.UUID{}, time.Now(), time.Now()))
 
 	list, err := repo.List(context.Background())
@@ -107,7 +107,7 @@ func TestGroupRepository_Update(t *testing.T) {
 	g := &group.Group{ID: id, Name: "Updated Name"}
 
 	mock.ExpectExec("UPDATE groups").
-		WithArgs(g.Name, g.Icon, g.SystemPrompt, g.DefaultAgentIDs, pgxmock.AnyArg(), g.ID).
+		WithArgs(g.Name, g.Icon, g.SystemPrompt, g.DefaultAgentUUIDs, pgxmock.AnyArg(), g.ID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	err = repo.Update(context.Background(), g)

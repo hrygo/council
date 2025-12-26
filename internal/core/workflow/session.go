@@ -22,7 +22,7 @@ const (
 
 // Session represents a single execution instance of a workflow
 type Session struct {
-	ID        string
+	ID        string `json:"session_uuid"`
 	Graph     *GraphDefinition
 	Status    SessionStatus
 	StartTime time.Time

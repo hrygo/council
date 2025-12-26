@@ -24,13 +24,13 @@ func NewKnowledgeHandler(memoryManager memory.MemoryManager, sessionRepo workflo
 
 // KnowledgeItem represents a knowledge item displayed in the UI
 type KnowledgeItem struct {
-	ID              string    `json:"id"`
+	ID              string    `json:"knowledge_uuid"`
 	Title           string    `json:"title"`
 	Summary         string    `json:"summary"`
 	Content         string    `json:"content"`
 	MemoryLayer     string    `json:"memory_layer"`
 	RelevanceScore  int       `json:"relevance_score"`
-	SourceMessageID string    `json:"source_message_id,omitempty"`
+	SourceMessageID string    `json:"source_message_uuid,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 }
 

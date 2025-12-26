@@ -11,18 +11,18 @@ describe('useSessionStore', () => {
             const { initSession } = useSessionStore.getState();
 
             initSession({
-                sessionId: 'sess-123',
-                workflowId: 'wf-456',
-                groupId: 'group-789',
+                session_uuid: 'sess-123',
+                workflow_id: 'wf-456',
+                group_uuid: 'group-789',
                 nodes: [
-                    { id: 'node-1', name: 'Start', type: 'start' },
-                    { id: 'node-2', name: 'Analyst', type: 'agent' },
+                    { node_id: 'node-1', name: 'Start', type: 'start' },
+                    { node_id: 'node-2', name: 'Analyst', type: 'agent' },
                 ],
             });
 
             const session = useSessionStore.getState().currentSession;
             expect(session).not.toBeNull();
-            expect(session?.id).toBe('sess-123');
+            expect(session?.session_uuid).toBe('sess-123');
             expect(session?.status).toBe('idle');
             // Map comparison in Vitest might need checking size or getting keys
             expect(session?.nodes.size).toBe(2);
@@ -34,16 +34,16 @@ describe('useSessionStore', () => {
         it('should append chunks to existing streaming message', () => {
             const store = useSessionStore.getState();
             store.initSession({
-                sessionId: 'sess-1',
-                workflowId: 'wf-1',
-                groupId: 'g-1',
-                nodes: [{ id: 'node-2', name: 'Analyst', type: 'agent' }]
+                session_uuid: 'sess-1',
+                workflow_id: 'wf-1',
+                group_uuid: 'g-1',
+                nodes: [{ node_id: 'node-2', name: 'Analyst', type: 'agent' }]
             });
 
             // First chunk
             store.appendMessage({
-                nodeId: 'node-2',
-                agentId: 'agent-1',
+                node_id: 'node-2',
+                agent_uuid: 'agent-1',
                 role: 'agent',
                 content: 'Hello ',
                 isStreaming: true,
@@ -52,8 +52,8 @@ describe('useSessionStore', () => {
 
             // Second chunk
             store.appendMessage({
-                nodeId: 'node-2',
-                agentId: 'agent-1',
+                node_id: 'node-2',
+                agent_uuid: 'agent-1',
                 role: 'agent',
                 content: 'World!',
                 isStreaming: true,
@@ -68,23 +68,23 @@ describe('useSessionStore', () => {
         it('should create new message if not streaming or not chunk', () => {
             const store = useSessionStore.getState();
             store.initSession({
-                sessionId: 'sess-1',
-                workflowId: 'wf-1',
-                groupId: 'g-1',
-                nodes: [{ id: 'node-2', name: 'Analyst', type: 'agent' }]
+                session_uuid: 'sess-1',
+                workflow_id: 'wf-1',
+                group_uuid: 'g-1',
+                nodes: [{ node_id: 'node-2', name: 'Analyst', type: 'agent' }]
             });
 
             store.appendMessage({
-                nodeId: 'node-2',
-                agentId: 'agent-1',
+                node_id: 'node-2',
+                agent_uuid: 'agent-1',
                 role: 'agent',
                 content: 'Msg 1',
                 isStreaming: false,
             });
 
             store.appendMessage({
-                nodeId: 'node-2',
-                agentId: 'agent-1',
+                node_id: 'node-2',
+                agent_uuid: 'agent-1',
                 role: 'agent',
                 content: 'Msg 2',
                 isStreaming: false,
@@ -99,12 +99,12 @@ describe('useSessionStore', () => {
         it('should accumulate total cost', () => {
             const store = useSessionStore.getState();
             store.initSession({
-                sessionId: 'sess-1',
-                workflowId: 'wf-1',
-                groupId: 'g-1',
+                session_uuid: 'sess-1',
+                workflow_id: 'wf-1',
+                group_uuid: 'g-1',
                 nodes: [
-                    { id: 'node-2', name: 'Analyst', type: 'agent' },
-                    { id: 'node-3', name: 'Reviewer', type: 'agent' }
+                    { node_id: 'node-2', name: 'Analyst', type: 'agent' },
+                    { node_id: 'node-3', name: 'Reviewer', type: 'agent' }
                 ]
             });
 
@@ -130,9 +130,9 @@ describe('useSessionStore', () => {
         it('should update status and logic timestamps', () => {
             const store = useSessionStore.getState();
             store.initSession({
-                sessionId: 'sess-1',
-                workflowId: 'wf-1',
-                groupId: 'g-1',
+                session_uuid: 'sess-1',
+                workflow_id: 'wf-1',
+                group_uuid: 'g-1',
                 nodes: []
             });
 

@@ -27,7 +27,7 @@ export const ParallelMessageRow: FC<ParallelMessageRowProps> = ({
     >
         {messages.map((msg, idx) => (
             <ParallelMessageCard
-                key={msg.id}
+                key={msg.message_uuid}
                 message={msg}
                 index={idx}
                 accentColor={accentColors[idx % accentColors.length]}

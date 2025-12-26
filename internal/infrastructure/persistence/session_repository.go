@@ -18,7 +18,7 @@ func NewSessionRepository(pool db.DB) workflow.SessionRepository {
 
 func (r *SessionRepository) Create(ctx context.Context, session *workflow.Session, groupID string, workflowID string) error {
 	query := `
-		INSERT INTO sessions (id, group_id, workflow_id, status, started_at)
+		INSERT INTO sessions (session_uuid, group_uuid, workflow_uuid, status, started_at)
 		VALUES ($1, $2, $3, $4, NOW())
 	`
 	// workflowID can be null if it's a dynamic one not yet saved, but usually it's saved.
@@ -36,7 +36,7 @@ func (r *SessionRepository) Create(ctx context.Context, session *workflow.Sessio
 
 func (r *SessionRepository) Get(ctx context.Context, id string) (*workflow.SessionEntity, error) {
 	query := `
-		SELECT id, group_id, workflow_id, status FROM sessions WHERE id = $1
+		SELECT session_uuid, group_uuid, workflow_uuid, status FROM sessions WHERE session_uuid = $1
 	`
 	var s workflow.SessionEntity
 	var wfID interface{}
@@ -52,7 +52,7 @@ func (r *SessionRepository) Get(ctx context.Context, id string) (*workflow.Sessi
 
 func (r *SessionRepository) UpdateStatus(ctx context.Context, id string, status workflow.SessionStatus) error {
 	query := `
-		UPDATE sessions SET status = $2 WHERE id = $1
+		UPDATE sessions SET status = $2 WHERE session_uuid = $1
 	`
 	_, err := r.pool.Exec(ctx, query, id, string(status))
 	return err

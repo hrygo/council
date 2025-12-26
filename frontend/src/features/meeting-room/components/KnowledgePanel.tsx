@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface Knowledge {
-  id: string;
+  knowledge_uuid: string;
   title: string;
   summary: string;
   source: string;
@@ -22,17 +22,27 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
 
   useEffect(() => {
     if (!sessionId) return;
-    
+
     const fetchKnowledge = async () => {
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
         if (layerFilter !== 'all') params.append('layer', layerFilter);
-        
+
         const response = await fetch(`/api/v1/sessions/${sessionId}/knowledge?${params}`);
         if (response.ok) {
           const data = await response.json();
-          setKnowledge(data.items || []);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mappedItems = (data.items || []).map((item: any) => ({
+            knowledge_uuid: item.knowledge_uuid,
+            title: item.title,
+            summary: item.summary,
+            source: item.content, // Using content as source/details
+            relevance: item.relevance_score / 5, // Normalize back if needed or use score directly
+            timestamp: new Date(item.created_at),
+            layer: item.memory_layer
+          }));
+          setKnowledge(mappedItems);
         }
       } catch (error: unknown) {
         console.error('Failed to fetch knowledge:', error instanceof Error ? error.message : String(error));
@@ -45,7 +55,7 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
   }, [sessionId, layerFilter]);
 
   const filteredKnowledge = knowledge.filter(item =>
-    searchQuery === '' || 
+    searchQuery === '' ||
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.summary.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -57,7 +67,7 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
           📚 相关知识
         </h3>
-        
+
         {/* Search */}
         <input
           type="text"
@@ -94,7 +104,7 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {filteredKnowledge.map((item) => (
-              <KnowledgeItem key={item.id} knowledge={item} />
+              <KnowledgeItem key={item.knowledge_uuid} knowledge={item} />
             ))}
           </div>
         )}

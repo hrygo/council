@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 
 export interface ProviderOption {
-    id: string;
+    provider_id: string;
     name: string;
     icon: string;
     models: string[];

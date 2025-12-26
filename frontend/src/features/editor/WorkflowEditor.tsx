@@ -80,7 +80,7 @@ export const WorkflowEditor: FC = () => {
                 .map(e => e.target);
 
             backendNodes[n.id] = {
-                id: n.id,
+                node_id: n.id,
                 type: (n.type as string) || 'agent', // Default/Fallback
                 name: n.data.label as string,
                 next_ids: nextIds,
@@ -92,7 +92,7 @@ export const WorkflowEditor: FC = () => {
         const startNode = nodes.find(n => n.type === 'start');
 
         const payload = {
-            id: graph?.id || undefined, // undefined to create new if not exists
+            workflow_id: graph?.workflow_id || undefined, // undefined to create new if not exists
             name: graph?.name || "Untitled Workflow",
             description: graph?.description || "Created via Builder",
             start_node_id: startNode ? startNode.id : (nodes[0]?.id || ""),
@@ -101,9 +101,9 @@ export const WorkflowEditor: FC = () => {
 
         try {
             // Determine method based on ID presence AND ensure empty string is treated as new
-            const isNew = !payload.id || payload.id === '';
+            const isNew = !payload.workflow_id || payload.workflow_id === '';
             const method = isNew ? 'POST' : 'PUT';
-            const url = isNew ? '/api/v1/workflows' : `/api/v1/workflows/${payload.id}`;
+            const url = isNew ? '/api/v1/workflows' : `/api/v1/workflows/${payload.workflow_id}`;
 
             const res = await fetch(url, {
                 method,
@@ -144,7 +144,7 @@ export const WorkflowEditor: FC = () => {
         // IMPORTANT: Strip ID so it saves as a NEW workflow, not overwriting the template source ID
         const newGraph = {
             ...template.graph,
-            id: '', // Reset ID for new creation
+            workflow_id: '', // Reset ID for new creation
             name: `${template.graph.name} (Copy)`
         };
         setGraph(newGraph);
@@ -157,7 +157,7 @@ export const WorkflowEditor: FC = () => {
         // Ensure generated graph is treated as new
         const newGraph = {
             ...generatedGraph,
-            id: '',
+            workflow_id: '',
         };
         setGraph(newGraph);
         setShowWizard(false);

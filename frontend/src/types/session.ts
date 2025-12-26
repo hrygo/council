@@ -25,9 +25,9 @@ export type MessageRole = 'user' | 'agent' | 'system';
  * 单条消息
  */
 export interface Message {
-  id: string;
-  nodeId: string;          // 所属节点 ID
-  agentId?: string;        // Agent ID (如有)
+  message_uuid: string;
+  node_id: string;          // 所属节点 ID
+  agent_uuid?: string;      // Agent UUID (如有)
   agentName?: string;      // Agent 显示名
   agentAvatar?: string;    // Agent 头像
   role: MessageRole;
@@ -45,7 +45,7 @@ export interface Message {
  * 消息组 (按节点分组)
  */
 export interface MessageGroup {
-  nodeId: string;
+  node_id: string;
   nodeName: string;
   nodeType: 'start' | 'agent' | 'parallel' | 'sequence' | 'vote' | 'loop' | 'fact_check' | 'human_review' | 'end';
   isParallel: boolean;     // 是否为并行组
@@ -57,7 +57,7 @@ export interface MessageGroup {
  * 节点状态快照
  */
 export interface NodeStateSnapshot {
-  id: string;
+  node_id: string;
   name?: string;         // 节点显示名称
   type?: string;         // 节点类型
   status: NodeStatus;
@@ -73,9 +73,9 @@ export interface NodeStateSnapshot {
  * 会话状态
  */
 export interface WorkflowSession {
-  id: string;
-  workflowId: string;
-  groupId: string;
+  session_uuid: string;
+  workflow_id: string;
+  group_uuid: string;
   status: SessionStatus;
   startedAt?: Date;
   completedAt?: Date;
@@ -84,7 +84,7 @@ export interface WorkflowSession {
   nodes: Map<string, NodeStateSnapshot>;
 
   // 当前高亮节点 (可能多个，如并行执行)
-  activeNodeIds: string[];
+  active_node_ids: string[];
 
   // 累计统计
   totalTokens: number;

@@ -7,8 +7,8 @@ import (
 
 // WorkflowEntity represents the persistent storage for a workflow.
 type WorkflowEntity struct {
-	ID              string          `json:"id"`
-	GroupID         string          `json:"group_id"`
+	ID              string          `json:"workflow_uuid" db:"workflow_uuid"`
+	GroupID         string          `json:"group_uuid" db:"group_uuid"`
 	Name            string          `json:"name"`
 	GraphDefinition GraphDefinition `json:"graph_definition"`
 	CreatedAt       time.Time       `json:"created_at"`

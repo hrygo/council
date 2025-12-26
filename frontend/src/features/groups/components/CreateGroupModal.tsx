@@ -18,7 +18,7 @@ export function CreateGroupModal({ open, onClose, onSubmit, isLoading, initialDa
     const [name, setName] = useState(() => initialData?.name || '');
     const [icon, setIcon] = useState(() => initialData?.icon || ICONS[0]);
     const [systemPrompt, setSystemPrompt] = useState(() => initialData?.system_prompt || '');
-    const [selectedAgents, setSelectedAgents] = useState<string[]>(() => initialData?.default_agent_ids || []);
+    const [selectedAgents, setSelectedAgents] = useState<string[]>(() => initialData?.default_agent_uuids || []);
 
     if (!open) return null;
 
@@ -28,15 +28,15 @@ export function CreateGroupModal({ open, onClose, onSubmit, isLoading, initialDa
             name,
             icon,
             system_prompt: systemPrompt,
-            default_agent_ids: selectedAgents
+            default_agent_uuids: selectedAgents
         });
     };
 
-    const toggleAgent = (agentId: string) => {
+    const toggleAgent = (agent_uuid: string) => {
         setSelectedAgents(prev =>
-            prev.includes(agentId)
-                ? prev.filter(id => id !== agentId)
-                : [...prev, agentId]
+            prev.includes(agent_uuid)
+                ? prev.filter(id => id !== agent_uuid)
+                : [...prev, agent_uuid]
         );
     };
 
@@ -113,11 +113,11 @@ export function CreateGroupModal({ open, onClose, onSubmit, isLoading, initialDa
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
                                 {agents?.map(agent => {
-                                    const isSelected = selectedAgents.includes(agent.id);
+                                    const isSelected = selectedAgents.includes(agent.agent_uuid);
                                     return (
                                         <div
-                                            key={agent.id}
-                                            onClick={() => toggleAgent(agent.id)}
+                                            key={agent.agent_uuid}
+                                            onClick={() => toggleAgent(agent.agent_uuid)}
                                             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all select-none ${isSelected
                                                 ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500'
                                                 : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'

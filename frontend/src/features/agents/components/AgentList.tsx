@@ -25,7 +25,7 @@ export function AgentList() {
 
     const handleDelete = (agent: Agent) => {
         if (confirm(`Are you sure you want to retire agent "${agent.name}"?`)) {
-            deleteAgent.mutate(agent.id);
+            deleteAgent.mutate(agent.agent_uuid);
         }
     };
 
@@ -92,7 +92,7 @@ export function AgentList() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {filteredAgents?.map((agent: Agent) => (
                         <AgentCard
-                            key={agent.id}
+                            key={agent.agent_uuid}
                             agent={agent}
                             onClick={openEdit}
                             onDelete={handleDelete}

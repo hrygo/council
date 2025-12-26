@@ -58,18 +58,18 @@ describe('useWorkflowRunStore', () => {
         });
     });
 
-    describe('activeNodeIds', () => {
+    describe('active_node_ids', () => {
         it('should manage active nodes for parallel execution', () => {
             useWorkflowRunStore.getState().setActiveNodes(['node-a', 'node-b']);
-            expect(useWorkflowRunStore.getState().activeNodeIds.size).toBe(2);
-            expect(useWorkflowRunStore.getState().activeNodeIds.has('node-a')).toBe(true);
+            expect(useWorkflowRunStore.getState().active_node_ids.size).toBe(2);
+            expect(useWorkflowRunStore.getState().active_node_ids.has('node-a')).toBe(true);
 
             useWorkflowRunStore.getState().removeActiveNode('node-a');
-            expect(useWorkflowRunStore.getState().activeNodeIds.has('node-a')).toBe(false);
-            expect(useWorkflowRunStore.getState().activeNodeIds.has('node-b')).toBe(true);
+            expect(useWorkflowRunStore.getState().active_node_ids.has('node-a')).toBe(false);
+            expect(useWorkflowRunStore.getState().active_node_ids.has('node-b')).toBe(true);
 
             useWorkflowRunStore.getState().addActiveNode('node-c');
-            expect(useWorkflowRunStore.getState().activeNodeIds.has('node-c')).toBe(true);
+            expect(useWorkflowRunStore.getState().active_node_ids.has('node-c')).toBe(true);
         });
     });
 
@@ -156,7 +156,7 @@ describe('useWorkflowRunStore', () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (fetch as any).mockResolvedValue({ ok: true });
 
-                const request = { sessionId: 's1', nodeId: 'n1', reason: 'test', timeout: 30 };
+                const request = { session_uuid: 's1', node_id: 'n1', reason: 'test', timeout: 30 };
                 useWorkflowRunStore.getState().setHumanReview(request);
 
                 await useWorkflowRunStore.getState().submitHumanReview(request, 'approve');
@@ -169,7 +169,7 @@ describe('useWorkflowRunStore', () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (fetch as any).mockResolvedValue({ ok: false, statusText: 'Bad Request' });
 
-                const request = { sessionId: 's1', nodeId: 'n1', reason: 'test', timeout: 30 };
+                const request = { session_uuid: 's1', node_id: 'n1', reason: 'test', timeout: 30 };
                 useWorkflowRunStore.getState().setHumanReview(request);
 
                 await expect(

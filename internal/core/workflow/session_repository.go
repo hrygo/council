@@ -6,9 +6,9 @@ import (
 
 // SessionEntity represents the persistent state of a session.
 type SessionEntity struct {
-	ID         string                 `json:"id"`
-	GroupID    string                 `json:"group_id"`
-	WorkflowID string                 `json:"workflow_id"`
+	ID         string                 `json:"session_uuid" db:"session_uuid"`
+	GroupID    string                 `json:"group_uuid" db:"group_uuid"`
+	WorkflowID string                 `json:"workflow_uuid" db:"workflow_uuid"`
 	Status     SessionStatus          `json:"status"`
 	Proposal   map[string]interface{} `json:"proposal"`
 	StartedAt  *interface{}           `json:"started_at"` // Simplified for now

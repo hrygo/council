@@ -24,10 +24,10 @@ func TestAgentRepository_GetByID(t *testing.T) {
 	repo := NewAgentRepository(mock)
 	id := uuid.New()
 
-	rows := pgxmock.NewRows([]string{"id", "name", "avatar", "description", "persona_prompt", "model_config", "capabilities", "created_at", "updated_at"}).
+	rows := pgxmock.NewRows([]string{"agent_uuid", "name", "avatar", "description", "persona_prompt", "model_config", "capabilities", "created_at", "updated_at"}).
 		AddRow(id, "Agent 1", strPtr("avatar"), strPtr("desc"), strPtr("persona"), agent.ModelConfig{}, agent.Capabilities{}, time.Now(), time.Now())
 
-	mock.ExpectQuery("SELECT id, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents WHERE id = \\$1").
+	mock.ExpectQuery("SELECT agent_uuid, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents WHERE agent_uuid = \\$1").
 		WithArgs(id).
 		WillReturnRows(rows)
 
@@ -58,7 +58,7 @@ func TestAgentRepository_Create(t *testing.T) {
 
 	mock.ExpectQuery("INSERT INTO agents").
 		WithArgs(a.Name, a.Avatar, a.Description, a.PersonaPrompt, a.ModelConfig, a.Capabilities, pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "created_at", "updated_at"}).AddRow(uuid.New(), time.Now(), time.Now()))
+		WillReturnRows(pgxmock.NewRows([]string{"agent_uuid", "created_at", "updated_at"}).AddRow(uuid.New(), time.Now(), time.Now()))
 
 	err = repo.Create(context.Background(), a)
 	if err != nil {
@@ -79,8 +79,8 @@ func TestAgentRepository_List(t *testing.T) {
 
 	repo := NewAgentRepository(mock)
 
-	mock.ExpectQuery("SELECT id, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "avatar", "description", "persona_prompt", "model_config", "capabilities", "created_at", "updated_at"}).
+	mock.ExpectQuery("SELECT agent_uuid, name, avatar, description, persona_prompt, model_config, capabilities, created_at, updated_at FROM agents").
+		WillReturnRows(pgxmock.NewRows([]string{"agent_uuid", "name", "avatar", "description", "persona_prompt", "model_config", "capabilities", "created_at", "updated_at"}).
 			AddRow(uuid.New(), "A1", nil, nil, nil, agent.ModelConfig{}, agent.Capabilities{}, time.Now(), time.Now()))
 
 	list, err := repo.List(context.Background())

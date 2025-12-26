@@ -16,7 +16,7 @@ const (
 )
 
 type Template struct {
-	ID          string           `json:"id"`
+	ID          string           `json:"template_uuid"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
 	Category    TemplateCategory `json:"category"`

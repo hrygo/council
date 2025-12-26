@@ -27,7 +27,7 @@ interface WorkflowRunState {
     /**
      * 当前高亮的节点 ID 列表
      */
-    activeNodeIds: Set<string>;
+    active_node_ids: Set<string>;
 
     /**
      * 执行状态
@@ -64,13 +64,13 @@ interface WorkflowRunState {
     loadWorkflow: (nodes: Node[], edges: Edge[]) => void;
     setGraphFromTemplate: (template: Template) => void;
     clearWorkflow: () => void;
-    updateNodeStatus: (nodeId: string, status: NodeStatus, error?: string) => void;
-    setActiveNodes: (nodeIds: string[]) => void;
-    addActiveNode: (nodeId: string) => void;
-    removeActiveNode: (nodeId: string) => void;
-    updateNodeTokenUsage: (nodeId: string, usage: NonNullable<RuntimeNode['tokenUsage']>) => void;
+    updateNodeStatus: (node_id: string, status: NodeStatus, error?: string) => void;
+    setActiveNodes: (node_ids: string[]) => void;
+    addActiveNode: (node_id: string) => void;
+    removeActiveNode: (node_id: string) => void;
+    updateNodeTokenUsage: (node_id: string, usage: NonNullable<RuntimeNode['tokenUsage']>) => void;
     setExecutionStatus: (status: WorkflowRunState['executionStatus']) => void;
-    sendControl: (sessionId: string, action: ControlAction) => Promise<void>;
+    sendControl: (session_uuid: string, action: ControlAction) => Promise<void>;
     setHumanReview: (request: HumanReviewRequest | null) => void;
     submitHumanReview: (req: HumanReviewRequest, action: 'approve' | 'reject' | 'modify', data?: Record<string, unknown>) => Promise<void>;
     startTimer: () => void;
@@ -85,7 +85,7 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
         immer((set, get) => ({
             nodes: [],
             edges: [],
-            activeNodeIds: new Set(),
+            active_node_ids: new Set(),
             executionStatus: 'idle',
             humanReview: null as HumanReviewRequest | null,
             graphDefinition: null,
@@ -106,7 +106,7 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                         data: {
                             ...n.data,
                             status: 'pending',
-                            id: n.id,
+                            node_id: n.id,
                             type: n.type || 'default',
                             label: (n.data?.label as string) || n.id,
                         }
@@ -128,7 +128,7 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 set((state) => {
                     state.nodes = [];
                     state.edges = [];
-                    state.activeNodeIds = new Set();
+                    state.active_node_ids = new Set();
                     state.executionStatus = 'idle';
                     state.graphDefinition = null;
                     state.stats = {
@@ -146,9 +146,9 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 }
             },
 
-            updateNodeStatus: (nodeId, status, error) => {
+            updateNodeStatus: (node_id, status, error) => {
                 set((state) => {
-                    const node = state.nodes.find(n => n.id === nodeId);
+                    const node = state.nodes.find(n => n.id === node_id);
                     if (node) {
                         node.data.status = status;
                         if (error) node.data.error = error;
@@ -159,27 +159,27 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 });
             },
 
-            setActiveNodes: (nodeIds) => {
+            setActiveNodes: (node_ids) => {
                 set((state) => {
-                    state.activeNodeIds = new Set(nodeIds);
+                    state.active_node_ids = new Set(node_ids);
                 });
             },
 
-            addActiveNode: (nodeId) => {
+            addActiveNode: (node_id) => {
                 set((state) => {
-                    state.activeNodeIds.add(nodeId);
+                    state.active_node_ids.add(node_id);
                 });
             },
 
-            removeActiveNode: (nodeId) => {
+            removeActiveNode: (node_id) => {
                 set((state) => {
-                    state.activeNodeIds.delete(nodeId);
+                    state.active_node_ids.delete(node_id);
                 });
             },
 
-            updateNodeTokenUsage: (nodeId, usage) => {
+            updateNodeTokenUsage: (node_id, usage) => {
                 set((state) => {
-                    const node = state.nodes.find(n => n.id === nodeId);
+                    const node = state.nodes.find(n => n.id === node_id);
                     if (node) {
                         node.data.tokenUsage = usage;
                     }
@@ -194,10 +194,10 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 });
             },
 
-            sendControl: async (sessionId, action) => {
+            sendControl: async (session_uuid, action) => {
                 const { setExecutionStatus } = get();
                 try {
-                    const response = await fetch(`/api/v1/sessions/${sessionId}/control`, {
+                    const response = await fetch(`/api/v1/sessions/${session_uuid}/control`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action }),
@@ -234,11 +234,11 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 const { setHumanReview } = get();
                 try {
                     const payload = {
-                        node_id: req.nodeId,
+                        node_id: req.node_id,
                         action,
                         data,
                     };
-                    const response = await fetch(`/api/v1/sessions/${req.sessionId}/review`, {
+                    const response = await fetch(`/api/v1/sessions/${req.session_uuid}/review`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),

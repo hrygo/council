@@ -2,7 +2,7 @@ import { type Node, type Edge, MarkerType } from '@xyflow/react';
 
 // Types mirroring Backend GraphDefinition
 export interface BackendNode {
-    id: string;
+    node_id: string;
     type: string; // "start", "end", "agent", "llm", "tool", "parallel", "sequence"
     name: string;
     next_ids?: string[];
@@ -10,7 +10,7 @@ export interface BackendNode {
 }
 
 export interface BackendGraph {
-    id: string;
+    workflow_id: string;
     name: string;
     description: string;
     nodes: Record<string, BackendNode>;
@@ -90,7 +90,7 @@ export const transformToReactFlow = (graph: BackendGraph): { nodes: Node[]; edge
         const indexInLevel = levelCounts[level]++;
 
         nodes.push({
-            id: node.id,
+            id: node.node_id,
             type: mapNodeType(node.type), // Map backend type to RF type
             position: { x: indexInLevel * 200 + 100, y: level * 150 + 50 }, // Vertical layout? Or horizontal?
             // Vertical Layout:

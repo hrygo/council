@@ -42,7 +42,7 @@ const (
 
 // GraphDefinition represents the static definition of a workflow
 type GraphDefinition struct {
-	ID          string           `json:"id"`
+	ID          string           `json:"workflow_id"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
 	Nodes       map[string]*Node `json:"nodes"`
@@ -51,7 +51,7 @@ type GraphDefinition struct {
 
 // Node represents a single step in the workflow
 type Node struct {
-	ID         string                 `json:"id"`
+	ID         string                 `json:"node_id"`
 	Type       NodeType               `json:"type"`
 	Name       string                 `json:"name"`
 	NextIDs    []string               `json:"next_ids,omitempty"` // Adjacency list for next steps

@@ -23,7 +23,7 @@ func TestWorkflowRepository_Get(t *testing.T) {
 	graph := workflow.GraphDefinition{ID: id, Name: "Workflow 1"}
 	graphJSON, _ := json.Marshal(graph)
 
-	mock.ExpectQuery("SELECT graph_definition FROM workflows WHERE id = \\$1").
+	mock.ExpectQuery("SELECT graph_definition FROM workflows WHERE workflow_uuid = \\$1").
 		WithArgs(id).
 		WillReturnRows(pgxmock.NewRows([]string{"graph_definition"}).AddRow(graphJSON))
 
@@ -95,8 +95,8 @@ func TestWorkflowRepository_List(t *testing.T) {
 
 	repo := NewWorkflowRepository(mock)
 
-	mock.ExpectQuery("SELECT id, name, graph_definition, created_at, updated_at FROM workflows").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "graph_definition", "created_at", "updated_at"}).
+	mock.ExpectQuery("SELECT workflow_uuid, name, graph_definition, created_at, updated_at FROM workflows").
+		WillReturnRows(pgxmock.NewRows([]string{"workflow_uuid", "name", "graph_definition", "created_at", "updated_at"}).
 			AddRow("1", "W1", []byte("{}"), time.Now(), time.Now()))
 
 	list, err := repo.List(context.Background())

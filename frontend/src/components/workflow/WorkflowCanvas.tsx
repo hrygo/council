@@ -95,7 +95,7 @@ export default function WorkflowCanvas({
 
     const storeNodes = useWorkflowRunStore(state => state.nodes);
     const storeEdges = useWorkflowRunStore(state => state.edges);
-    const activeIds = useWorkflowRunStore(state => state.activeNodeIds);
+    const activeIds = useWorkflowRunStore(state => state.active_node_ids);
 
     const displayedNodes = readOnly ? storeNodes.map((node) => ({
         ...node,

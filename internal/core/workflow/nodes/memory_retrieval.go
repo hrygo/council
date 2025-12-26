@@ -12,12 +12,12 @@ import (
 
 // MemoryRetrievalProcessor retrieves historical context from Memory system.
 type MemoryRetrievalProcessor struct {
-	MemoryService *memory.Service
+	MemoryManager memory.MemoryManager
 }
 
 // NewMemoryRetrievalProcessor creates a new MemoryRetrievalProcessor.
-func NewMemoryRetrievalProcessor(ms *memory.Service) *MemoryRetrievalProcessor {
-	return &MemoryRetrievalProcessor{MemoryService: ms}
+func NewMemoryRetrievalProcessor(mm memory.MemoryManager) *MemoryRetrievalProcessor {
+	return &MemoryRetrievalProcessor{MemoryManager: mm}
 }
 
 // Process retrieves relevant historical context and injects it into the output.
@@ -49,9 +49,9 @@ func (p *MemoryRetrievalProcessor) Process(
 
 	// 3. Retrieve from Memory system if available
 	var historyContext string
-	if p.MemoryService != nil && topic != "" {
+	if p.MemoryManager != nil && topic != "" {
 		sessionID, _ := input["session_id"].(string)
-		items, err := p.MemoryService.Retrieve(ctx, topic, groupID, sessionID)
+		items, err := p.MemoryManager.Retrieve(ctx, topic, groupID, sessionID)
 		if err != nil {
 			// Log but don't fail - memory retrieval is optional
 			stream <- workflow.StreamEvent{

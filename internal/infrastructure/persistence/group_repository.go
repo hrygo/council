@@ -22,21 +22,21 @@ func NewGroupRepository(pool db.DB) *GroupRepository {
 
 func (r *GroupRepository) Create(ctx context.Context, g *group.Group) error {
 	query := `
-		INSERT INTO groups (name, icon, system_prompt, default_agent_ids, created_at, updated_at)
+		INSERT INTO groups (name, icon, system_prompt, default_agent_uuids, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $5)
-		RETURNING id, created_at, updated_at
+		RETURNING group_uuid, created_at, updated_at
 	`
-	// Ensure default_agent_ids is empty array if nil, but DB default handles it.
+	// Ensure default_agent_uuids is empty array if nil, but DB default handles it.
 	// However, we satisfy the query.
-	if g.DefaultAgentIDs == nil {
-		g.DefaultAgentIDs = []uuid.UUID{}
+	if g.DefaultAgentUUIDs == nil {
+		g.DefaultAgentUUIDs = []uuid.UUID{}
 	}
 
 	err := r.pool.QueryRow(ctx, query,
 		g.Name,
 		g.Icon,
 		g.SystemPrompt,
-		g.DefaultAgentIDs,
+		g.DefaultAgentUUIDs,
 		time.Now(),
 	).Scan(&g.ID, &g.CreatedAt, &g.UpdatedAt)
 
@@ -44,14 +44,14 @@ func (r *GroupRepository) Create(ctx context.Context, g *group.Group) error {
 }
 
 func (r *GroupRepository) GetByID(ctx context.Context, id uuid.UUID) (*group.Group, error) {
-	query := `SELECT id, name, icon, system_prompt, default_agent_ids, created_at, updated_at FROM groups WHERE id = $1`
+	query := `SELECT group_uuid, name, icon, system_prompt, default_agent_uuids, created_at, updated_at FROM groups WHERE group_uuid = $1`
 	var g group.Group
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&g.ID,
 		&g.Name,
 		&g.Icon,
 		&g.SystemPrompt,
-		&g.DefaultAgentIDs,
+		&g.DefaultAgentUUIDs,
 		&g.CreatedAt,
 		&g.UpdatedAt,
 	)
@@ -62,7 +62,7 @@ func (r *GroupRepository) GetByID(ctx context.Context, id uuid.UUID) (*group.Gro
 }
 
 func (r *GroupRepository) List(ctx context.Context) ([]*group.Group, error) {
-	query := `SELECT id, name, icon, system_prompt, default_agent_ids, created_at, updated_at FROM groups ORDER BY created_at DESC`
+	query := `SELECT group_uuid, name, icon, system_prompt, default_agent_uuids, created_at, updated_at FROM groups ORDER BY created_at DESC`
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (r *GroupRepository) List(ctx context.Context) ([]*group.Group, error) {
 			&g.Name,
 			&g.Icon,
 			&g.SystemPrompt,
-			&g.DefaultAgentIDs,
+			&g.DefaultAgentUUIDs,
 			&g.CreatedAt,
 			&g.UpdatedAt,
 		); err != nil {
@@ -91,15 +91,15 @@ func (r *GroupRepository) List(ctx context.Context) ([]*group.Group, error) {
 func (r *GroupRepository) Update(ctx context.Context, g *group.Group) error {
 	query := `
 		UPDATE groups
-		SET name = $1, icon = $2, system_prompt = $3, default_agent_ids = $4, updated_at = $5
-		WHERE id = $6
+		SET name = $1, icon = $2, system_prompt = $3, default_agent_uuids = $4, updated_at = $5
+		WHERE group_uuid = $6
 	`
 	g.UpdatedAt = time.Now()
 	_, err := r.pool.Exec(ctx, query,
 		g.Name,
 		g.Icon,
 		g.SystemPrompt,
-		g.DefaultAgentIDs,
+		g.DefaultAgentUUIDs,
 		g.UpdatedAt,
 		g.ID,
 	)
@@ -107,7 +107,7 @@ func (r *GroupRepository) Update(ctx context.Context, g *group.Group) error {
 }
 
 func (r *GroupRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM groups WHERE id = $1`
+	query := `DELETE FROM groups WHERE group_uuid = $1`
 	_, err := r.pool.Exec(ctx, query, id)
 	return err
 }
