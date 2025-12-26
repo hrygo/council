@@ -66,39 +66,11 @@ func Migrate(ctx context.Context, pool DB) error {
 
 		log.Printf("Applying migration: %s", name)
 		if _, err := pool.Exec(ctx, string(content)); err != nil {
-			// Now we should fail on error, because we expect clean execution for new migrations
-			// However, since we are retroactively applying this to an existing DB, we might still hit "already exists" errors
-			// for the existing tables if they weren't tracked in schema_migrations yet.
-			//
-			// Strategy: If error is "already exists" content, we might want to just mark it as applied.
-			// But parsing error strings is brittle.
-			//
-			// Better Strategy for THIS Transition:
-			// Just log warning and mark as applied? No, that's risky.
-			//
-			// Safe Strategy:
-			// If it fails, we return error.
-			// BUT, the user's DB already has these tables but NO schema_migrations table.
-			// So `exists` will be false for all 3.
-			// Then it will try to run `001` -> Fail (table exists).
-			//
-			// To handle this "Adoption" phase gracefully:
-			// We can swallow "duplicate" errors AND insert the record.
-			// Or we can ask user to reset DB.
-			// User said "Yes" to optimization.
-			//
-			// Let's implement the robust check, but keep the "Warning" behavior for this specific session
-			// BUT if successful (or warning), we MUST record it in `schema_migrations` so next time it skips.
-			log.Printf("Warning: Migration %s execution result: %v", name, err)
-			// Proceed to record it? If it failed because it existed, effectively it's applied.
+			return fmt.Errorf("failed to apply migration %s: %w", name, err)
 		}
 
-		// Record as applied (even if it failed with "already exists", we consider it consistent state for now)
-		// Ideally we only record on success. But un-tracked existing state is tricky.
-		// Let's retry: Record ONLY on success.
-		// Wait, if I don't record it, next time it warns again.
-		// So I MUST record it to silence warnings.
-		_, err = pool.Exec(ctx, "INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT DO NOTHING", name)
+		// Record as applied
+		_, err = pool.Exec(ctx, "INSERT INTO schema_migrations (version) VALUES ($1)", name)
 		if err != nil {
 			return fmt.Errorf("failed to record migration %s: %w", name, err)
 		}

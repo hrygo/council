@@ -27,7 +27,6 @@ ALTER TABLE memories RENAME COLUMN session_id TO session_uuid;
 -- LLM Tables (Logical IDs)
 ALTER TABLE llm_providers RENAME COLUMN id TO provider_id;
 ALTER TABLE llm_models RENAME COLUMN id TO model_id;
-ALTER TABLE llm_models RENAME COLUMN provider_id TO provider_id; -- No change but for completeness
 
 -- Migrate existing JSONB data
 UPDATE workflow_templates 

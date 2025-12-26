@@ -116,7 +116,7 @@ func (s *Seeder) SeedGroups(ctx context.Context) error {
 	agentIDsJSON, _ := json.Marshal(agentUUIDs)
 
 	_, err := s.db.Exec(ctx, `
-		INSERT INTO groups (group_uuid, name, system_prompt, default_agent_ids, created_at, updated_at)
+		INSERT INTO groups (group_uuid, name, system_prompt, default_agent_uuids, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, NOW(), NOW())
 		ON CONFLICT (group_uuid) DO NOTHING
 	`, groupUUID, "The Council", councilSystemPrompt, agentIDsJSON)
