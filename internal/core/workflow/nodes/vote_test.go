@@ -43,3 +43,30 @@ func TestVoteProcessor_Process(t *testing.T) {
 		t.Error("expected approved to be true for empty input mock")
 	}
 }
+
+func TestVoteProcessor_ExactThreshold(t *testing.T) {
+	p := &VoteProcessor{Threshold: 0.5}
+	stream := make(chan workflow.StreamEvent, 10)
+
+	// Exactly at threshold: 1 YES, 1 NO (ratio 0.5 >= 0.5)
+	input := map[string]interface{}{"a1": "YES", "a2": "NO"}
+	output, _ := p.Process(context.Background(), input, stream)
+	if !output["approved"].(bool) {
+		t.Error("expected approved when ratio equals threshold")
+	}
+}
+
+func TestVoteProcessor_AllApproved(t *testing.T) {
+	p := &VoteProcessor{Threshold: 0.9}
+	stream := make(chan workflow.StreamEvent, 10)
+
+	// All approved
+	input := map[string]interface{}{"a1": "APPROVED", "a2": "APPROVED"}
+	output, _ := p.Process(context.Background(), input, stream)
+	if !output["approved"].(bool) {
+		t.Error("expected approved for all APPROVED votes")
+	}
+	if output["yes_votes"].(int) != 2 {
+		t.Errorf("expected 2 yes votes, got %v", output["yes_votes"])
+	}
+}

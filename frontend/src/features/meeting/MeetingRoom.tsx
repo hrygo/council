@@ -10,6 +10,7 @@ import ChatPanel from '../../components/chat/ChatPanel';
 import { DocumentReader } from '../../components/modules/DocumentReader';
 import { HumanReviewModal } from '../execution/components/HumanReviewModal';
 import { SessionStarter } from './SessionStarter';
+import { KnowledgePanel } from '../meeting-room/components/KnowledgePanel';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useConnectStore } from '../../stores/useConnectStore';
 import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
@@ -141,7 +142,7 @@ export const MeetingRoom: FC = () => {
         const panelMap = {
             left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} workflowId={currentSession?.workflowId} graph={graphDefinition} readOnly={true} />,
             center: <ChatPanel fullscreen onExitFullscreen={onExit} />,
-            right: <DocumentReader fullscreen onExitFullscreen={onExit} />,
+            right: currentSession ? <KnowledgePanel sessionId={currentSession.id} /> : <DocumentReader fullscreen onExitFullscreen={onExit} />,
         };
         return (
             <div className="h-screen w-screen fixed top-0 left-0 bg-white dark:bg-gray-900 z-50">
@@ -207,7 +208,7 @@ export const MeetingRoom: FC = () => {
 
                 <PanelResizeHandle className="w-1.5 bg-gray-200 hover:bg-blue-400 dark:bg-gray-800 dark:hover:bg-blue-600 transition-colors cursor-col-resize z-10" />
 
-                {/* Right Panel: Document Reader */}
+                {/* Right Panel: Knowledge Panel */}
                 <Panel
                     ref={rightPanelRef}
                     defaultSize={panelSizes[2]}
@@ -221,7 +222,13 @@ export const MeetingRoom: FC = () => {
                     <div className="relative h-full w-full">
                         <PanelMaximizeButton panel="right" />
                         {!rightCollapsed && <SidebarCollapseTrigger side="right" onCollapse={handleToggleRight} />}
-                        <DocumentReader />
+                        {currentSession ? (
+                            <KnowledgePanel sessionId={currentSession.id} />
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                <p>启动会话后查看相关知识</p>
+                            </div>
+                        )}
                     </div>
                 </Panel>
             </PanelGroup>

@@ -11,6 +11,22 @@
 | **[`/methodology`](./methodology/)** | **方法论与文章**   | 核心设计理念、架构方法论、开箱即用指南  |
 | **[`/debates`](./debates/)**         | **会议辩论存档**   | Council 辩论过程的完整记录与归档        |
 
+## 🎯 任务追踪报告 (2025-12-26 新增)
+
+### 📊 快速查阅
+
+如果你只有 1 分钟时间，请查看:
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - 开发进度快速参考
+
+### 📋 详细报告
+
+如果你需要全面了解项目进展，请查看:
+- **[task_progress_report.md](./task_progress_report.md)** - 任务进度追踪报告 (详细版)
+- **[task_board.md](./task_board.md)** - 任务看板 (可视化)
+- **[../plans/Sprint9_Execution_Plan.md](../plans/Sprint9_Execution_Plan.md)** - Sprint 9 执行计划
+
+---
+
 ## 🌟 关键报告推荐
 
 ### 🛠️ 调试与技术复盘

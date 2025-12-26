@@ -18,6 +18,29 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Bundle optimization
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React vendor bundle
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // ReactFlow vendor bundle
+          'flow-vendor': ['@xyflow/react'],
+          // Markdown and math rendering
+          'markdown': ['react-markdown', 'rehype-katex', 'remark-math', 'remark-gfm'],
+          // UI component libraries
+          'ui-vendor': ['lucide-react'],
+          // State management
+          'state': ['zustand'],
+        },
+      },
+    },
+    // Target modern browsers for smaller bundle
+    target: 'es2020',
+    // Enable minification
+    minify: 'esbuild',
+  },
   test: {
     environment: 'happy-dom', // or jsdom if installed
     globals: true,

@@ -45,11 +45,11 @@ func TestEstimateWorkflowCost(t *testing.T) {
 		t.Errorf("Expected 3000 tokens, got %d", estimate.TotalTokens)
 	}
 
-	// Calculate expected cost
+	// Calculate expected cost from CSV pricing
 	// gpt-4: (1*0.03) + (0.5*0.06) = 0.03 + 0.03 = 0.06
-	// gemini-1.5-flash: (1*0.00035) + (0.5*0.00105) = 0.00035 + 0.000525 = 0.000875
-	// Total: 0.060875
-	expectedCost := 0.060875
+	// gemini-1.5-flash: (1*0.000075) + (0.5*0.0003) = 0.000075 + 0.00015 = 0.000225
+	// Total: 0.060225
+	expectedCost := 0.060225
 	if estimate.TotalCostUSD != expectedCost {
 		t.Errorf("Expected cost %f, got %f", expectedCost, estimate.TotalCostUSD)
 	}

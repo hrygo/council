@@ -1,17 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Play, Boxes, Users, Network, type LucideIcon } from 'lucide-react';
 import './i18n';
 import './index.css';
 import { useConfigStore } from './stores/useConfigStore';
-import { MeetingRoom } from './features/meeting/MeetingRoom';
-import { WorkflowEditor } from './features/editor/WorkflowEditor';
-import { GroupsPage } from './features/groups/pages/GroupsPage';
-import { AgentsPage } from './features/agents/pages/AgentsPage';
 import { HomePage } from './features/home/HomePage';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ToastProvider } from './components/ui/Toast';
+
+// Lazy load feature pages for better code splitting
+const MeetingRoom = lazy(() => import('./features/meeting/MeetingRoom').then(m => ({ default: m.MeetingRoom })));
+const WorkflowEditor = lazy(() => import('./features/editor/WorkflowEditor').then(m => ({ default: m.WorkflowEditor })));
+const GroupsPage = lazy(() => import('./features/groups/pages/GroupsPage').then(m => ({ default: m.GroupsPage })));
+const AgentsPage = lazy(() => import('./features/agents/pages/AgentsPage').then(m => ({ default: m.AgentsPage })));
 
 // Simple Nav Bar for demo purposes
 const NavButton = ({ path, icon: Icon, label, onClick }: { path: string, icon: LucideIcon, label: string, onClick: (path: string) => void }) => (
@@ -63,18 +65,27 @@ function App() {
         </div>
 
         <div className="ml-16 h-full w-[calc(100vw-4rem)]">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/meeting" element={<MeetingRoom />} />
-            <Route path="/meeting/:sessionId" element={<MeetingRoom />} />
-            {/* Alias /chat to /meeting for backward compatibility if needed, or remove */}
-            <Route path="/chat" element={<MeetingRoom />} />
+          <Suspense fallback={
+            <div className="h-full w-full flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('loading', { defaultValue: 'Loading...' })}</span>
+              </div>
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/meeting" element={<MeetingRoom />} />
+              <Route path="/meeting/:sessionId" element={<MeetingRoom />} />
+              {/* Alias /chat to /meeting for backward compatibility if needed, or remove */}
+              <Route path="/chat" element={<MeetingRoom />} />
 
-            <Route path="/editor" element={<WorkflowEditor />} />
-            <Route path="/groups" element={<GroupsPage />} />
-            <Route path="/agents" element={<AgentsPage />} />
-            <Route path="*" element={<HomePage />} />
-          </Routes>
+              <Route path="/editor" element={<WorkflowEditor />} />
+              <Route path="/groups" element={<GroupsPage />} />
+              <Route path="/agents" element={<AgentsPage />} />
+              <Route path="*" element={<HomePage />} />
+            </Routes>
+          </Suspense>
         </div>
       </div>
     </ToastProvider>

@@ -83,6 +83,7 @@ func main() {
 	groupHandler := handler.NewGroupHandler(groupRepo)
 	templateHandler := handler.NewTemplateHandler(templateRepo)
 	memoryHandler := handler.NewMemoryHandler(memoryService)
+	knowledgeHandler := handler.NewKnowledgeHandler(memoryService)
 	workflowMgmtHandler := handler.NewWorkflowMgmtHandler(workflowRepo, registry)
 	llmHandler := handler.NewLLMHandler(cfg, pool)
 
@@ -137,6 +138,9 @@ func main() {
 		// Memory
 		api.POST("/memory/ingest", memoryHandler.Ingest)
 		api.POST("/memory/query", memoryHandler.Query)
+
+		// Knowledge (Session-specific)
+		api.GET("/sessions/:sessionID/knowledge", knowledgeHandler.GetSessionKnowledge)
 
 		// LLM Options
 		api.GET("/llm/providers", llmHandler.GetProviderOptions)

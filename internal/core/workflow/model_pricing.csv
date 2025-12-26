@@ -1,0 +1,27 @@
+# 模型价格配置
+
+## OpenAI
+gpt-4o,0.0025,0.01
+gpt-4o-mini,0.00015,0.0006
+gpt-4-turbo,0.01,0.03
+gpt-4,0.03,0.06
+gpt-3.5-turbo,0.0005,0.0015
+
+## Google Gemini
+gemini-2.0-flash,0.0,0.0
+gemini-1.5-pro,0.00125,0.005
+gemini-1.5-flash,0.000075,0.0003
+
+## DeepSeek
+deepseek-chat,0.00014,0.00028
+deepseek-coder,0.00014,0.00028
+
+## Alibaba DashScope
+qwen-max,0.002,0.006
+qwen-plus,0.0004,0.0012
+qwen-turbo,0.0003,0.0006
+
+## SiliconFlow
+Qwen/Qwen2.5-7B-Instruct,0.00035,0.00035
+Qwen/Qwen2.5-32B-Instruct,0.00105,0.00105
+deepseek-ai/DeepSeek-V3,0.00014,0.00028

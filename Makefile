@@ -11,7 +11,9 @@
         start-db stop-db start-backend stop-backend start-frontend stop-frontend \
         build test test-backend test-frontend lint fmt check clean install \
         coverage coverage-backend coverage-frontend \
-        e2e e2e-ui e2e-headed e2e-report
+        e2e e2e-ui e2e-headed e2e-report \
+        validate-plan check-docs \
+        generate-types verify-types
 
 # ============================================================================
 # 🎨 Colors
@@ -367,6 +369,11 @@ help: ## ❓ Show this help
 	@echo "  $(CYAN)make coverage-backend$(RESET)  Backend coverage"
 	@echo "  $(CYAN)make coverage-frontend$(RESET) Frontend coverage"
 	@echo ""
+	@echo "$(BOLD)📝 Documentation:$(RESET)"
+	@echo "  $(CYAN)make validate-plan$(RESET)   验证开发计划"
+	@echo "  $(CYAN)make check-docs$(RESET)      检查文档格式"
+	@echo ""
+
 	@echo "$(BOLD)📦 Setup:$(RESET)"
 	@echo "  $(CYAN)make install$(RESET)        Install dependencies"
 	@echo "  $(CYAN)make clean$(RESET)          Clean everything"
@@ -384,3 +391,39 @@ check-docs: ## 📚 检查所有文档格式
 	@echo "$(CYAN)📚 检查文档格式...$(RESET)"
 	@command -v markdownlint >/dev/null 2>&1 && npx markdownlint docs/**/*.md || echo "$(YELLOW)⚠️ markdownlint 未安装$(RESET)"
 	@echo "$(GREEN)✅ 文档检查完成$(RESET)"
+
+
+# ============================================================================
+# 🔄 TYPE GENERATION
+# ============================================================================
+
+generate-types: ## 🔄 Generate TypeScript types from Go structures
+	@echo "$(CYAN)🔄 Generating TypeScript types from Go...$(RESET)"
+	@tygo generate
+	@echo "$(GREEN)✅ Type generation complete$(RESET)"
+
+verify-types: generate-types ## 🔍 Verify type consistency
+	@echo "$(CYAN)🔍 Verifying type consistency...$(RESET)"
+	@git diff --exit-code frontend/src/types/*.generated.ts || \
+		(echo "$(RED)❌ Generated types are out of sync! Run 'make generate-types'$(RESET)" && exit 1)
+	@echo "$(GREEN)✅ Type consistency verified$(RESET)"
+
+# ============================================================================
+# 📊 PERFORMANCE ANALYSIS
+# ============================================================================
+
+perf-analyze: ## 📊 Analyze bundle size
+	@echo "$(CYAN)📊 Analyzing bundle size...$(RESET)"
+	@cd frontend && npm run build 2>&1 | tee build-stats.txt
+	@echo ""
+	@echo "$(BOLD)$(CYAN)Bundle Size Analysis:$(RESET)"
+	@echo "════════════════════════════════════════"
+	@cd frontend/dist && du -sh assets/*.js | sort -rh | head -10
+	@echo "════════════════════════════════════════"
+	@echo "$(GREEN)✅ Build stats saved to frontend/build-stats.txt$(RESET)"
+
+perf-lighthouse: start-frontend ## 🔦 Run Lighthouse audit
+	@echo "$(CYAN)🔦 Running Lighthouse audit...$(RESET)"
+	@sleep 3
+	@npx lighthouse http://localhost:5173 --output=html --output-path=./lighthouse-report.html --chrome-flags="--headless" || true
+	@echo "$(GREEN)✅ Report generated: lighthouse-report.html$(RESET)"

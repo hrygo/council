@@ -139,13 +139,19 @@ func (r *Registry) GetDefaultModel() string {
 	case "gemini", "google":
 		return "gemini-2.0-flash"
 	case "openai":
-		return "gpt-4"
+		if r.cfg.LLM.Model != "" {
+			return r.cfg.LLM.Model
+		}
+		return "gpt-4o"
 	case "deepseek":
 		return "deepseek-chat"
 	case "dashscope":
 		return "qwen-max"
 	default:
-		return "gpt-4"
+		if r.cfg.LLM.Model != "" {
+			return r.cfg.LLM.Model
+		}
+		return "gpt-4o"
 	}
 }
 

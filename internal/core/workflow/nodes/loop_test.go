@@ -42,3 +42,27 @@ func TestLoopProcessor_Process(t *testing.T) {
 		t.Error("expected exit_reason to be score_threshold_reached")
 	}
 }
+
+func TestLoopProcessor_IntScore(t *testing.T) {
+	p := &LoopProcessor{MaxRounds: 5, ExitOnScore: 85}
+	stream := make(chan workflow.StreamEvent, 10)
+
+	// Test int score type
+	input := map[string]interface{}{"iteration": 1, "score": 90}
+	output, _ := p.Process(context.Background(), input, stream)
+	if !output["should_exit"].(bool) {
+		t.Error("expected should_exit for int score >= threshold")
+	}
+}
+
+func TestLoopProcessor_NoScore(t *testing.T) {
+	p := &LoopProcessor{MaxRounds: 3, ExitOnScore: 90}
+	stream := make(chan workflow.StreamEvent, 10)
+
+	// No score provided
+	input := map[string]interface{}{"iteration": 1}
+	output, _ := p.Process(context.Background(), input, stream)
+	if output["should_exit"].(bool) {
+		t.Error("expected should_exit to be false when no score and below max rounds")
+	}
+}

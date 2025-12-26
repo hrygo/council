@@ -1,0 +1,8 @@
+packages:
+  - path: "github.com/hrygo/council/internal/core/workflow"
+    type_mappings:
+      time.Time: "string"
+      interface{}: "any"
+    output_path: "frontend/src/types/workflow.generated.ts"
+    include:
+      - StreamEvent
