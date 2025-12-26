@@ -131,8 +131,8 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	}()
 
 	c.JSON(http.StatusAccepted, gin.H{
-		"session_id": session.ID,
-		"status":     "started",
+		"session_uuid": session.ID,
+		"status":       "started",
 	})
 }
 
@@ -173,9 +173,9 @@ func (h *WorkflowHandler) Control(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":     id,
-		"status": session.Status,
-		"action": req.Action,
+		"session_uuid": id,
+		"status":       session.Status,
+		"action":       req.Action,
 	})
 }
 
