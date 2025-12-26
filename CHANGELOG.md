@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.16.0] - 2025-12-26
+
+### Added
+- **UI/UX Overhaul for Message Bubbles**:
+  - **Dark Mode**: Fully theme-aware agent bubbles (Slate colors) eliminating "white box" issues.
+  - **Collapsible Messages**: Replaced internal scrollbars with a "Show More/Show Less" interaction for long content, using gradient masks for a cleaner look.
+  - **Custom Scrollbars**: Global thin, rounded, theme-aware scrollbars replacing browser defaults.
+  - **Typography**: Improved line height and tracking for better readability.
+
+### Changed
+- **ID Standardization (Architecture)**:
+  - **Database & API**: Standardized all primary keys to `_uuid` suffix and logical IDs to `_id` suffix across the entire stack.
+  - **API Response**: `POST /workflows/execute` and websocket events now return `session_uuid` instead of legacy `id` or `session_id`.
+  - **Seeder**: Updated seeder logic to respect new column names (`default_agent_uuids`).
+
+### Fixed
+- **Migration & Seeder Alignment**: Resolved backend crash caused by schema mismatch (`default_agent_ids` vs `uuids`).
+- **Migration Logic**: Corrected `migrator.go` to fail fast on errors instead of swallowing them.
+- **Frontend Crash**: Fixed `SessionHeader` white-screen crash due to undefined session ID property access.
+- **UI Flicker**: Removed annoying `animate-pulse` from streaming message bubbles.
+
 ## [0.15.1] - 2025-12-21
 
 ### Changed
