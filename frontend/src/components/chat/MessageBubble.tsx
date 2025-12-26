@@ -49,11 +49,10 @@ export const MessageBubble: FC<MessageBubbleProps> = ({ content, isStreaming, ro
     return (
         <div
             className={`
-        p-3 rounded-2xl text-sm
+        p-3 rounded-2xl text-sm overflow-x-auto
         ${role === 'user'
                     ? "bg-blue-600 text-white rounded-br-none ml-auto max-w-[80%]"
                     : "bg-gray-50 border border-gray-100 text-gray-800 rounded-bl-none"}
-        ${isStreaming ? "animate-pulse" : ""}
       `}
         >
             <div className={`prose prose-sm max-w-none dark:prose-invert ${role === 'user' ? 'text-white prose-headings:text-white prose-p:text-white prose-a:text-white' : ''}`}>
