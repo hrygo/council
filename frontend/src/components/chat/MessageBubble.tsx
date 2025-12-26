@@ -49,13 +49,21 @@ export const MessageBubble: FC<MessageBubbleProps> = ({ content, isStreaming, ro
     return (
         <div
             className={`
-        p-3 rounded-2xl text-sm overflow-x-auto
+        p-4 rounded-2xl text-sm leading-relaxed tracking-wide
+        overflow-x-auto overflow-y-auto max-h-96
+        [&::-webkit-scrollbar]:w-1.5
+        [&::-webkit-scrollbar-track]:bg-transparent
+        [&::-webkit-scrollbar-thumb]:bg-gray-300 
+        dark:[&::-webkit-scrollbar-thumb]:bg-slate-600
+        [&::-webkit-scrollbar-thumb]:rounded-full
         ${role === 'user'
-                    ? "bg-blue-600 text-white rounded-br-none ml-auto max-w-[80%]"
-                    : "bg-gray-50 border border-gray-100 text-gray-800 rounded-bl-none max-h-96 overflow-y-auto"}
+                    ? "bg-blue-600 text-white rounded-br-none ml-auto max-w-[80%] shadow-md"
+                    : "bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-800 dark:text-gray-100 rounded-bl-none shadow-sm"}
       `}
         >
-            <div className={`prose prose-sm max-w-none dark:prose-invert ${role === 'user' ? 'text-white prose-headings:text-white prose-p:text-white prose-a:text-white' : ''}`}>
+            <div className={`prose prose-sm max-w-none dark:prose-invert 
+                ${role === 'user' ? 'text-white prose-headings:text-white prose-p:text-white prose-a:text-white prose-code:text-white' : 'dark:text-gray-100'}
+                prose-p:leading-relaxed prose-pre:my-2 prose-pre:bg-gray-800 dark:prose-pre:bg-black/30 prose-pre:rounded-lg`}>
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeHighlight, rehypeKatex]}
