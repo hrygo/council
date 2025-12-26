@@ -37,7 +37,7 @@ func TestNewNodeFactory(t *testing.T) {
 	}{
 		{workflow.NodeTypeStart, "start", nil, false},
 		{workflow.NodeTypeEnd, "end", nil, false},
-		{workflow.NodeTypeAgent, "agent", map[string]interface{}{"agent_id": "a1"}, false},
+		{workflow.NodeTypeAgent, "agent", map[string]interface{}{"agent_uuid": "a1"}, false},
 		{workflow.NodeTypeAgent, "agent-fail", nil, true}, // Missing agent_id
 		{workflow.NodeTypeVote, "vote", nil, false},
 		{workflow.NodeTypeLoop, "loop", nil, false},

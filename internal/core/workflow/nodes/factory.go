@@ -48,9 +48,9 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 			}, nil
 
 		case workflow.NodeTypeAgent:
-			agentID, _ := node.Properties["agent_id"].(string)
+			agentID, _ := node.Properties["agent_uuid"].(string)
 			if agentID == "" {
-				return nil, fmt.Errorf("agent_id property missing for node %s", node.ID)
+				return nil, fmt.Errorf("agent_uuid property missing for node %s", node.ID)
 			}
 			return &AgentProcessor{
 				NodeID:    node.ID,

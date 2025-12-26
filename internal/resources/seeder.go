@@ -148,21 +148,21 @@ const debateWorkflowGraph = `{
 			"node_id": "agent_affirmative",
 			"type": "agent",
 			"name": "Affirmative",
-			"properties": {"agent_id": "system_affirmative"},
+			"properties": {"agent_uuid": "system_affirmative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_negative": {
 			"node_id": "agent_negative",
 			"type": "agent",
 			"name": "Negative",
-			"properties": {"agent_id": "system_negative"},
+			"properties": {"agent_uuid": "system_negative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_adjudicator": {
 			"node_id": "agent_adjudicator",
 			"type": "agent",
 			"name": "Adjudicator",
-			"properties": {"agent_id": "system_adjudicator"},
+			"properties": {"agent_uuid": "system_adjudicator"},
 			"next_ids": ["end"]
 		},
 		"end": {
@@ -204,21 +204,21 @@ const optimizeWorkflowGraph = `{
 			"node_id": "agent_affirmative",
 			"type": "agent",
 			"name": "Affirmative",
-			"properties": {"agent_id": "system_affirmative"},
+			"properties": {"agent_uuid": "system_affirmative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_negative": {
 			"node_id": "agent_negative",
 			"type": "agent",
 			"name": "Negative",
-			"properties": {"agent_id": "system_negative"},
+			"properties": {"agent_uuid": "system_negative"},
 			"next_ids": ["agent_adjudicator"]
 		},
 		"agent_adjudicator": {
 			"node_id": "agent_adjudicator",
 			"type": "agent",
 			"name": "Adjudicator",
-			"properties": {"agent_id": "system_adjudicator", "output_format": "structured_verdict"},
+			"properties": {"agent_uuid": "system_adjudicator", "output_format": "structured_verdict"},
 			"next_ids": ["human_review"]
 		},
 		"human_review": {
