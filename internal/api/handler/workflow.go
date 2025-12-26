@@ -119,7 +119,7 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 		go func() {
 			for event := range engine.StreamChannel {
 				// Augment event with SessionID?
-				event.Data["session_id"] = session.ID
+				event.Data["session_uuid"] = session.ID
 
 				h.Hub.Broadcast(event)
 			}
