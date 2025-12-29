@@ -10,7 +10,7 @@ export interface BackendNode {
 }
 
 export interface BackendGraph {
-    workflow_id: string;
+    workflow_uuid: string;
     name: string;
     description: string;
     nodes: Record<string, BackendNode>;

@@ -92,7 +92,7 @@ export const WorkflowEditor: FC = () => {
         const startNode = nodes.find(n => n.type === 'start');
 
         const payload = {
-            workflow_id: graph?.workflow_id || undefined, // undefined to create new if not exists
+            workflow_uuid: graph?.workflow_uuid || undefined, // undefined to create new if not exists
             name: graph?.name || "Untitled Workflow",
             description: graph?.description || "Created via Builder",
             start_node_id: startNode ? startNode.id : (nodes[0]?.id || ""),
@@ -101,9 +101,9 @@ export const WorkflowEditor: FC = () => {
 
         try {
             // Determine method based on ID presence AND ensure empty string is treated as new
-            const isNew = !payload.workflow_id || payload.workflow_id === '';
+            const isNew = !payload.workflow_uuid || payload.workflow_uuid === '';
             const method = isNew ? 'POST' : 'PUT';
-            const url = isNew ? '/api/v1/workflows' : `/api/v1/workflows/${payload.workflow_id}`;
+            const url = isNew ? '/api/v1/workflows' : `/api/v1/workflows/${payload.workflow_uuid}`;
 
             const res = await fetch(url, {
                 method,
@@ -144,7 +144,7 @@ export const WorkflowEditor: FC = () => {
         // IMPORTANT: Strip ID so it saves as a NEW workflow, not overwriting the template source ID
         const newGraph = {
             ...template.graph,
-            workflow_id: '', // Reset ID for new creation
+            workflow_uuid: '', // Reset ID for new creation
             name: `${template.graph.name} (Copy)`
         };
         setGraph(newGraph);
@@ -157,7 +157,7 @@ export const WorkflowEditor: FC = () => {
         // Ensure generated graph is treated as new
         const newGraph = {
             ...generatedGraph,
-            workflow_id: '',
+            workflow_uuid: '',
         };
         setGraph(newGraph);
         setShowWizard(false);

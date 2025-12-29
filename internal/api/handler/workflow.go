@@ -74,7 +74,13 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	session.SetFileRepository(h.FileRepo)
 
 	// Persist Session
-	groupID, _ := req.Input["group_id"].(string)
+	groupID, _ := req.Input["group_uuid"].(string)
+	if groupID == "" {
+		groupID, _ = req.Input["group_id"].(string) // Backward compatibility
+		if groupID != "" {
+			log.Printf("[Workflow] Warning: Client used deprecated 'group_id' parameter. Please update to 'group_uuid'.")
+		}
+	}
 	workflowID := ""
 	if req.Graph != nil {
 		workflowID = req.Graph.ID

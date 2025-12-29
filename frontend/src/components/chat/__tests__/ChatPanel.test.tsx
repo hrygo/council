@@ -21,7 +21,7 @@ describe('ChatPanel', () => {
         const store = useSessionStore.getState();
         store.initSession({
             session_uuid: 'test-session',
-            workflow_id: 'test-workflow',
+            workflow_uuid: 'test-workflow',
             group_uuid: 'test-group',
             nodes: [] // Providing empty nodes array
         });
@@ -103,7 +103,7 @@ describe('ChatPanel', () => {
         useSessionStore.setState({
             currentSession: {
                 session_uuid: 'sess-1',
-                workflow_id: 'wf-1',
+                workflow_uuid: 'wf-1',
                 group_uuid: 'grp-1',
                 status: 'running',
                 nodes: new Map(),

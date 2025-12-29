@@ -131,7 +131,7 @@ func (s *Seeder) SeedGroups(ctx context.Context) error {
 
 // debateWorkflowGraph is the JSON graph definition for council_debate workflow.
 const debateWorkflowGraph = `{
-	"workflow_id": "council_debate", "start_node_id": "start",
+	"workflow_uuid": "council_debate", "start_node_id": "start",
 	"nodes": {
 		"start": {
 			"node_id": "start",
@@ -176,7 +176,7 @@ const debateWorkflowGraph = `{
 
 // optimizeWorkflowGraph is the JSON graph definition for council_optimize workflow.
 const optimizeWorkflowGraph = `{
-	"workflow_id": "council_optimize", "start_node_id": "start",
+	"workflow_uuid": "council_optimize", "start_node_id": "start",
 	"nodes": {
 		"start": {
 			"node_id": "start",

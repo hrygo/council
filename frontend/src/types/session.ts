@@ -74,7 +74,7 @@ export interface NodeStateSnapshot {
  */
 export interface WorkflowSession {
   session_uuid: string;
-  workflow_id: string;
+  workflow_uuid: string;
   group_uuid: string;
   status: SessionStatus;
   startedAt?: Date;

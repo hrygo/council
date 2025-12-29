@@ -37,7 +37,7 @@ interface SessionState {
      */
     initSession: (params: {
         session_uuid: string;
-        workflow_id: string;
+        workflow_uuid: string;
         group_uuid: string;
         nodes: Array<{ node_id: string; name: string; type: string }>;
     }) => void;
@@ -101,7 +101,7 @@ export const useSessionStore = create<SessionState>()(
         connectionStatus: 'disconnected',
 
         // Actions
-        initSession: ({ session_uuid, workflow_id, group_uuid, nodes }) => {
+        initSession: ({ session_uuid, workflow_uuid, group_uuid, nodes }) => {
             const initialNodes = new Map();
             nodes.forEach(node => {
                 initialNodes.set(node.node_id, {
@@ -115,7 +115,7 @@ export const useSessionStore = create<SessionState>()(
             set({
                 currentSession: {
                     session_uuid,
-                    workflow_id,
+                    workflow_uuid,
                     group_uuid,
                     status: 'idle',
                     nodes: initialNodes,

@@ -43,7 +43,7 @@ const (
 
 // GraphDefinition represents the static definition of a workflow
 type GraphDefinition struct {
-	ID          string           `json:"workflow_id"`
+	ID          string           `json:"workflow_uuid"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
 	Nodes       map[string]*Node `json:"nodes"`

@@ -57,7 +57,7 @@ export const useWorkflow = (): UseWorkflowReturn => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    workflow_id: id,
+                    workflow_uuid: id,
                     input: { initial_prompt: input }
                 }),
             });

@@ -52,6 +52,27 @@ export interface Engine {
 }
 
 //////////
+// source: file_repository.go
+
+/**
+ * FileEntity represents a versioned file in the Virtual File System.
+ */
+export interface FileEntity {
+  file_uuid: string;
+  session_uuid: string;
+  path: string;
+  version: number /* int */;
+  content: string;
+  author: string;
+  reason: string;
+  created_at: string;
+}
+/**
+ * SessionFileRepository defines the interface for VFS persistence.
+ */
+export type SessionFileRepository = any;
+
+//////////
 // source: processor.go
 
 /**
@@ -100,7 +121,8 @@ export interface Session {
   Inputs: { [key: string]: any};
   Outputs: { [key: string]: any};
   Error: any;
-  SignalChannels: { [key: string]: any};
+  signal_channels?: { [key: string]: any};
+  context_data: { [key: string]: any}; // Runtime context for Loop variables, etc.
 }
 
 //////////
@@ -173,11 +195,12 @@ export const NodeTypeLoop: NodeType = "loop"; // Logic node: Loop
 export const NodeTypeFactCheck: NodeType = "fact_check"; // Logic node: Fact Check
 export const NodeTypeHumanReview: NodeType = "human_review"; // Logic node: Human Review
 export const NodeTypeMemoryRetrieval: NodeType = "memory_retrieval"; // Logic node: Memory Retrieval
+export const NodeTypeContextSynth: NodeType = "context_synth"; // Logic node: Context Synthesizer
 /**
  * GraphDefinition represents the static definition of a workflow
  */
 export interface GraphDefinition {
-  workflow_id: string;
+  workflow_uuid: string;
   name: string;
   description: string;
   nodes: { [key: string]: Node | undefined};

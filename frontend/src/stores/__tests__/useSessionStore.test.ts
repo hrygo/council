@@ -12,7 +12,7 @@ describe('useSessionStore', () => {
 
             initSession({
                 session_uuid: 'sess-123',
-                workflow_id: 'wf-456',
+                workflow_uuid: 'wf-456',
                 group_uuid: 'group-789',
                 nodes: [
                     { node_id: 'node-1', name: 'Start', type: 'start' },
@@ -35,7 +35,7 @@ describe('useSessionStore', () => {
             const store = useSessionStore.getState();
             store.initSession({
                 session_uuid: 'sess-1',
-                workflow_id: 'wf-1',
+                workflow_uuid: 'wf-1',
                 group_uuid: 'g-1',
                 nodes: [{ node_id: 'node-2', name: 'Analyst', type: 'agent' }]
             });
@@ -69,7 +69,7 @@ describe('useSessionStore', () => {
             const store = useSessionStore.getState();
             store.initSession({
                 session_uuid: 'sess-1',
-                workflow_id: 'wf-1',
+                workflow_uuid: 'wf-1',
                 group_uuid: 'g-1',
                 nodes: [{ node_id: 'node-2', name: 'Analyst', type: 'agent' }]
             });
@@ -100,7 +100,7 @@ describe('useSessionStore', () => {
             const store = useSessionStore.getState();
             store.initSession({
                 session_uuid: 'sess-1',
-                workflow_id: 'wf-1',
+                workflow_uuid: 'wf-1',
                 group_uuid: 'g-1',
                 nodes: [
                     { node_id: 'node-2', name: 'Analyst', type: 'agent' },
@@ -131,7 +131,7 @@ describe('useSessionStore', () => {
             const store = useSessionStore.getState();
             store.initSession({
                 session_uuid: 'sess-1',
-                workflow_id: 'wf-1',
+                workflow_uuid: 'wf-1',
                 group_uuid: 'g-1',
                 nodes: []
             });

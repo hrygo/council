@@ -140,7 +140,7 @@ export const MeetingRoom: FC = () => {
     if (maximizedPanel) {
         const onExit = () => maximizePanel(null);
         const panelMap = {
-            left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} workflowId={currentSession?.workflow_id} graph={graphDefinition} readOnly={true} />,
+            left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} workflowId={currentSession?.workflow_uuid} graph={graphDefinition} readOnly={true} />,
             center: <ChatPanel fullscreen onExitFullscreen={onExit} />,
             right: currentSession ? <KnowledgePanel sessionId={currentSession.session_uuid} /> : <DocumentReader fullscreen onExitFullscreen={onExit} />,
         };
@@ -180,7 +180,7 @@ export const MeetingRoom: FC = () => {
                         {!leftCollapsed && <SidebarCollapseTrigger side="left" onCollapse={handleToggleLeft} />}
                         <WorkflowCanvas
                             readOnly={isRunning}
-                            workflowId={currentSession?.workflow_id}
+                            workflowId={currentSession?.workflow_uuid}
                             graph={graphDefinition}
                         />
                     </div>

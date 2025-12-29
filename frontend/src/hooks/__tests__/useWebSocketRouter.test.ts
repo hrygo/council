@@ -20,7 +20,7 @@ describe('useWebSocketRouter', () => {
         // Mock init session to have a valid session to update
         useSessionStore.getState().initSession({
             session_uuid: 'sess-1',
-            workflow_id: 'wf-1',
+            workflow_uuid: 'wf-1',
             group_uuid: 'g-1',
             nodes: [{ node_id: 'node-1', name: 'Node 1', type: 'agent' }]
         });

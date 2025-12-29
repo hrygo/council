@@ -35,9 +35,9 @@ type Session struct {
 	cancel   context.CancelFunc
 	resumeCh chan struct{}
 
-	SignalChannels map[string]chan interface{}
-	ContextData    map[string]interface{} // Runtime context for Loop variables, etc.
-	FileRepo       SessionFileRepository  `json:"-"` // Injected persistence
+	SignalChannels map[string]chan interface{} `json:"signal_channels,omitempty"`
+	ContextData    map[string]interface{}      `json:"context_data"` // Runtime context for Loop variables, etc.
+	FileRepo       SessionFileRepository       `json:"-"`            // Injected persistence
 	mu             sync.RWMutex
 }
 
