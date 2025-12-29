@@ -566,20 +566,22 @@ SPEC-605 ───────────────────────�
 
 ### 17.1 阶段任务
 
-| ID   | 任务                                   | Spec      | 优先级 | 状态  |
-| :--- | :------------------------------------- | :-------- | :----: | :---: |
-| 12.1 | VFS Explorer UI (Codebase Tab)         | SPEC-1201 |   P0   |   ⬜   |
-| 12.2 | Advanced Human Review (Diff Editor)    | SPEC-1202 |   P0   |   ⬜   |
-| 12.3 | Loop Analytics (Score Chart)           | SPEC-1203 |   P1   |   ⬜   |
-| 12.4 | E2E Integration (Run Optimize Flow)    | -         |   P0   |   ⬜   |
+| ID   | 任务                                | Spec      | 优先级 | 状态  |
+| :--- | :---------------------------------- | :-------- | :----: | :---: |
+| 12.1 | VFS Explorer UI (Codebase Tab)      | SPEC-1201 |   P0   |   ⬜   |
+| 12.2 | Advanced Human Review (Diff Editor) | SPEC-1202 |   P0   |   ⬜   |
+| 12.3 | Loop Analytics (Score Chart)        | SPEC-1203 |   P1   |   ⬜   |
+| 12.4 | E2E Integration (Run Optimize Flow) | -         |   P0   |   ⬜   |
+| 12.5 | Naming Standardization (Refactor)   | SPEC-1205 |   P1   |   ⬜   |
 
 ### 17.2 规格文档索引
 
-| SPEC ID | 文档 | 类型 | 状态 |
-| :--- | :--- | :--- | :---: |
-| SPEC-1201 | [VFS Frontend](./specs/sprint12/SPEC-1201-vfs-frontend.md) | Frontend | ⬜ |
-| SPEC-1202 | [Diff Review](./specs/sprint12/SPEC-1202-diff-review.md) | Frontend | ⬜ |
-| SPEC-1203 | [Loop Charts](./specs/sprint12/SPEC-1203-loop-charts.md) | Frontend | ⬜ |
+| SPEC ID   | 文档                                                          | 类型     | 状态  |
+| :-------- | :------------------------------------------------------------ | :------- | :---: |
+| SPEC-1201 | [VFS Frontend](./specs/sprint12/SPEC-1201-vfs-frontend.md)    | Frontend |   ⬜   |
+| SPEC-1202 | [Diff Review](./specs/sprint12/SPEC-1202-diff-review.md)      | Frontend |   ⬜   |
+| SPEC-1203 | [Loop Charts](./specs/sprint12/SPEC-1203-loop-charts.md)      | Frontend |   ⬜   |
+| SPEC-1205 | [Tech Debt Refactor](./specs/sprint12/SPEC-1205-tech-debt.md) | Refactor |   ⬜   |
 
 ### 17.3 验收标准
 

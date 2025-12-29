@@ -131,7 +131,7 @@ func main() {
 		// Workflows Execution
 		api.POST("/workflows/execute", workflowHandler.Execute)
 		api.POST("/sessions/:id/control", workflowHandler.Control)
-		api.POST("/sessions/:id/control", workflowHandler.Control)
+
 		api.POST("/sessions/:id/signal", workflowHandler.Signal)
 		api.POST("/sessions/:id/review", workflowHandler.Review)
 		api.GET("/sessions/:id/files", workflowHandler.ListFiles)
@@ -147,7 +147,7 @@ func main() {
 		api.POST("/memory/query", memoryHandler.Query)
 
 		// Knowledge (Session-specific)
-		api.GET("/sessions/:sessionID/knowledge", knowledgeHandler.GetSessionKnowledge)
+		api.GET("/sessions/:id/knowledge", knowledgeHandler.GetSessionKnowledge)
 
 		// LLM Options
 		api.GET("/llm/providers", llmHandler.GetProviderOptions)
