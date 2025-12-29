@@ -101,6 +101,7 @@ func (s *Seeder) SeedGroups(ctx context.Context) error {
 		"system_affirmative",
 		"system_negative",
 		"system_adjudicator",
+		"system_surgeon",
 	}
 
 	var agentUUIDs []string
@@ -219,6 +220,13 @@ const optimizeWorkflowGraph = `{
 			"type": "agent",
 			"name": "Adjudicator",
 			"properties": {"agent_uuid": "system_adjudicator", "output_format": "structured_verdict"},
+			"next_ids": ["agent_surgeon"]
+		},
+		"agent_surgeon": {
+			"node_id": "agent_surgeon",
+			"type": "agent",
+			"name": "Surgeon",
+			"properties": {"agent_uuid": "system_surgeon", "tools": ["write_file", "read_file"]},
 			"next_ids": ["human_review"]
 		},
 		"human_review": {
@@ -274,6 +282,7 @@ func (s *Seeder) SeedWorkflows(ctx context.Context) error {
 		graph = strings.ReplaceAll(graph, "system_affirmative", uuid.NewSHA1(SystemNamespace, []byte("system_affirmative")).String())
 		graph = strings.ReplaceAll(graph, "system_negative", uuid.NewSHA1(SystemNamespace, []byte("system_negative")).String())
 		graph = strings.ReplaceAll(graph, "system_adjudicator", uuid.NewSHA1(SystemNamespace, []byte("system_adjudicator")).String())
+		graph = strings.ReplaceAll(graph, "system_surgeon", uuid.NewSHA1(SystemNamespace, []byte("system_surgeon")).String())
 
 		// Compact the JSON to ensure valid format
 		var compactGraph bytes.Buffer

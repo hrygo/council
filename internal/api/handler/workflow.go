@@ -40,15 +40,17 @@ type WorkflowHandler struct {
 	Registry      *llm.Registry
 	MemoryManager memory.MemoryManager
 	SessionRepo   workflow.SessionRepository
+	FileRepo      workflow.SessionFileRepository
 }
 
-func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memManager memory.MemoryManager, sessionRepo workflow.SessionRepository) *WorkflowHandler {
+func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memManager memory.MemoryManager, sessionRepo workflow.SessionRepository, fileRepo workflow.SessionFileRepository) *WorkflowHandler {
 	return &WorkflowHandler{
 		Hub:           hub,
 		AgentRepo:     agentRepo,
 		Registry:      registry,
 		MemoryManager: memManager,
 		SessionRepo:   sessionRepo,
+		FileRepo:      fileRepo,
 	}
 }
 
@@ -69,6 +71,7 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Create Session
 	session := workflow.NewSession(req.Graph, req.Input)
+	session.SetFileRepository(h.FileRepo)
 
 	// Persist Session
 	groupID, _ := req.Input["group_id"].(string)
@@ -92,6 +95,7 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 		Registry:      h.Registry,
 		AgentRepo:     h.AgentRepo,
 		MemoryManager: h.MemoryManager,
+		Session:       session,
 	})
 
 	// First, create memService as it's a dependency for NodeDependencies now.

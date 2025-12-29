@@ -78,6 +78,7 @@ func main() {
 	workflowRepo := persistence.NewWorkflowRepository(pool)
 	templateRepo := persistence.NewTemplateRepository(pool)
 	sessionRepo := persistence.NewSessionRepository(pool)
+	fileRepo := persistence.NewSessionFileRepository(pool)
 
 	// Handlers
 	agentHandler := handler.NewAgentHandler(agentRepo)
@@ -95,6 +96,7 @@ func main() {
 		registry,
 		memoryService,
 		sessionRepo,
+		fileRepo,
 	)
 
 	// Routes
@@ -129,8 +131,11 @@ func main() {
 		// Workflows Execution
 		api.POST("/workflows/execute", workflowHandler.Execute)
 		api.POST("/sessions/:id/control", workflowHandler.Control)
+		api.POST("/sessions/:id/control", workflowHandler.Control)
 		api.POST("/sessions/:id/signal", workflowHandler.Signal)
 		api.POST("/sessions/:id/review", workflowHandler.Review)
+		api.GET("/sessions/:id/files", workflowHandler.ListFiles)
+		api.GET("/sessions/:id/files/history", workflowHandler.GetFileHistory)
 
 		// Templates
 		api.GET("/templates", templateHandler.List)

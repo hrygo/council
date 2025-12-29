@@ -523,3 +523,68 @@ SPEC-605 ───────────────────────�
 | **技术债务**    | 为快速交付而采用的非最优方案，需要后续偿还       |
 | **tygo**        | 自动将 Go 结构体转换为 TypeScript 类型定义的工具 |
 
+
+---
+
+## 十六、Sprint 11: Dialecta 2.0 Evolution
+
+> **目标**: 升级核心引擎，实现“超越 Example”的自主进化闭环。引入 **Tool Use** 与 **Logic Loop**。
+
+### 16.1 阶段任务
+
+| ID   | 任务                                   | Spec      | 优先级 | 状态  |  TDD  |
+| :--- | :------------------------------------- | :-------- | :----: | :---: | :---: |
+| 11.0 | Relational VFS Foundation (DB/Session) | SPEC-1100 |   P0   |   ✅   |   ✅   |
+| 11.1 | Core Tool Infrastructure               | SPEC-1101 |   P0   |   ✅   |   ✅   |
+| 11.2 | System Surgeon Agent                   | SPEC-1102 |   P0   |   ✅   |   ✅   |
+| 11.3 | Logic Loop Processor (Delta)           | SPEC-1103 |   P0   |   ✅   |   ✅   |
+| 11.4 | Context Synthesizer                    | SPEC-1104 |   P1   |   ✅   |   ✅   |
+
+### 16.2 规格文档索引
+
+| SPEC ID   | 文档                                                             | 类型     | 状态  |
+| :-------- | :--------------------------------------------------------------- | :------- | :---: |
+| SPEC-1100 | [Foundation Refactors](./specs/sprint11/SPEC-1100-foundation.md) | Refactor |   ✅   |
+| SPEC-1101 | [Tool Function Call](./specs/sprint11/SPEC-1101-tool-infra.md)   | Infra    |   ✅   |
+| SPEC-1102 | [System Surgeon](./specs/sprint11/SPEC-1102-surgeon.md)          | Agent    |   ✅   |
+| SPEC-1103 | [Logic Loop Logic](./specs/sprint11/SPEC-1103-logic-loop.md)     | Core     |   ✅   |
+| SPEC-1104 | [Context Synth](./specs/sprint11/SPEC-1104-context-synth.md)     | Core     |   ✅   |
+
+### 16.3 验收标准
+
+- [x] `AgentProcessor` 支持 `tools` 配置并能正确执行 Tool Call 回调 (SPEC-1101).
+- [x] `WriteFile` 工具在沙箱内安全写入文件 (SPEC-1101).
+- [x] `council_optimize` 流程图更新，包含 `agent_surgeon` 节点 (SPEC-1102).
+- [x] 循环节点支持 `Delta < -10` 回滚逻辑 (SPEC-1103).
+- [x] 历史上下文自动进行“滚动压缩” (SPEC-1104).
+
+---
+
+## 十七、Sprint 12: Integrated Visibility (Visualization & Control)
+
+> **目标**: 将 Backend 的自主进化引擎可视化，提供 VFS 文件浏览器、Diff 审查和实时循环分析图表。实现真正的"人机协同"。
+
+### 17.1 阶段任务
+
+| ID   | 任务                                   | Spec      | 优先级 | 状态  |
+| :--- | :------------------------------------- | :-------- | :----: | :---: |
+| 12.1 | VFS Explorer UI (Codebase Tab)         | SPEC-1201 |   P0   |   ⬜   |
+| 12.2 | Advanced Human Review (Diff Editor)    | SPEC-1202 |   P0   |   ⬜   |
+| 12.3 | Loop Analytics (Score Chart)           | SPEC-1203 |   P1   |   ⬜   |
+| 12.4 | E2E Integration (Run Optimize Flow)    | -         |   P0   |   ⬜   |
+
+### 17.2 规格文档索引
+
+| SPEC ID | 文档 | 类型 | 状态 |
+| :--- | :--- | :--- | :---: |
+| SPEC-1201 | [VFS Frontend](./specs/sprint12/SPEC-1201-vfs-frontend.md) | Frontend | ⬜ |
+| SPEC-1202 | [Diff Review](./specs/sprint12/SPEC-1202-diff-review.md) | Frontend | ⬜ |
+| SPEC-1203 | [Loop Charts](./specs/sprint12/SPEC-1203-loop-charts.md) | Frontend | ⬜ |
+
+### 17.3 验收标准
+
+- [ ] 系统界面右侧栏包含 "Codebase" 标签页，并可浏览 VFS 文件树 (SPEC-1201)
+- [ ] 点击文件可查看内容，并支持 Diff View 对比版本 (SPEC-1201)
+- [ ] 当 System Surgeon 发起修改时，Human Review 弹窗内嵌入 Diff Editor (SPEC-1202)
+- [ ] 顶部或侧边显示 "Optimization Score" 趋势图，实时更新 (SPEC-1203)
+- [ ] 完整跑通一次 `council_optimize` 流程，从 "Memory Retrieval" -> "Loop" -> "Surgeon" -> "Diff Review" -> "Apply"。

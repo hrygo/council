@@ -17,7 +17,10 @@ func TestAgentProcessor_Process(t *testing.T) {
 	// Setup Mocks
 	mockRepo := mocks.NewAgentMockRepository()
 	mockLLM := llm.NewMockProvider()
-	mockLLM.StreamContent = []string{"Agent", " ", "Says", " ", "Hi"}
+	mockLLM.GenerateResponse = &llm.CompletionResponse{
+		Content: "Agent Says Hi",
+		Usage:   llm.Usage{TotalTokens: 10},
+	}
 
 	agentID := uuid.New()
 	if err := mockRepo.Create(context.Background(), &agent.Agent{

@@ -36,7 +36,74 @@ type Session struct {
 	resumeCh chan struct{}
 
 	SignalChannels map[string]chan interface{}
+	ContextData    map[string]interface{} // Runtime context for Loop variables, etc.
+	FileRepo       SessionFileRepository  `json:"-"` // Injected persistence
 	mu             sync.RWMutex
+}
+
+func (s *Session) SetFileRepository(repo SessionFileRepository) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.FileRepo = repo
+}
+
+func (s *Session) WriteFile(path, content, author, reason string) (int, error) {
+	s.mu.RLock()
+	repo := s.FileRepo
+	s.mu.RUnlock()
+
+	if repo == nil {
+		return 0, fmt.Errorf("file repository not injected")
+	}
+	version, err := repo.AddVersion(s.Context(), s.ID, path, content, author, reason)
+	if err == nil {
+		// Broadcast VFS change
+		// Need access to Engine Stream? No, Session doesn't have it.
+		// We could send to a dedicated VFS channel if we had one.
+		// For now, assume Frontend polls or we enhance Engine later.
+		// Actually, we can use a callback if we want.
+	}
+	return version, err
+}
+
+func (s *Session) GetLatestFile(path string) (*FileEntity, error) {
+	s.mu.RLock()
+	repo := s.FileRepo
+	s.mu.RUnlock()
+
+	if repo == nil {
+		return nil, fmt.Errorf("file repository not injected")
+	}
+	return repo.GetLatest(s.Context(), s.ID, path)
+}
+
+func (s *Session) ListFiles() (map[string]*FileEntity, error) {
+	s.mu.RLock()
+	repo := s.FileRepo
+	s.mu.RUnlock()
+
+	if repo == nil {
+		return nil, fmt.Errorf("file repository not injected")
+	}
+	return repo.ListFiles(s.Context(), s.ID)
+}
+
+func (s *Session) SetContext(key string, value interface{}) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ContextData == nil {
+		s.ContextData = make(map[string]interface{})
+	}
+	s.ContextData[key] = value
+}
+
+func (s *Session) GetContext(key string) interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.ContextData == nil {
+		return nil
+	}
+	return s.ContextData[key]
 }
 
 func NewSession(graph *GraphDefinition, inputs map[string]interface{}) *Session {

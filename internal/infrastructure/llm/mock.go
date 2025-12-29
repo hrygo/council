@@ -8,8 +8,9 @@ import (
 // MockProvider implements both LLMProvider and Embedder for testing.
 type MockProvider struct {
 	// Setup expectations
-	GenerateResponse *CompletionResponse
-	GenerateError    error
+	GenerateResponse      *CompletionResponse
+	GenerateResponseQueue []*CompletionResponse // Pop from front
+	GenerateError         error
 
 	StreamContent []string
 	StreamError   error
@@ -41,6 +42,11 @@ func (m *MockProvider) Generate(ctx context.Context, req *CompletionRequest) (*C
 	m.GenerateCalls++
 	if m.GenerateError != nil {
 		return nil, m.GenerateError
+	}
+	if len(m.GenerateResponseQueue) > 0 {
+		res := m.GenerateResponseQueue[0]
+		m.GenerateResponseQueue = m.GenerateResponseQueue[1:]
+		return res, nil
 	}
 	return m.GenerateResponse, nil
 }

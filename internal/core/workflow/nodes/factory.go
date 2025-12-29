@@ -6,6 +6,7 @@ import (
 	"github.com/hrygo/council/internal/core/agent"
 	"github.com/hrygo/council/internal/core/memory"
 	"github.com/hrygo/council/internal/core/workflow"
+	"github.com/hrygo/council/internal/core/workflow/nodes/tools"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
@@ -14,6 +15,7 @@ type NodeDependencies struct {
 	Registry      *llm.Registry
 	AgentRepo     agent.Repository
 	MemoryManager memory.MemoryManager
+	Session       *workflow.Session
 }
 
 // NewNodeFactory returns a factory function compatible with workflow.Engine
@@ -52,11 +54,28 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 			if agentID == "" {
 				return nil, fmt.Errorf("agent_uuid property missing for node %s", node.ID)
 			}
+
+			var processorTools []tools.Tool
+			if toolNames, ok := node.Properties["tools"].([]interface{}); ok {
+				for _, t := range toolNames {
+					if name, ok := t.(string); ok {
+						switch name {
+						case "write_file":
+							processorTools = append(processorTools, &tools.WriteFileTool{})
+						case "read_file":
+							processorTools = append(processorTools, &tools.ReadFileTool{})
+						}
+					}
+				}
+			}
+
 			return &AgentProcessor{
 				NodeID:    node.ID,
 				AgentID:   agentID,
 				AgentRepo: deps.AgentRepo,
 				Registry:  deps.Registry,
+				Tools:     processorTools,
+				Session:   deps.Session,
 			}, nil
 
 		case workflow.NodeTypeVote:
@@ -73,6 +92,7 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 			return &LoopProcessor{
 				MaxRounds:   int(maxRounds),
 				ExitOnScore: int(exitOnScore),
+				Session:     deps.Session,
 			}, nil
 
 		case workflow.NodeTypeFactCheck:
@@ -97,6 +117,15 @@ func NewNodeFactory(deps NodeDependencies) func(node *workflow.Node) (workflow.N
 		case workflow.NodeTypeMemoryRetrieval:
 			// SPEC-607: Memory Retrieval Node
 			return NewMemoryRetrievalProcessor(deps.MemoryManager), nil
+
+		case workflow.NodeTypeContextSynth:
+			maxRecent, _ := node.Properties["max_recent_rounds"].(float64) // JSON float64
+			if maxRecent == 0 {
+				maxRecent = 3 // Default
+			}
+			return &ContextSynthesizerProcessor{
+				MaxRecentRounds: int(maxRecent),
+			}, nil
 
 		default:
 			return nil, fmt.Errorf("unsupported node type: %s", node.Type)

@@ -84,6 +84,19 @@ func TestMigrate(t *testing.T) {
 		WithArgs("005_standardize_id_naming.up.sql").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
+	// Check 006
+	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM schema_migrations WHERE version=\\$1\\)").
+		WithArgs("006_create_session_files.up.sql").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+
+	// Content of 006: CREATE TABLE session_files...
+	mock.ExpectExec("CREATE TABLE session_files").WillReturnResult(pgxmock.NewResult("CREATE", 1))
+
+	// Record 006
+	mock.ExpectExec("INSERT INTO schema_migrations").
+		WithArgs("006_create_session_files.up.sql").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
 	err = Migrate(context.Background(), mock)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

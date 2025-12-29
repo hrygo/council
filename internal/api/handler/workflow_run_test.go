@@ -28,7 +28,7 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 	registry.RegisterProvider("default", mockLLM)
 
 	sessionRepo := mocks.NewSessionMockRepository()
-	h := NewWorkflowHandler(hub, repo, registry, nil, sessionRepo)
+	h := NewWorkflowHandler(hub, repo, registry, nil, sessionRepo, nil)
 
 	router := gin.New()
 	router.POST("/execute", h.Execute)
@@ -60,7 +60,7 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
-	if resp["status"] != "started" || resp["session_id"] == "" {
+	if resp["status"] != "started" || resp["session_uuid"] == "" {
 		t.Errorf("Unexpected response: %+v", resp)
 	}
 }
@@ -68,7 +68,7 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 func TestWorkflowHandler_Review(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	sessionRepo := mocks.NewSessionMockRepository()
-	h := NewWorkflowHandler(nil, nil, nil, nil, sessionRepo)
+	h := NewWorkflowHandler(nil, nil, nil, nil, sessionRepo, nil)
 
 	router := gin.New()
 	router.POST("/sessions/:id/review", h.Review)

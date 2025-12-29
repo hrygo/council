@@ -55,6 +55,7 @@ func LoadAllPrompts() (map[string]*AgentPrompt, error) {
 		"system_affirmative.md",
 		"system_negative.md",
 		"system_adjudicator.md",
+		"system_surgeon.md",
 	}
 
 	prompts := make(map[string]*AgentPrompt)

@@ -20,7 +20,7 @@ func TestWorkflowHandler_Control(t *testing.T) {
 	repo := mocks.NewAgentMockRepository()
 	// We don't need real WS or LLM for this test as we only test Control logic
 	sessionRepo := mocks.NewSessionMockRepository()
-	h := NewWorkflowHandler(nil, repo, nil, nil, sessionRepo)
+	h := NewWorkflowHandler(nil, repo, nil, nil, sessionRepo, nil)
 	r := gin.New()
 	r.POST("/sessions/:id/control", h.Control)
 
@@ -117,7 +117,7 @@ func TestWorkflowHandler_Signal(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := mocks.NewAgentMockRepository()
 	sessionRepo := mocks.NewSessionMockRepository()
-	h := NewWorkflowHandler(nil, repo, nil, nil, sessionRepo)
+	h := NewWorkflowHandler(nil, repo, nil, nil, sessionRepo, nil)
 	r := gin.New()
 	r.POST("/sessions/:id/signal", h.Signal)
 

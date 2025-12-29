@@ -10,6 +10,7 @@ import (
 type LoopProcessor struct {
 	MaxRounds   int
 	ExitOnScore int // Score threshold for automatic exit (e.g., 90)
+	Session     *workflow.Session
 }
 
 func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{}, stream chan<- workflow.StreamEvent) (map[string]interface{}, error) {
@@ -37,16 +38,48 @@ func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{
 	}
 
 	// Check Exit on Score (SPEC-609 Defect-3 fix)
-	if l.ExitOnScore > 0 {
-		if score, ok := input["score"].(float64); ok && int(score) >= l.ExitOnScore {
-			shouldExit = true
-			exitReason = "score_threshold_reached"
+	// Check Exit on Score (SPEC-609 Defect-3 fix)
+	currentScore := 0.0
+	if val, ok := input["score"].(float64); ok {
+		currentScore = val
+	} else if val, ok := input["score"].(int); ok {
+		currentScore = float64(val)
+	} else {
+		// Try to find score in history if not in direct input
+		// Assuming input contains all node outputs, look for "agent_adjudicator" or "structured_score"
+		// This part depends on how Engine passes inputs. Assuming flat map of all outputs.
+		if scoreMap, ok := input["structured_score"].(map[string]interface{}); ok {
+			if s, ok := scoreMap["weighted_score"].(float64); ok {
+				currentScore = s
+			}
 		}
-		// Also check int type
-		if score, ok := input["score"].(int); ok && score >= l.ExitOnScore {
-			shouldExit = true
-			exitReason = "score_threshold_reached"
+	}
+
+	// Persist History
+	if l.Session != nil {
+		history, _ := l.Session.GetContext("score_history").([]float64)
+		history = append(history, currentScore)
+		l.Session.SetContext("score_history", history)
+
+		// Calculate Delta
+		if len(history) > 1 {
+			prevScore := history[len(history)-2]
+			delta := currentScore - prevScore
+
+			// Detect Regression (Rollback) - Threshold -10
+			if delta < -10 {
+				// TODO: Trigger VFS Rollback?
+				// For now just log usage
+				exitReason = "regression_detected"
+				// shouldExit = true? Or allow loop to try fix?
+				// Usually loop restarts or tries again.
+			}
 		}
+	}
+
+	if l.ExitOnScore > 0 && currentScore >= float64(l.ExitOnScore) {
+		shouldExit = true
+		exitReason = "score_threshold_reached"
 	}
 
 	output := map[string]interface{}{

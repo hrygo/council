@@ -38,6 +38,7 @@ const (
 	NodeTypeFactCheck       NodeType = "fact_check"       // Logic node: Fact Check
 	NodeTypeHumanReview     NodeType = "human_review"     // Logic node: Human Review
 	NodeTypeMemoryRetrieval NodeType = "memory_retrieval" // Logic node: Memory Retrieval
+	NodeTypeContextSynth    NodeType = "context_synth"    // Logic node: Context Synthesizer
 )
 
 // GraphDefinition represents the static definition of a workflow
