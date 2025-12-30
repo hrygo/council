@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Knowledge {
   knowledge_uuid: string;
@@ -15,6 +16,7 @@ interface KnowledgePanelProps {
 }
 
 export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => {
+  const { t } = useTranslation();
   const [knowledge, setKnowledge] = useState<Knowledge[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [layerFilter, setLayerFilter] = useState<'all' | 'sandboxed' | 'working' | 'long-term'>('all');
@@ -61,17 +63,17 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
   );
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
-          📚 相关知识
+          📚 {t('rightPanel.knowledge.title')}
         </h3>
 
         {/* Search */}
         <input
           type="text"
-          placeholder="搜索知识..."
+          placeholder={t('rightPanel.knowledge.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -83,10 +85,10 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
           onChange={(e) => setLayerFilter(e.target.value as Knowledge['layer'] | 'all')}
           className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="all">全部记忆</option>
-          <option value="sandboxed">隔离区</option>
-          <option value="working">工作记忆</option>
-          <option value="long-term">长期记忆</option>
+          <option value="all">{t('rightPanel.knowledge.layers.all')}</option>
+          <option value="sandboxed">{t('rightPanel.knowledge.layers.sandboxed')}</option>
+          <option value="working">{t('rightPanel.knowledge.layers.working')}</option>
+          <option value="long-term">{t('rightPanel.knowledge.layers.longTerm')}</option>
         </select>
       </div>
 
@@ -94,12 +96,12 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="text-gray-500 dark:text-gray-400">加载中...</div>
+            <div className="text-gray-500 dark:text-gray-400">{t('common.status.loading')}</div>
           </div>
         ) : filteredKnowledge.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-gray-500 dark:text-gray-400">
-            <p className="text-sm">暂无相关知识</p>
-            <p className="text-xs mt-1">知识将在会话进行中自动更新</p>
+            <p className="text-sm">{t('rightPanel.knowledge.empty')}</p>
+            <p className="text-xs mt-1">{t('rightPanel.knowledge.emptyHint')}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -113,7 +115,7 @@ export const KnowledgePanel: React.FC<KnowledgePanelProps> = ({ sessionId }) => 
       {/* Footer */}
       {!isLoading && filteredKnowledge.length > 0 && (
         <div className="p-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 text-center">
-          显示 {filteredKnowledge.length} / {knowledge.length} 项
+          {t('rightPanel.knowledge.showing', { filtered: filteredKnowledge.length, total: knowledge.length })}
         </div>
       )}
     </div>
@@ -125,6 +127,8 @@ interface KnowledgeItemProps {
 }
 
 const KnowledgeItem: React.FC<KnowledgeItemProps> = ({ knowledge }) => {
+  const { t } = useTranslation();
+
   const getLayerBadgeColor = (layer: string) => {
     switch (layer) {
       case 'sandboxed': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
@@ -136,10 +140,10 @@ const KnowledgeItem: React.FC<KnowledgeItemProps> = ({ knowledge }) => {
 
   const getLayerLabel = (layer: string) => {
     switch (layer) {
-      case 'sandboxed': return '隔离';
-      case 'working': return '工作';
-      case 'long-term': return '长期';
-      default: return '未知';
+      case 'sandboxed': return t('rightPanel.knowledge.layers.sandboxed');
+      case 'working': return t('rightPanel.knowledge.layers.working');
+      case 'long-term': return t('rightPanel.knowledge.layers.longTerm');
+      default: return t('rightPanel.knowledge.layers.unknown');
     }
   };
 
@@ -168,7 +172,7 @@ const KnowledgeItem: React.FC<KnowledgeItemProps> = ({ knowledge }) => {
       {/* Metadata */}
       <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
         <span className="flex items-center">
-          <span className="mr-1">相关度:</span>
+          <span className="mr-1">{t('rightPanel.knowledge.relevance')}:</span>
           <span>{getRelevanceStars(knowledge.relevance)}</span>
         </span>
         <span>{knowledge.source}</span>

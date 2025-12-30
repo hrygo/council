@@ -38,6 +38,11 @@ export const useWebSocketRouter = () => {
                     workflowStore.addActiveNode(data.node_id);
                     // Auto-update session status to running when first node starts
                     sessionStore.updateSessionStatus('running');
+                    // Start timer if not already running
+                    if (workflowStore.executionStatus !== 'running') {
+                        workflowStore.setExecutionStatus('running');
+                        workflowStore.startTimer();
+                    }
                 } else if (data.status === 'completed' || data.status === 'failed') {
                     workflowStore.removeActiveNode(data.node_id);
                     sessionStore.finalizeMessage(data.node_id);
@@ -69,11 +74,13 @@ export const useWebSocketRouter = () => {
 
             case 'execution:paused':
                 workflowStore.setExecutionStatus('paused');
+                workflowStore.stopTimer();
                 sessionStore.updateSessionStatus('paused');
                 break;
 
             case 'execution:completed':
                 workflowStore.setExecutionStatus('completed');
+                workflowStore.stopTimer();
                 sessionStore.updateSessionStatus('completed');
                 break;
 

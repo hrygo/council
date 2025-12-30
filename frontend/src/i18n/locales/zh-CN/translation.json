@@ -164,5 +164,27 @@
             "unauthorized": "请先登录",
             "forbidden": "您没有权限执行此操作"
         }
+    },
+    "rightPanel": {
+        "tabs": {
+            "knowledge": "知识库",
+            "codebase": "代码库",
+            "analytics": "分析"
+        },
+        "knowledge": {
+            "title": "相关知识",
+            "searchPlaceholder": "搜索知识...",
+            "layers": {
+                "all": "全部记忆",
+                "sandboxed": "隔离区",
+                "working": "工作记忆",
+                "longTerm": "长期记忆",
+                "unknown": "未知"
+            },
+            "empty": "暂无相关知识",
+            "emptyHint": "知识将在会话进行中自动更新",
+            "showing": "显示 {{filtered}} / {{total}} 项",
+            "relevance": "相关度"
+        }
     }
 }

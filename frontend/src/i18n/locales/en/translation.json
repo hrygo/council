@@ -164,5 +164,27 @@
             "unauthorized": "Please login first",
             "forbidden": "You don't have permission to perform this action"
         }
+    },
+    "rightPanel": {
+        "tabs": {
+            "knowledge": "Knowledge",
+            "codebase": "Codebase",
+            "analytics": "Analytics"
+        },
+        "knowledge": {
+            "title": "Related Knowledge",
+            "searchPlaceholder": "Search knowledge...",
+            "layers": {
+                "all": "All Memory",
+                "sandboxed": "Sandboxed",
+                "working": "Working",
+                "longTerm": "Long-term",
+                "unknown": "Unknown"
+            },
+            "empty": "No knowledge yet",
+            "emptyHint": "Knowledge will be updated during the session.",
+            "showing": "Showing {{filtered}} / {{total}} items",
+            "relevance": "Relevance"
+        }
     }
 }

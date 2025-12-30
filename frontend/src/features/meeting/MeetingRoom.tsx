@@ -142,7 +142,7 @@ export const MeetingRoom: FC = () => {
         const panelMap = {
             left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} workflowId={currentSession?.workflow_uuid} graph={graphDefinition} readOnly={true} />,
             center: <ChatPanel fullscreen onExitFullscreen={onExit} />,
-            right: currentSession ? <RightPanel sessionId={currentSession.session_uuid} /> : <DocumentReader fullscreen onExitFullscreen={onExit} />,
+            right: currentSession ? <RightPanel sessionId={currentSession.session_uuid} fullscreen onExitFullscreen={onExit} /> : <DocumentReader fullscreen onExitFullscreen={onExit} />,
         };
         return (
             <div className="h-screen w-screen fixed top-0 left-0 bg-white dark:bg-gray-900 z-50">
