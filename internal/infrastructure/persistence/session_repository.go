@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/db"
 )
@@ -61,10 +60,4 @@ func (r *SessionRepository) UpdateStatus(ctx context.Context, id string, status 
 	`
 	_, err := r.pool.Exec(ctx, query, id, string(status))
 	return err
-}
-
-// isValidUUID checks if a string is a valid UUID format
-func isValidUUID(s string) bool {
-	_, err := uuid.Parse(s)
-	return err == nil
 }

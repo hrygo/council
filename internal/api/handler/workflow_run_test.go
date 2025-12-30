@@ -68,7 +68,7 @@ func TestWorkflowHandler_Execute(t *testing.T) {
 func TestWorkflowHandler_Review(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	sessionRepo := mocks.NewSessionMockRepository()
-	h := NewWorkflowHandler(nil, nil, nil, nil, sessionRepo, nil)
+	h := NewWorkflowHandler(nil, nil, nil, nil, sessionRepo, nil, nil)
 
 	router := gin.New()
 	router.POST("/sessions/:id/review", h.Review)
