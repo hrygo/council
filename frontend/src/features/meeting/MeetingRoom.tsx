@@ -10,7 +10,7 @@ import ChatPanel from '../../components/chat/ChatPanel';
 import { DocumentReader } from '../../components/modules/DocumentReader';
 import { HumanReviewModal } from '../execution/components/HumanReviewModal';
 import { SessionStarter } from './SessionStarter';
-import { KnowledgePanel } from '../meeting-room/components/KnowledgePanel';
+import { RightPanel } from '../../components/panels/RightPanel';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useConnectStore } from '../../stores/useConnectStore';
 import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
@@ -142,7 +142,7 @@ export const MeetingRoom: FC = () => {
         const panelMap = {
             left: <WorkflowCanvas fullscreen onExitFullscreen={onExit} workflowId={currentSession?.workflow_uuid} graph={graphDefinition} readOnly={true} />,
             center: <ChatPanel fullscreen onExitFullscreen={onExit} />,
-            right: currentSession ? <KnowledgePanel sessionId={currentSession.session_uuid} /> : <DocumentReader fullscreen onExitFullscreen={onExit} />,
+            right: currentSession ? <RightPanel sessionId={currentSession.session_uuid} /> : <DocumentReader fullscreen onExitFullscreen={onExit} />,
         };
         return (
             <div className="h-screen w-screen fixed top-0 left-0 bg-white dark:bg-gray-900 z-50">
@@ -223,7 +223,7 @@ export const MeetingRoom: FC = () => {
                         <PanelMaximizeButton panel="right" />
                         {!rightCollapsed && <SidebarCollapseTrigger side="right" onCollapse={handleToggleRight} />}
                         {currentSession ? (
-                            <KnowledgePanel sessionId={currentSession.session_uuid} />
+                            <RightPanel sessionId={currentSession.session_uuid} />
                         ) : (
                             <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                                 <p>启动会话后查看相关知识</p>

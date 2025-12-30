@@ -89,4 +89,10 @@ export interface WorkflowSession {
   // 累计统计
   totalTokens: number;
   totalCostUsd: number;
+
+  // 运行时上下文 (Loop 分数历史等)
+  contextData?: {
+    score_history?: Array<{ round: number; score: number; timestamp?: string }>;
+    [key: string]: unknown;
+  };
 }

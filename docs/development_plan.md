@@ -10,17 +10,17 @@
 
 ### 1.1 Sprint 状态
 
-| Sprint | 名称                   |   状态   | 完成度 |
-| :----: | :--------------------- | :------: | :----: |
-| S1-S4  | MVP 核心功能           |  ✅ Done  |  100%  |
-|   S5   | Post-MVP (i18n, E2E)   |  ✅ Done  |  100%  |
-|   S6   | Default Experience     |  ✅ Done  |  100%  |
-|   S7   | UX Polish              |  ✅ Done  |  100%  |
-|   S8   | Meeting Room Fix       |  ✅ Done  |  100%  |
-|   S9   | Quality Base           |  ✅ Done  |  100%  |
-|  S10   | System Hardening       |  ✅ Done  |  100%  |
-|  S11   | Dialecta 2.0 Evolution |  ✅ Done  |  100%  |
-|  S12   | Integrated Visibility  | 🔄 进行中 |  20%   |
+| Sprint | 名称                   |  状态  | 完成度 |
+| :----: | :--------------------- | :----: | :----: |
+| S1-S4  | MVP 核心功能           | ✅ Done |  100%  |
+|   S5   | Post-MVP (i18n, E2E)   | ✅ Done |  100%  |
+|   S6   | Default Experience     | ✅ Done |  100%  |
+|   S7   | UX Polish              | ✅ Done |  100%  |
+|   S8   | Meeting Room Fix       | ✅ Done |  100%  |
+|   S9   | Quality Base           | ✅ Done |  100%  |
+|  S10   | System Hardening       | ✅ Done |  100%  |
+|  S11   | Dialecta 2.0 Evolution | ✅ Done |  100%  |
+|  S12   | Integrated Visibility  | ✅ Done |  100%  |
 
 ### 1.2 里程碑达成
 
@@ -34,16 +34,16 @@
 |   M6   | Out-of-Box       | The Council 开箱即用         |   ✅   |
 |   M7   | Meeting Room Fix | 会议室功能完善               |   ✅   |
 |   M8   | Dialecta 2.0     | Tool Use + Logic Loop        |   ✅   |
-|   M9   | Visibility       | VFS + Analytics              |   🔄   |
+|   M9   | Visibility       | VFS + Analytics              |   ✅   |
 
 ### 1.3 完成度统计
 
 | 维度     | 已完成 | 总计  | 完成率 |
 | :------- | :----: | :---: | :----: |
-| Sprint   |   10   |  12   |  83%   |
-| 前端任务 |   19   |  22   |  86%   |
+| Sprint   |   11   |  12   |  92%   |
+| 前端任务 |   22   |  22   |  100%  |
 | 后端任务 |   17   |  17   |  100%  |
-| 总任务数 |   52   |  58   |  90%   |
+| 总任务数 |   56   |  58   |  97%   |
 
 ---
 
@@ -57,29 +57,29 @@
 
 | ID   | 任务                                | Spec      | 优先级 | 状态  |
 | :--- | :---------------------------------- | :-------- | :----: | :---: |
-| 12.1 | VFS Explorer UI (Codebase Tab)      | SPEC-1201 |   P0   |   ⬜   |
-| 12.2 | Advanced Human Review (Diff Editor) | SPEC-1202 |   P0   |   ⬜   |
-| 12.3 | Loop Analytics (Score Chart)        | SPEC-1203 |   P1   |   ⬜   |
-| 12.4 | E2E Integration (Run Optimize Flow) | -         |   P0   |   ⬜   |
+| 12.1 | VFS Explorer UI (Codebase Tab)      | SPEC-1201 |   P0   |   ✅   |
+| 12.2 | Advanced Human Review (Diff Editor) | SPEC-1202 |   P0   |   ✅   |
+| 12.3 | Loop Analytics (Score Chart)        | SPEC-1203 |   P1   |   ✅   |
+| 12.4 | E2E Integration (Run Optimize Flow) | -         |   P0   |   ✅   |
 | 12.5 | Naming Standardization (Refactor)   | SPEC-1205 |   P1   |   ✅   |
 
 #### 规格文档
 
 | SPEC ID   | 文档                                                          | 类型     | 状态  |
 | :-------- | :------------------------------------------------------------ | :------- | :---: |
-| SPEC-1201 | [VFS Frontend](./specs/sprint12/SPEC-1201-vfs-frontend.md)    | Frontend |   ⬜   |
-| SPEC-1202 | [Diff Review](./specs/sprint12/SPEC-1202-diff-review.md)      | Frontend |   ⬜   |
-| SPEC-1203 | [Loop Charts](./specs/sprint12/SPEC-1203-loop-charts.md)      | Frontend |   ⬜   |
+| SPEC-1201 | [VFS Frontend](./specs/sprint12/SPEC-1201-vfs-frontend.md)    | Frontend |   ✅   |
+| SPEC-1202 | [Diff Review](./specs/sprint12/SPEC-1202-diff-review.md)      | Frontend |   ✅   |
+| SPEC-1203 | [Loop Charts](./specs/sprint12/SPEC-1203-loop-charts.md)      | Frontend |   ✅   |
 | SPEC-1205 | [Tech Debt Refactor](./specs/sprint12/SPEC-1205-tech-debt.md) | Refactor |   ✅   |
 
 #### 验收标准
 
-- [ ] 系统界面右侧栏包含 "Codebase" 标签页，可浏览 VFS 文件树 (SPEC-1201)
-- [ ] 点击文件可查看内容，支持 Diff View 对比版本 (SPEC-1201)
-- [ ] Human Review 弹窗内嵌入 Diff Editor (SPEC-1202)
-- [ ] 顶部或侧边显示 "Optimization Score" 趋势图 (SPEC-1203)
+- [x] 系统界面右侧栏包含 "Codebase" 标签页，可浏览 VFS 文件树 (SPEC-1201)
+- [x] 点击文件可查看内容，支持 Diff View 对比版本 (SPEC-1201)
+- [x] Human Review 弹窗内嵌入 Diff Editor (SPEC-1202)
+- [x] 顶部或侧边显示 "Optimization Score" 趋势图 (SPEC-1203)
 - [x] ID 命名规范化完成 (`workflow_uuid`, `context_data` 等) (SPEC-1205)
-- [ ] 完整跑通 `council_optimize` 流程
+- [x] 完整跑通 `council_optimize` 流程
 
 ---
 

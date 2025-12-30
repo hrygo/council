@@ -37,4 +37,12 @@ export interface HumanReviewRequest {
     node_id: string;
     reason: string;
     timeout: number;
+    payload?: {
+        tool_calls?: Array<{
+            name: string;
+            arguments: Record<string, unknown>;
+        }>;
+        original_content?: string;
+        [key: string]: unknown;
+    };
 }
