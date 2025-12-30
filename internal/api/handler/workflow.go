@@ -15,25 +15,6 @@ import (
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
-// Note: We use global getters here for simplicity, but ideally these would be in WorkflowHandler
-// And ideally MemoryService is injected.
-// Since we don't have MemoryService injected yet, we must assume we can get one?
-// Actually, let's fix the injection in next step.
-// For this step, I'll temporarily disable the local creation if it depends on h.LLM,
-// OR try to get it from Registry if possible.
-// But `Registry` doesn't store Embedder.
-
-// DECISION: I will modify `WorkflowHandler` to accept `MemoryService` in the next tool call.
-// For this call, I will comment out the dynamic parts to allow compilation,
-// or set embedder to nil if not critical for MVP flow (it is critical for Memory).
-
-// Better: Update `Execute` to use a globally available MemoryService if I can't inject it easily right now?
-// No, I can inject it. I control `main.go`.
-
-// So:
-// 1. Update struct to have MemoryService (done in next call or this one?)
-// This call updates struct. I'll add MemoryService to struct NOW.
-
 type WorkflowHandler struct {
 	Hub           *ws.Hub
 	AgentRepo     agent.Repository
@@ -41,9 +22,10 @@ type WorkflowHandler struct {
 	MemoryManager memory.MemoryManager
 	SessionRepo   workflow.SessionRepository
 	FileRepo      workflow.SessionFileRepository
+	WorkflowRepo  workflow.Repository
 }
 
-func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memManager memory.MemoryManager, sessionRepo workflow.SessionRepository, fileRepo workflow.SessionFileRepository) *WorkflowHandler {
+func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memManager memory.MemoryManager, sessionRepo workflow.SessionRepository, fileRepo workflow.SessionFileRepository, workflowRepo workflow.Repository) *WorkflowHandler {
 	return &WorkflowHandler{
 		Hub:           hub,
 		AgentRepo:     agentRepo,
@@ -51,6 +33,7 @@ func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.R
 		MemoryManager: memManager,
 		SessionRepo:   sessionRepo,
 		FileRepo:      fileRepo,
+		WorkflowRepo:  workflowRepo,
 	}
 }
 
@@ -84,6 +67,24 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	workflowID := ""
 	if req.Graph != nil {
 		workflowID = req.Graph.ID
+		// Auto-persist dynamic workflow if it doesn't exist
+		// This prevents 404 errors when frontend tries to fetch workflow details later.
+		if workflowID != "" && h.WorkflowRepo != nil {
+			if _, err := h.WorkflowRepo.Get(c.Request.Context(), workflowID); err != nil {
+				// Assume duplicate/exists or not found. If error, try to create.
+				// A simple way is to just try Create and ignore specific "already exists" error,
+				// but Get() error usually means not found or DB error.
+				// Let's try Create.
+				if req.Graph.Name == "" {
+					req.Graph.Name = "Dynamic Workflow " + workflowID[:8]
+				}
+				if err := h.WorkflowRepo.Create(c.Request.Context(), req.Graph); err != nil {
+					log.Printf("[Workflow] Warning: Failed to auto-persist dynamic workflow %s: %v", workflowID, err)
+				} else {
+					log.Printf("[Workflow] Auto-persisted dynamic workflow %s", workflowID)
+				}
+			}
+		}
 	}
 	if err := h.SessionRepo.Create(c.Request.Context(), session, groupID, workflowID); err != nil {
 		log.Printf("[Workflow] Failed to persist session: %v", err)

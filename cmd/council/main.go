@@ -97,6 +97,7 @@ func main() {
 		memoryService,
 		sessionRepo,
 		fileRepo,
+		workflowRepo,
 	)
 
 	// Routes
