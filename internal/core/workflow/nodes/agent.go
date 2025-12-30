@@ -161,6 +161,19 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 				Timestamp: time.Now(),
 				Data:      map[string]interface{}{"node_id": a.NodeID, "chunk": finalResponse},
 			}
+
+			// Notify Token Usage
+			stream <- workflow.StreamEvent{
+				Type:      "token_usage",
+				Timestamp: time.Now(),
+				Data: map[string]interface{}{
+					"node_id":            a.NodeID,
+					"agent_id":           a.AgentID,
+					"input_tokens":       resp.Usage.PromptTokens,
+					"output_tokens":      resp.Usage.CompletionTokens,
+					"estimated_cost_usd": estimateCost(resp.Usage.TotalTokens),
+				},
+			}
 			break
 		}
 	}
@@ -208,4 +221,10 @@ func constructHistory(systemPrompt string, input map[string]interface{}) []llm.M
 func parseUUID(id string) uuid.UUID {
 	u, _ := uuid.Parse(id)
 	return u
+}
+
+// estimateCost provides a rough cost estimate based on token count
+// Using approximate pricing of $0.002 per 1K tokens (typical for most models)
+func estimateCost(tokens int) float64 {
+	return float64(tokens) * 0.002 / 1000
 }
