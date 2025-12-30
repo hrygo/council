@@ -19,8 +19,7 @@ func TestTemplateRepository_Get(t *testing.T) {
 
 	repo := NewTemplateRepository(mock)
 	id := "template-1"
-	tpl := workflow.Template{ID: id, Name: "Template 1", Category: "custom"}
-	graphJSON, _ := json.Marshal(tpl.Graph)
+	graphJSON, _ := json.Marshal(workflow.GraphDefinition{})
 
 	mock.ExpectQuery("SELECT template_uuid, name, description, is_system, graph_definition, created_at, updated_at FROM workflow_templates WHERE template_uuid = \\$1").
 		WithArgs(id).
@@ -74,10 +73,10 @@ func TestTemplateRepository_Create(t *testing.T) {
 
 	repo := NewTemplateRepository(mock)
 	tpl := &workflow.Template{
-		ID:       "tpl-1",
-		Name:     "New Template",
-		Category: "custom",
-		Graph:    workflow.GraphDefinition{},
+		ID:   "tpl-1",
+		Name: "New Template",
+		// Category: "custom", // Not persists check schema
+		Graph: workflow.GraphDefinition{},
 	}
 
 	mock.ExpectExec("INSERT INTO workflow_templates").
