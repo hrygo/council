@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestParseAdjudicatorOutput_Success(t *testing.T) {
+func TestParseStructuredScore_Success(t *testing.T) {
 	content := `## 💡 决策简报 (Executive Summary)
 
 【评分: 85/100】 【结论：细节优化】
@@ -28,7 +28,7 @@ func TestParseAdjudicatorOutput_Success(t *testing.T) {
 ...
 `
 
-	score, err := ParseAdjudicatorOutput(content)
+	score, err := ParseStructuredScore(content)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -47,13 +47,13 @@ func TestParseAdjudicatorOutput_Success(t *testing.T) {
 	}
 }
 
-func TestParseAdjudicatorOutput_NoJSON(t *testing.T) {
+func TestParseStructuredScore_NoJSON(t *testing.T) {
 	content := `## 决策简报
 
 没有 JSON 块的输出内容
 `
 
-	_, err := ParseAdjudicatorOutput(content)
+	_, err := ParseStructuredScore(content)
 	if err == nil {
 		t.Error("expected error for content without JSON block")
 	}

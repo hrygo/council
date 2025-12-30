@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-// StructuredScore represents the parsed output from Adjudicator.
+// StructuredScore represents the parsed output from a scoring agent.
 // This is used by the Workflow Engine to drive loop exit conditions.
 type StructuredScore struct {
 	Score struct {
@@ -19,14 +19,14 @@ type StructuredScore struct {
 	ExitRecommendation bool   `json:"exit_recommendation"`
 }
 
-// ParseAdjudicatorOutput extracts structured score from Adjudicator's markdown output.
+// ParseStructuredScore extracts structured score from an agent's markdown output.
 // The JSON block is expected to be wrapped in ```json ... ``` code fences.
-func ParseAdjudicatorOutput(content string) (*StructuredScore, error) {
+func ParseStructuredScore(content string) (*StructuredScore, error) {
 	// Match JSON block within markdown code fences
 	re := regexp.MustCompile("(?s)```json\\s*(\\{.*?\\})\\s*```")
 	matches := re.FindStringSubmatch(content)
 	if len(matches) < 2 {
-		return nil, fmt.Errorf("no structured score JSON block found in adjudicator output")
+		return nil, fmt.Errorf("no structured score JSON block found in agent output")
 	}
 
 	var score StructuredScore

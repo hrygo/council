@@ -33,7 +33,7 @@ func (r *Registry) RegisterProvider(name string, provider LLMProvider) {
 
 // GetLLMProvider retrieves a provider by name.
 // If providerName is empty, it returns the system default provider.
-// This matches example/llm/client.py logic: "once key configured, it is available".
+// Once a provider's API key is configured, it becomes available for use.
 func (r *Registry) GetLLMProvider(providerName string) (LLMProvider, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
