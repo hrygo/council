@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/hrygo/council/internal/core/workflow"
 	"github.com/hrygo/council/internal/infrastructure/db"
 )
@@ -21,14 +22,14 @@ func (r *SessionRepository) Create(ctx context.Context, session *workflow.Sessio
 		INSERT INTO sessions (session_uuid, group_uuid, workflow_uuid, status, started_at)
 		VALUES ($1, $2, $3, $4, NOW())
 	`
-	// Handle empty strings - PostgreSQL expects NULL for empty UUID values
-	var grpID interface{} = groupID
-	if groupID == "" {
-		grpID = nil
+	// Handle empty or invalid UUIDs - PostgreSQL expects NULL for empty/invalid UUID values
+	var grpID interface{} = nil
+	if groupID != "" && isValidUUID(groupID) {
+		grpID = groupID
 	}
-	var wfID interface{} = workflowID
-	if workflowID == "" {
-		wfID = nil
+	var wfID interface{} = nil
+	if workflowID != "" && isValidUUID(workflowID) {
+		wfID = workflowID
 	}
 
 	_, err := r.pool.Exec(ctx, query, session.ID, grpID, wfID, string(session.Status))
@@ -60,4 +61,10 @@ func (r *SessionRepository) UpdateStatus(ctx context.Context, id string, status 
 	`
 	_, err := r.pool.Exec(ctx, query, id, string(status))
 	return err
+}
+
+// isValidUUID checks if a string is a valid UUID format
+func isValidUUID(s string) bool {
+	_, err := uuid.Parse(s)
+	return err == nil
 }
