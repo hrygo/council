@@ -2,7 +2,7 @@
 
 > **策略**: 前端优先，API Contract First  
 > **质量内建**: 每个 Spec 必须通过 CI (Lint/Test) 和验收标准方可标记 Done  
-> **文档版本**: v2.0 (2025-12-30 重构)
+> **文档版本**: v2.1 (2025-12-30)
 
 ---
 
@@ -40,96 +40,43 @@
 
 | 维度     | 已完成 | 总计  | 完成率 |
 | :------- | :----: | :---: | :----: |
-| Sprint   |   11   |  12   |  92%   |
+| Sprint   |   12   |  12   |  100%  |
 | 前端任务 |   22   |  22   |  100%  |
 | 后端任务 |   17   |  17   |  100%  |
-| 总任务数 |   56   |  58   |  97%   |
+| 总任务数 |   58   |  58   |  100%  |
 
 ---
 
-## 二、当前进行中 (Active Sprints)
-
-### 2.1 Sprint 12: Integrated Visibility
-
-> **目标**: 将 Backend 的自主进化引擎可视化，提供 VFS 文件浏览器、Diff 审查和实时循环分析图表。
-
-#### 任务矩阵
-
-| ID   | 任务                                | Spec      | 优先级 | 状态  |
-| :--- | :---------------------------------- | :-------- | :----: | :---: |
-| 12.1 | VFS Explorer UI (Codebase Tab)      | SPEC-1201 |   P0   |   ✅   |
-| 12.2 | Advanced Human Review (Diff Editor) | SPEC-1202 |   P0   |   ✅   |
-| 12.3 | Loop Analytics (Score Chart)        | SPEC-1203 |   P1   |   ✅   |
-| 12.4 | E2E Integration (Run Optimize Flow) | -         |   P0   |   ✅   |
-| 12.5 | Naming Standardization (Refactor)   | SPEC-1205 |   P1   |   ✅   |
-
-#### 规格文档
-
-| SPEC ID   | 文档                                                          | 类型     | 状态  |
-| :-------- | :------------------------------------------------------------ | :------- | :---: |
-| SPEC-1201 | [VFS Frontend](./specs/sprint12/SPEC-1201-vfs-frontend.md)    | Frontend |   ✅   |
-| SPEC-1202 | [Diff Review](./specs/sprint12/SPEC-1202-diff-review.md)      | Frontend |   ✅   |
-| SPEC-1203 | [Loop Charts](./specs/sprint12/SPEC-1203-loop-charts.md)      | Frontend |   ✅   |
-| SPEC-1205 | [Tech Debt Refactor](./specs/sprint12/SPEC-1205-tech-debt.md) | Refactor |   ✅   |
-
-#### 验收标准
-
-- [x] 系统界面右侧栏包含 "Codebase" 标签页，可浏览 VFS 文件树 (SPEC-1201)
-- [x] 点击文件可查看内容，支持 Diff View 对比版本 (SPEC-1201)
-- [x] Human Review 弹窗内嵌入 Diff Editor (SPEC-1202)
-- [x] 顶部或侧边显示 "Optimization Score" 趋势图 (SPEC-1203)
-- [x] ID 命名规范化完成 (`workflow_uuid`, `context_data` 等) (SPEC-1205)
-- [x] 完整跑通 `council_optimize` 流程
-
----
-
-### 2.2 Sprint 10: System Hardening (并行)
-
-> **目标**: 完成跨模块的深度集成，消除技术债务，确保系统生产就绪。
-
-#### 任务矩阵
-
-| ID   | 任务                           | 类型     | 优先级 | 状态  |
-| :--- | :----------------------------- | :------- | :----: | :---: |
-| 10.1 | E2E 消息数据一致性测试         | QA       |   P0   |   ✅   |
-| 10.2 | Nodes 测试覆盖率补全           | QA       |   P1   |   ✅   |
-| 10.3 | 配置文件化 & 硬编码清理        | Refactor |   P1   |   ✅   |
-| 10.4 | 全局 ID 命名规范化审查         | Refactor |   P2   |   ✅   |
-| 10.5 | Store 类型字段完整性校验       | QA       |   P2   |   ✅   |
-| 10.6 | Core 解耦收尾 (移除特定 Agent) | Refactor |   P1   |   ✅   |
-
-#### 规格文档
-
-| Spec ID  | 文档                                                         | 类型           |
-| :------- | :----------------------------------------------------------- | :------------- |
-| SPEC-901 | [RAG 深度集成](./specs/sprint10/SPEC-901-rag-integration.md) | Integration    |
-| SPEC-902 | [QA 质量硬化](./specs/sprint10/SPEC-902-qa-hardening.md)     | QA             |
-| SPEC-903 | [架构标准化](./specs/sprint10/SPEC-903-standardization.md)   | Refactor       |
-| SPEC-904 | [性能与安全](./specs/sprint10/SPEC-904-perf-security.md)     | Infrastructure |
-
----
-
-## 三、已完成 Sprints (归档)
+## 二、已完成 Sprints (归档)
 
 > 以下为历史 Sprint 的精简记录，详细规格请参阅对应目录。
 
-### 3.1 Sprint 11: Dialecta 2.0 Evolution ✅
+### 2.1 Sprint 12: Integrated Visibility ✅
 
-**目标**: 升级核心引擎，实现 Tool Use 与 Logic Loop 自主进化闭环。
+**目标**: 将 Backend 的自主进化引擎可视化，提供 VFS 文件浏览器、Diff 审查和实时循环分析图表。
 
-| ID   | 任务                      | Spec      | 状态  |
-| :--- | :------------------------ | :-------- | :---: |
-| 11.0 | Relational VFS Foundation | SPEC-1100 |   ✅   |
-| 11.1 | Core Tool Infrastructure  | SPEC-1101 |   ✅   |
-| 11.2 | System Surgeon Agent      | SPEC-1102 |   ✅   |
-| 11.3 | Logic Loop Processor      | SPEC-1103 |   ✅   |
-| 11.4 | Context Synthesizer       | SPEC-1104 |   ✅   |
+| ID   | 任务                                | Spec      | 状态  |
+| :--- | :---------------------------------- | :-------- | :---: |
+| 12.1 | VFS Explorer UI (Codebase Tab)      | SPEC-1201 |   ✅   |
+| 12.2 | Advanced Human Review (Diff Editor) | SPEC-1202 |   ✅   |
+| 12.3 | Loop Analytics (Score Chart)        | SPEC-1203 |   ✅   |
+| 12.4 | E2E Integration (Run Optimize Flow) | -         |   ✅   |
+| 12.5 | Naming Standardization (Refactor)   | SPEC-1205 |   ✅   |
 
-**规格目录**: [specs/sprint11/](./specs/sprint11/)
+**规格目录**: [specs/sprint12/](./specs/sprint12/)
 
 ---
 
-### 3.2 Sprint 6-9: Experience & Quality ✅
+### 2.2 Sprint 10-11: Hardening & Evolution ✅
+
+| Sprint | 名称             | 核心交付                                    | 规格目录                             |
+| :----: | :--------------- | :------------------------------------------ | :----------------------------------- |
+|  S10   | System Hardening | 配置解耦, Core 层标准化, ID 命名规范        | [specs/sprint10/](./specs/sprint10/) |
+|  S11   | Dialecta 2.0     | VFS 基础设施, Tool Use, Context Synthesizer | [specs/sprint11/](./specs/sprint11/) |
+
+---
+
+### 2.3 Sprint 6-9: Experience & Quality ✅
 
 | Sprint | 名称               | 核心交付                               | 规格目录                           |
 | :----: | :----------------- | :------------------------------------- | :--------------------------------- |
@@ -140,7 +87,7 @@
 
 ---
 
-### 3.3 Sprint 1-5: MVP Core ✅
+### 2.4 Sprint 1-5: MVP Core ✅
 
 | Sprint | 名称           | 核心交付                                  | 规格目录                           |
 | :----: | :------------- | :---------------------------------------- | :--------------------------------- |
@@ -154,9 +101,9 @@
 
 ---
 
-## 四、规格文档总索引
+## 三、规格文档总索引
 
-### 4.1 按类型分类
+### 3.1 按类型分类
 
 | 类型           | Spec 范围        | 说明                        |
 | :------------- | :--------------- | :-------------------------- |
@@ -170,7 +117,7 @@
 | **Evolution**  | SPEC-1100 ~ 1104 | Dialecta 2.0 进化引擎       |
 | **Visibility** | SPEC-1201 ~ 1205 | 可视化与控制                |
 
-### 4.2 快速导航
+### 3.2 快速导航
 
 | 目录                                        | 说明             |
 | :------------------------------------------ | :--------------- |
@@ -185,23 +132,21 @@
 | [specs/sprint10/](./specs/sprint10/)        | S10: Hardening   |
 | [specs/sprint11/](./specs/sprint11/)        | S11: Evolution   |
 | [specs/sprint12/](./specs/sprint12/)        | S12: Visibility  |
-| [specs/backend/](./specs/backend/README.md) | 后端 Processors  |
 
 ---
 
-## 五、技术债务与待办
+## 四、技术债务与待办
 
-### 5.1 技术债务跟踪
+### 4.1 技术债务跟踪
 
 | 状态  | 债务项                 | 关联 Spec | 说明                                 |
 | :---: | :--------------------- | :-------- | :----------------------------------- |
 |   ✅   | WebSocket 类型自动生成 | S9        | tygo 集成完成                        |
 |   ✅   | ID 命名规范化          | SPEC-1205 | `workflow_uuid`, `context_data` 统一 |
-|   ⬜   | 硬编码默认值清理       | SPEC-903  | 移入 config.yaml                     |
-|   ⬜   | Core 层解耦验证        | 10.6      | 移除特定 Agent 依赖                  |
-|   ⬜   | 性能优化 (虚拟滚动)    | SPEC-904  | 长消息列表优化                       |
+|   ✅   | 硬编码默认值清理       | SPEC-903  | 移入 config.yaml                     |
+|   ✅   | Core 层解耦验证        | 10.6      | 移除特定 Agent 依赖                  |
 
-### 5.2 已搁置任务
+### 4.2 已搁置任务
 
 | 任务              | 原优先级 | 搁置原因                       |
 | :---------------- | :------: | :----------------------------- |
@@ -209,7 +154,7 @@
 | 暗黑模式切换按钮  |    P2    | 已支持系统自动切换，ROI 不足   |
 | Run Mode 轻量渲染 |    P2    | 当前性能可接受                 |
 
-### 5.3 Backlog (低优先级)
+### 4.3 Backlog (低优先级)
 
 | 任务             | 备注          |
 | :--------------- | :------------ |
@@ -221,7 +166,7 @@
 
 ---
 
-## 六、质量门禁
+## 五、质量门禁
 
 | 门禁项         | 检查内容                            |       自动化        |
 | :------------- | :---------------------------------- | :-----------------: |
@@ -230,13 +175,13 @@
 | **Contract**   | 前后端 WebSocket 消息类型一致       |       ✅ tygo        |
 | **E2E**        | 关键流程端到端测试通过              |    ✅ Playwright     |
 | **Decoupling** | Core 层不依赖具体 Agent 实现        | ✅ verify-decoupling |
-| **Config**     | 所有默认值可从环境变量/配置文件覆盖 |      ⬜ Manual       |
+| **Config**     | 所有默认值可从环境变量/配置文件覆盖 |       ✅ Done        |
 
 ---
 
-## 七、核心成果总结
+## 六、核心成果总结
 
-### 7.1 系统能力
+### 6.1 系统能力
 
 ✅ **完整的多智能体协作系统**
 - 工作流设计器（9 种节点类型）
@@ -250,13 +195,18 @@
 - 预置工作流（Debate, Optimize）
 - Tool Use 支持（write_file, read_file）
 
+✅ **可视化与控制 (Sprint 12)**
+- VFS 文件浏览器 + 版本历史
+- Code Diff 审查与编辑
+- Loop Analytics 分数趋势图
+
 ✅ **质量保障**
 - 前端单元测试覆盖
 - 后端测试覆盖 80%+
 - E2E 关键流程测试
 - CI/CD 自动化
 
-### 7.2 技术亮点
+### 6.2 技术亮点
 
 - **类型安全**: tygo 自动生成前后端类型定义
 - **国际化**: i18n 支持中英文切换
@@ -264,8 +214,9 @@
 - **版本控制**: HumanReview 前自动备份 (VFS)
 - **知识检索**: 集成外部搜索（Tavily）
 - **Tool Use**: Agent 可直接修改 VFS 文件
+- **可视化**: Recharts 实时图表
 
-### 7.3 架构优势
+### 6.3 架构优势
 
 - **解耦设计**: Core 层独立于具体业务
 - **可扩展**: 支持自定义节点、Provider、Tool
@@ -290,12 +241,13 @@
 
 ### B. 变更日志
 
-| 日期       | 版本 | 变更说明                                    |
-| :--------- | :--- | :------------------------------------------ |
-| 2025-12-30 | v2.0 | 重构文档结构，统一格式，更新 Sprint 12 状态 |
-| 2025-12-29 | v1.5 | 添加 Sprint 11/12，完成 SPEC-1205           |
-| 2025-12-26 | v1.4 | Sprint 11 完成，Dialecta 2.0 发布           |
+| 日期       | 版本 | 变更说明                                         |
+| :--------- | :--- | :----------------------------------------------- |
+| 2025-12-30 | v2.1 | S10/S12 完成，所有 Sprint 归档，项目进入维护阶段 |
+| 2025-12-30 | v2.0 | 重构文档结构，统一格式                           |
+| 2025-12-29 | v1.5 | 添加 Sprint 11/12，完成 SPEC-1205                |
+| 2025-12-26 | v1.4 | Sprint 11 完成，Dialecta 2.0 发布                |
 
 ---
 
-*文档维护: 请在每个 Sprint 结束时更新进度总览和归档对应 Sprint。*
+*🎉 项目已达成 100% 完成度！进入维护阶段。*
