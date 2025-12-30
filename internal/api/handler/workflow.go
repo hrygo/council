@@ -268,3 +268,13 @@ func (h *WorkflowHandler) Review(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "resumed"})
 }
+
+func (h *WorkflowHandler) GetSession(c *gin.Context) {
+	id := c.Param("id")
+	session, err := h.SessionRepo.Get(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+	c.JSON(http.StatusOK, session)
+}

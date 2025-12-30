@@ -1,4 +1,5 @@
 import { type FC, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
 import { Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLayoutStore } from '../../stores/useLayoutStore';
@@ -75,9 +76,39 @@ const CenterExpandTrigger: FC<{
 };
 
 export const MeetingRoom: FC = () => {
+    const { session_uuid } = useParams();
     const { executionStatus, setExecutionStatus, resumeTimer } = useWorkflowRunStore();
+    const currentSession = useSessionStore(state => state.currentSession);
     useWebSocketRouter();
     useFullscreenShortcuts();
+
+    // Auto-restore session from URL if missing in store
+    useEffect(() => {
+        const current = useSessionStore.getState().currentSession;
+        if (!current && session_uuid) {
+            fetch(`/api/v1/sessions/${session_uuid}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Session not found");
+                    return res.json();
+                })
+                .then(data => {
+                    useSessionStore.setState(state => {
+                        state.currentSession = {
+                            session_uuid: data.session_uuid,
+                            workflow_uuid: data.workflow_uuid,
+                            group_uuid: data.group_uuid,
+                            status: data.status,
+                            startedAt: data.started_at ? new Date(data.started_at) : undefined,
+                            nodes: new Map(), // Nodes are not in this API yet
+                            active_node_ids: [],
+                            totalTokens: 0,
+                            totalCostUsd: 0
+                        };
+                    });
+                })
+                .catch(console.error);
+        }
+    }, [session_uuid]);
 
 
     // Sync status on load (e.g. refresh)
@@ -142,7 +173,6 @@ export const MeetingRoom: FC = () => {
 
 
     // Check for active session
-    const currentSession = useSessionStore(state => state.currentSession);
     const wsStatus = useConnectStore(state => state.status);
     const wsConnect = useConnectStore(state => state.connect);
     const graphDefinition = useWorkflowRunStore(state => state.graphDefinition);

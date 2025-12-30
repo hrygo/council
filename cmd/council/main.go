@@ -131,6 +131,7 @@ func main() {
 
 		// Workflows Execution
 		api.POST("/workflows/execute", workflowHandler.Execute)
+		api.GET("/sessions/:id", workflowHandler.GetSession)
 		api.POST("/sessions/:id/control", workflowHandler.Control)
 
 		api.POST("/sessions/:id/signal", workflowHandler.Signal)
