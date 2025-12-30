@@ -22,14 +22,14 @@ func (r *SessionRepository) Create(ctx context.Context, session *workflow.Sessio
 		INSERT INTO sessions (session_uuid, group_uuid, workflow_uuid, status, started_at)
 		VALUES ($1, $2, $3, $4, NOW())
 	`
-	// Handle empty or invalid UUIDs - PostgreSQL expects NULL for empty/invalid UUID values
-	var grpID interface{} = nil
-	if groupID != "" && isValidUUID(groupID) {
-		grpID = groupID
+	// Handle empty strings - PostgreSQL expects NULL for empty UUID values
+	var grpID interface{} = groupID
+	if groupID == "" {
+		grpID = nil
 	}
-	var wfID interface{} = nil
-	if workflowID != "" && isValidUUID(workflowID) {
-		wfID = workflowID
+	var wfID interface{} = workflowID
+	if workflowID == "" {
+		wfID = nil
 	}
 
 	_, err := r.pool.Exec(ctx, query, session.ID, grpID, wfID, string(session.Status))

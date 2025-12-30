@@ -131,7 +131,7 @@ func (s *Seeder) SeedGroups(ctx context.Context) error {
 
 // debateWorkflowGraph is the JSON graph definition for council_debate workflow.
 const debateWorkflowGraph = `{
-	"workflow_uuid": "council_debate", "start_node_id": "start",
+	"workflow_uuid": "c0deb47e-0000-0000-0000-000000000001", "start_node_id": "start",
 	"nodes": {
 		"start": {
 			"node_id": "start",
@@ -176,7 +176,7 @@ const debateWorkflowGraph = `{
 
 // optimizeWorkflowGraph is the JSON graph definition for council_optimize workflow.
 const optimizeWorkflowGraph = `{
-	"workflow_uuid": "council_optimize", "start_node_id": "start",
+	"workflow_uuid": "c00p71m3-0000-0000-0000-000000000001", "start_node_id": "start",
 	"nodes": {
 		"start": {
 			"node_id": "start",
@@ -260,13 +260,13 @@ func (s *Seeder) SeedWorkflows(ctx context.Context) error {
 		Graph       string
 	}{
 		{
-			ID:          "council_debate",
+			ID:          "c0deb47e-0000-0000-0000-000000000001",
 			Name:        "Council Debate",
 			Description: "三方辩论，生成综合裁决报告",
 			Graph:       debateWorkflowGraph,
 		},
 		{
-			ID:          "council_optimize",
+			ID:          "c00p71m3-0000-0000-0000-000000000001",
 			Name:        "Council Optimize",
 			Description: "迭代优化循环，含历史上下文检索",
 			Graph:       optimizeWorkflowGraph,
