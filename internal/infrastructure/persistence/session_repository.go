@@ -21,13 +21,17 @@ func (r *SessionRepository) Create(ctx context.Context, session *workflow.Sessio
 		INSERT INTO sessions (session_uuid, group_uuid, workflow_uuid, status, started_at)
 		VALUES ($1, $2, $3, $4, NOW())
 	`
-	// workflowID can be null if it's a dynamic one not yet saved, but usually it's saved.
+	// Handle empty strings - PostgreSQL expects NULL for empty UUID values
+	var grpID interface{} = groupID
+	if groupID == "" {
+		grpID = nil
+	}
 	var wfID interface{} = workflowID
 	if workflowID == "" {
 		wfID = nil
 	}
 
-	_, err := r.pool.Exec(ctx, query, session.ID, groupID, wfID, string(session.Status))
+	_, err := r.pool.Exec(ctx, query, session.ID, grpID, wfID, string(session.Status))
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
