@@ -111,7 +111,7 @@ start-backend: ## 🔧 Start Go backend
 
 stop-backend: ## 🛑 Stop Go backend
 	@echo "$(YELLOW)🛑 Stopping Backend...$(RESET)"
-	@lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+	@lsof -ti:8080 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
 	@echo "$(GREEN)✅ Backend stopped$(RESET)"
 
 restart-backend: stop-backend start-backend ## 🔄 Restart backend
@@ -131,8 +131,8 @@ start-frontend: ## 🎨 Start React frontend
 
 stop-frontend: ## 🛑 Stop React frontend
 	@echo "$(YELLOW)🛑 Stopping Frontend...$(RESET)"
-	@lsof -ti:5173 | xargs kill -9 2>/dev/null || true
-	@lsof -ti:5174 | xargs kill -9 2>/dev/null || true
+	@lsof -ti:5173 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
+	@lsof -ti:5174 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
 	@echo "$(GREEN)✅ Frontend stopped$(RESET)"
 
 restart-frontend: stop-frontend start-frontend ## 🔄 Restart frontend
