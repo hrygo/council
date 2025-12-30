@@ -74,6 +74,7 @@ interface WorkflowRunState {
     setHumanReview: (request: HumanReviewRequest | null) => void;
     submitHumanReview: (req: HumanReviewRequest, action: 'approve' | 'reject' | 'modify', data?: Record<string, unknown>) => Promise<void>;
     startTimer: () => void;
+    resumeTimer: (startedAt: string) => void;
     stopTimer: () => void;
 }
 
@@ -261,22 +262,33 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 stopTimer();
 
                 const startTime = Date.now();
-                // Reset or continue? Usually continue if resuming?
-                // Spec implies resetting stats.elapsedTimeMs: 0, which implies a fresh start.
-                // But if resuming, we might want to add to previous.
-                // For now, follow spec: reset to 0 (maybe startTimer is only for fresh run).
-                // Wait, if resuming, we shouldn't reset.
-                // Let's assume startTimer is called on fresh start.
-                // If resuming, we need another logic or just rely on elapsedTime adding up.
-                // Spec 3.4 says: set({ stats: { ...get().stats, elapsedTimeMs: 0 } });
-                // This implies reset. I will follow spec for now.
 
+                // For fresh start, reset to 0
                 set((state) => { state.stats.elapsedTimeMs = 0; });
 
                 // Update elapsed time periodically
                 timerRef = setInterval(() => {
                     set((state) => {
                         state.stats.elapsedTimeMs = Date.now() - startTime;
+                    });
+                }, 100);
+            },
+
+            resumeTimer: (startedAtStr: string) => {
+                const { stopTimer } = get();
+                stopTimer();
+
+                const startedAt = new Date(startedAtStr).getTime();
+                if (isNaN(startedAt)) return;
+
+                // Update immediately
+                set((state) => {
+                    state.stats.elapsedTimeMs = Date.now() - startedAt;
+                });
+
+                timerRef = setInterval(() => {
+                    set((state) => {
+                        state.stats.elapsedTimeMs = Date.now() - startedAt;
                     });
                 }, 100);
             },

@@ -62,12 +62,8 @@ const CenterExpandTrigger: FC<{
     const isLeft = side === 'left';
     return (
         <button
-            onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onExpand();
-            }}
-            className={`absolute top-1/2 -translate-y-1/2 z-20 py-4 px-0.5 bg-white dark:bg-gray-800 border-y border-r border-gray-200 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 hover:w-6 transition-all group cursor-pointer flex items-center justify-center ${isLeft ? 'left-0 rounded-r-lg border-l-0' : 'right-0 rounded-l-lg border-l border-r-0'
+            onClick={onExpand}
+            className={`absolute top-1/2 -translate-y-1/2 z-20 p-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 text-gray-500 dark:text-gray-400 transition-all cursor-pointer ${isLeft ? 'left-2' : 'right-2'
                 }`}
             title="展开面板"
         >
@@ -79,8 +75,33 @@ const CenterExpandTrigger: FC<{
 };
 
 export const MeetingRoom: FC = () => {
+    const { executionStatus, setExecutionStatus, resumeTimer } = useWorkflowRunStore();
     useWebSocketRouter();
     useFullscreenShortcuts();
+
+
+    // Sync status on load (e.g. refresh)
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const checkStatus = (session: any) => {
+            if (session && session.status === 'running' && executionStatus !== 'running') {
+                setExecutionStatus('running');
+                if (session.startedAt) {
+                    resumeTimer(session.startedAt.toISOString());
+                }
+            }
+        };
+
+        // Subscribe to changes
+        const unsub = useSessionStore.subscribe((state) => {
+            checkStatus(state.currentSession);
+        });
+
+        // Initial check
+        checkStatus(useSessionStore.getState().currentSession);
+
+        return unsub;
+    }, [executionStatus, setExecutionStatus, resumeTimer]);
     const {
         maximizedPanel,
         panelSizes,

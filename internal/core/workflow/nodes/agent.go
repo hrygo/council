@@ -79,6 +79,13 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 			req.Model = a.Registry.GetDefaultModel()
 		}
 
+		// Notify "Thinking" (Force frontend to render message bubble)
+		stream <- workflow.StreamEvent{
+			Type:      "token_stream",
+			Timestamp: time.Now(),
+			Data:      map[string]interface{}{"node_id": a.NodeID, "agent_id": a.AgentID, "chunk": " "},
+		}
+
 		resp, err := provider.Generate(ctx, req)
 		if err != nil {
 			return nil, err
@@ -159,7 +166,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 			stream <- workflow.StreamEvent{
 				Type:      "token_stream",
 				Timestamp: time.Now(),
-				Data:      map[string]interface{}{"node_id": a.NodeID, "chunk": finalResponse},
+				Data:      map[string]interface{}{"node_id": a.NodeID, "agent_id": a.AgentID, "chunk": finalResponse},
 			}
 
 			// Notify Token Usage
