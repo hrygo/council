@@ -72,7 +72,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 			Temperature: float32(ag.ModelConfig.Temperature),
 			MaxTokens:   ag.ModelConfig.MaxTokens,
 			TopP:        float32(ag.ModelConfig.TopP),
-			Stream:      false,
+			Stream:      true,
 			Tools:       llmTools,
 		}
 		if req.Model == "" {
@@ -86,7 +86,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 			Data:      map[string]interface{}{"node_id": a.NodeID, "agent_id": a.AgentID, "chunk": " "},
 		}
 
-		resp, err := provider.Generate(ctx, req)
+		resp, err := a.streamResponse(ctx, provider, req, stream)
 		if err != nil {
 			return nil, err
 		}
@@ -162,12 +162,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 			// No tool calls, we are done
 			finalResponse = resp.Content
 
-			// Notify Content Stream (Simulated for non-streaming)
-			stream <- workflow.StreamEvent{
-				Type:      "token_stream",
-				Timestamp: time.Now(),
-				Data:      map[string]interface{}{"node_id": a.NodeID, "agent_id": a.AgentID, "chunk": finalResponse},
-			}
+			// Notify Content Stream (Already done by streamResponse)
 
 			// Notify Token Usage
 			stream <- workflow.StreamEvent{
@@ -199,6 +194,84 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 	}
 
 	return output, nil
+}
+
+func (a *AgentProcessor) streamResponse(ctx context.Context, provider llm.LLMProvider, req *llm.CompletionRequest, stream chan<- workflow.StreamEvent) (*llm.CompletionResponse, error) {
+	chunkChan, errChan := provider.Stream(ctx, req)
+
+	fullContent := ""
+	toolCallsMap := make(map[int]*llm.ToolCall)
+	var usage llm.Usage
+
+	for {
+		select {
+		case chunk, ok := <-chunkChan:
+			if !ok {
+				chunkChan = nil
+			} else {
+				if chunk.Content != "" {
+					stream <- workflow.StreamEvent{
+						Type:      "token_stream",
+						Timestamp: time.Now(),
+						Data:      map[string]interface{}{"node_id": a.NodeID, "agent_id": a.AgentID, "chunk": chunk.Content},
+					}
+					fullContent += chunk.Content
+				}
+
+				for _, tc := range chunk.ToolCalls {
+					index := tc.Index
+					if _, exists := toolCallsMap[index]; !exists {
+						toolCallsMap[index] = &llm.ToolCall{
+							Index:    index,
+							ID:       tc.ID,
+							Type:     tc.Type,
+							Function: llm.FunctionCall{Name: tc.Function.Name},
+						}
+					}
+					current := toolCallsMap[index]
+					if tc.ID != "" {
+						current.ID = tc.ID
+					}
+					if tc.Type != "" {
+						current.Type = tc.Type
+					}
+					if tc.Function.Name != "" {
+						current.Function.Name = tc.Function.Name
+					}
+					current.Function.Arguments += tc.Function.Arguments
+				}
+
+				if chunk.Usage != nil {
+					usage = *chunk.Usage
+				}
+			}
+		case err, ok := <-errChan:
+			if ok {
+				return nil, err
+			}
+			errChan = nil
+		}
+		if chunkChan == nil && errChan == nil {
+			break
+		}
+	}
+
+	// Flatten tool calls
+	var toolCalls []llm.ToolCall
+	var indices []int
+	for i := range toolCallsMap {
+		indices = append(indices, i)
+	}
+	sort.Ints(indices)
+	for _, i := range indices {
+		toolCalls = append(toolCalls, *toolCallsMap[i])
+	}
+
+	return &llm.CompletionResponse{
+		Content:   fullContent,
+		ToolCalls: toolCalls,
+		Usage:     usage,
+	}, nil
 }
 
 func constructHistory(systemPrompt string, input map[string]interface{}) []llm.Message {

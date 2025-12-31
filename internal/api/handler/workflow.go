@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hrygo/council/internal/api/ws"
@@ -86,12 +87,12 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 			}
 		}
 	}
+	session.Start(context.Background())
+
 	if err := h.SessionRepo.Create(c.Request.Context(), session, groupID, workflowID); err != nil {
 		log.Printf("[Workflow] Failed to persist session: %v", err)
 		// We continue anyway for MVP but ideally fail here
 	}
-
-	session.Start(context.Background())
 
 	// Create Engine
 	engine := workflow.NewEngine(session)
@@ -137,6 +138,13 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 		}()
 
 		engine.Run(session.Context())
+
+		// Emit completion event
+		engine.StreamChannel <- workflow.StreamEvent{
+			Type:      "execution:completed",
+			Timestamp: time.Now(),
+			Data:      map[string]interface{}{"status": "completed"},
+		}
 
 		close(engine.StreamChannel)
 	}()

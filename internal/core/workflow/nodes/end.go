@@ -71,15 +71,17 @@ func (e *EndProcessor) Process(ctx context.Context, input map[string]interface{}
 Loop:
 	for {
 		select {
-		case token, ok := <-tokenStream:
+		case chunk, ok := <-tokenStream:
 			if !ok {
 				tokenStream = nil // Channel closed
 			} else {
-				finalSummary.WriteString(token)
-				stream <- workflow.StreamEvent{
-					Type:      "token_stream",
-					Timestamp: time.Now(),
-					Data:      map[string]interface{}{"node_id": "end", "chunk": token},
+				if chunk.Content != "" {
+					finalSummary.WriteString(chunk.Content)
+					stream <- workflow.StreamEvent{
+						Type:      "token_stream",
+						Timestamp: time.Now(),
+						Data:      map[string]interface{}{"node_id": "end", "chunk": chunk.Content},
+					}
 				}
 			}
 		case err, ok := <-errChan:

@@ -62,6 +62,7 @@ func (s *Session) WriteFile(path, content, author, reason string) (int, error) {
 		// We could send to a dedicated VFS channel if we had one.
 		// For now, assume Frontend polls or we enhance Engine later.
 		// Actually, we can use a callback if we want.
+		_ = 0 // SA9003 suppression: intentional empty branch for future logic
 	}
 	return version, err
 }

@@ -76,6 +76,14 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 	e.Status[nodeID] = StatusRunning
 	e.mu.Unlock()
 
+	// Notify frontend immediately that node is running
+	e.StreamChannel <- StreamEvent{
+		Type:      "node_state_change",
+		Timestamp: time.Now(),
+		NodeID:    nodeID,
+		Data:      map[string]interface{}{"status": "running"},
+	}
+
 	// Special Handling for Control Flow Nodes
 	if node.Type == NodeTypeParallel {
 		e.handleParallel(ctx, node, input)
@@ -166,8 +174,15 @@ func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[strin
 
 func (e *Engine) updateStatus(nodeID string, status NodeStatus) {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	e.Status[nodeID] = status
+	e.mu.Unlock()
+
+	e.StreamChannel <- StreamEvent{
+		Type:      "node_state_change",
+		Timestamp: time.Now(),
+		NodeID:    nodeID,
+		Data:      map[string]interface{}{"status": status},
+	}
 }
 
 func (e *Engine) GetStatus(nodeID string) NodeStatus {
