@@ -13,6 +13,7 @@ type Message struct {
 }
 
 type ToolCall struct {
+	Index    int          `json:"index,omitempty"`
 	ID       string       `json:"id"`
 	Type     string       `json:"type"`
 	Function FunctionCall `json:"function"`
@@ -58,12 +59,19 @@ type Usage struct {
 	TotalTokens      int `json:"total_tokens"`
 }
 
+// CompletionChunk represents a chunk of the streaming response.
+type CompletionChunk struct {
+	Content   string     `json:"content"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"` // Partial tool calls
+	Usage     *Usage     `json:"usage,omitempty"`
+}
+
 // LLMProvider defines the interface for a Chat Model provider.
 type LLMProvider interface {
 	// Generate returns a complete response.
 	Generate(ctx context.Context, req *CompletionRequest) (*CompletionResponse, error)
 	// Stream returns a channel of chunks.
-	Stream(ctx context.Context, req *CompletionRequest) (<-chan string, <-chan error)
+	Stream(ctx context.Context, req *CompletionRequest) (<-chan CompletionChunk, <-chan error)
 }
 
 // Embedder defines the interface for an Embedding provider.

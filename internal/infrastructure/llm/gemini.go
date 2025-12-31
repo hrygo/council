@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -113,13 +114,16 @@ func (c *GeminiClient) Generate(ctx context.Context, req *CompletionRequest) (*C
 	}, nil
 }
 
-func (c *GeminiClient) Stream(ctx context.Context, req *CompletionRequest) (<-chan string, <-chan error) {
-	if c.client == nil {
-		return nil, nil // Or return error generic
-	}
-
-	outputChan := make(chan string)
+func (c *GeminiClient) Stream(ctx context.Context, req *CompletionRequest) (<-chan CompletionChunk, <-chan error) {
+	outputChan := make(chan CompletionChunk, 10)
 	errChan := make(chan error, 1)
+
+	if c.client == nil {
+		errChan <- fmt.Errorf("gemini client is not initialized")
+		close(outputChan)
+		close(errChan)
+		return outputChan, errChan
+	}
 
 	go func() {
 		defer close(outputChan)
@@ -155,19 +159,85 @@ func (c *GeminiClient) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 			val := int32(req.MaxTokens)
 			config.MaxOutputTokens = val
 		}
+		// Enable Tools if present
+		// Enable Tools if present
+		if len(req.Tools) > 0 {
+			var functionDecls []*genai.FunctionDeclaration
+			for _, t := range req.Tools {
+				paramsMap, ok := t.Function.Parameters.(map[string]interface{})
+				var schema *genai.Schema
+				if ok && paramsMap != nil {
+					schema = schemaFromMap(paramsMap)
+				}
+
+				functionDecls = append(functionDecls, &genai.FunctionDeclaration{
+					Name:        t.Function.Name,
+					Description: t.Function.Description,
+					Parameters:  schema,
+				})
+			}
+			config.Tools = []*genai.Tool{
+				{
+					FunctionDeclarations: functionDecls,
+				},
+			}
+		}
 
 		iter := c.client.Models.GenerateContentStream(ctx, req.Model, contents, config)
 
 		for resp, err := range iter {
 			if err != nil {
 				errChan <- fmt.Errorf("gemini stream error: %w", err)
-				return // Or continue if stream, but typically error ends stream
+				return
 			}
 
-			if resp != nil && len(resp.Candidates) > 0 {
-				for _, part := range resp.Candidates[0].Content.Parts {
-					if part.Text != "" {
-						outputChan <- part.Text
+			if resp != nil {
+				if len(resp.Candidates) > 0 {
+					for _, part := range resp.Candidates[0].Content.Parts {
+						chunk := CompletionChunk{}
+
+						// 1. Text Content
+						if part.Text != "" {
+							chunk.Content = part.Text
+						}
+
+						// 2. Function Calls
+						if part.FunctionCall != nil {
+							// Map to ToolCalls
+							// Gemini streams one function call per part usually?
+							// We need a dummy ID as Gemini might not send one in the stream same way OpenAI does?
+							// Using "call_" + timestamp or random?
+							// Actually, for streaming *aggregation*, we need a stable ID if it's split.
+							// But Gemini usually sends the whole FunctionCall in one chunk (not streamed char-by-char for args).
+							// So we can generate an ID here.
+
+							argsBytes, _ := json.Marshal(part.FunctionCall.Args) // Args is map[string]interface{}
+							chunk.ToolCalls = []ToolCall{
+								{
+									ID:   "call_" + part.FunctionCall.Name, // distinct enough
+									Type: "function",
+									Function: FunctionCall{
+										Name:      part.FunctionCall.Name,
+										Arguments: string(argsBytes),
+									},
+								},
+							}
+						}
+
+						// Only send if we have something
+						if chunk.Content != "" || len(chunk.ToolCalls) > 0 {
+							outputChan <- chunk
+						}
+					}
+				}
+
+				if resp.UsageMetadata != nil {
+					outputChan <- CompletionChunk{
+						Usage: &Usage{
+							PromptTokens:     int(resp.UsageMetadata.PromptTokenCount),
+							CompletionTokens: int(resp.UsageMetadata.CandidatesTokenCount),
+							TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
+						},
 					}
 				}
 			}
@@ -202,4 +272,55 @@ func (c *GeminiClient) Embed(ctx context.Context, model string, text string) ([]
 	}
 
 	return resp.Embeddings[0].Values, nil
+}
+
+// schemaFromMap converts a generic JSON Schema map to genai.Schema.
+// This matches the capabilities needed for standard tool definitions (strings, objects, arrays).
+func schemaFromMap(m map[string]interface{}) *genai.Schema {
+	s := &genai.Schema{}
+
+	if t, ok := m["type"].(string); ok {
+		switch t {
+		case "object":
+			s.Type = genai.TypeObject
+		case "string":
+			s.Type = genai.TypeString
+		case "integer":
+			s.Type = genai.TypeInteger
+		case "number":
+			s.Type = genai.TypeNumber
+		case "boolean":
+			s.Type = genai.TypeBoolean
+		case "array":
+			s.Type = genai.TypeArray
+		}
+	}
+
+	if desc, ok := m["description"].(string); ok {
+		s.Description = desc
+	}
+
+	if props, ok := m["properties"].(map[string]interface{}); ok {
+		s.Properties = make(map[string]*genai.Schema)
+		for k, v := range props {
+			if vMap, ok := v.(map[string]interface{}); ok {
+				s.Properties[k] = schemaFromMap(vMap)
+			}
+		}
+	}
+
+	if req, ok := m["required"].([]interface{}); ok {
+		for _, r := range req {
+			if rStr, ok := r.(string); ok {
+				s.Required = append(s.Required, rStr)
+			}
+		}
+	}
+	
+	// Handle Array Items
+	if items, ok := m["items"].(map[string]interface{}); ok {
+		s.Items = schemaFromMap(items)
+	}
+
+	return s
 }

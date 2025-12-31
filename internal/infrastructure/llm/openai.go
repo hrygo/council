@@ -73,8 +73,8 @@ func (c *OpenAIClient) Generate(ctx context.Context, req *CompletionRequest) (*C
 	}, nil
 }
 
-func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-chan string, <-chan error) {
-	outputChan := make(chan string)
+func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-chan CompletionChunk, <-chan error) {
+	outputChan := make(chan CompletionChunk)
 	errChan := make(chan error, 1)
 
 	go func() {
@@ -91,6 +91,39 @@ func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 				Role:    msg.Role,
 				Content: msg.Content,
 			}
+			// Map ToolCalls if they form part of history
+			if len(msg.ToolCalls) > 0 {
+				tcList := make([]openai.ToolCall, len(msg.ToolCalls))
+				for j, tc := range msg.ToolCalls {
+					tcList[j] = openai.ToolCall{
+						ID:   tc.ID,
+						Type: openai.ToolType(tc.Type),
+						Function: openai.FunctionCall{
+							Name:      tc.Function.Name,
+							Arguments: tc.Function.Arguments,
+						},
+					}
+				}
+				messages[i].ToolCalls = tcList
+			}
+			if msg.ToolCallID != "" {
+				messages[i].ToolCallID = msg.ToolCallID
+			}
+		}
+
+		var tools []openai.Tool
+		if len(req.Tools) > 0 {
+			tools = make([]openai.Tool, len(req.Tools))
+			for i, t := range req.Tools {
+				tools[i] = openai.Tool{
+					Type: openai.ToolType(t.Type),
+					Function: &openai.FunctionDefinition{
+						Name:        t.Function.Name,
+						Description: t.Function.Description,
+						Parameters:  t.Function.Parameters,
+					},
+				}
+			}
 		}
 
 		stream, err := c.client.CreateChatCompletionStream(
@@ -102,6 +135,10 @@ func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 				TopP:        req.TopP,
 				MaxTokens:   req.MaxTokens,
 				Stream:      true,
+				Tools:       tools,
+				StreamOptions: &openai.StreamOptions{
+					IncludeUsage: true,
+				},
 			},
 		)
 		if err != nil {
@@ -121,7 +158,40 @@ func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 			}
 
 			if len(response.Choices) > 0 {
-				outputChan <- response.Choices[0].Delta.Content
+				delta := response.Choices[0].Delta
+				chunk := CompletionChunk{
+					Content: delta.Content,
+				}
+
+				if len(delta.ToolCalls) > 0 {
+					for _, tc := range delta.ToolCalls {
+						idx := 0
+						if tc.Index != nil {
+							idx = *tc.Index
+						}
+						chunk.ToolCalls = append(chunk.ToolCalls, ToolCall{
+							Index: idx,
+							ID:    tc.ID, // Often only present in first chunk
+							Type:  string(tc.Type),
+							Function: FunctionCall{
+								Name:      tc.Function.Name,
+								Arguments: tc.Function.Arguments,
+							},
+						})
+					}
+				}
+				outputChan <- chunk
+			}
+
+			// Handle usage if present (usually in last chunk with no choices)
+			if response.Usage != nil {
+				outputChan <- CompletionChunk{
+					Usage: &Usage{
+						PromptTokens:     response.Usage.PromptTokens,
+						CompletionTokens: response.Usage.CompletionTokens,
+						TotalTokens:      response.Usage.TotalTokens,
+					},
+				}
 			}
 		}
 	}()

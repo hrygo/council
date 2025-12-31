@@ -51,9 +51,10 @@ func (m *MockProvider) Generate(ctx context.Context, req *CompletionRequest) (*C
 	return m.GenerateResponse, nil
 }
 
-func (m *MockProvider) Stream(ctx context.Context, req *CompletionRequest) (<-chan string, <-chan error) {
+func (m *MockProvider) Stream(ctx context.Context, req *CompletionRequest) (<-chan CompletionChunk, <-chan error) {
 	m.StreamCalls++
-	contentChan := make(chan string, len(m.StreamContent))
+	// Buffer enough for: 1 content + N tool calls + 1 usage
+	contentChan := make(chan CompletionChunk, 10)
 	errChan := make(chan error, 1)
 
 	go func() {
@@ -65,8 +66,43 @@ func (m *MockProvider) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 			return
 		}
 
-		for _, chunk := range m.StreamContent {
-			contentChan <- chunk
+		// Priority 1: Explicit StreamContent (for specific stream testing)
+		if len(m.StreamContent) > 0 {
+			for _, chunk := range m.StreamContent {
+				contentChan <- CompletionChunk{Content: chunk}
+			}
+			return
+		}
+
+		// Priority 2: GenerateResponseQueue or GenerateResponse
+		var resp *CompletionResponse
+		if len(m.GenerateResponseQueue) > 0 {
+			resp = m.GenerateResponseQueue[0]
+			m.GenerateResponseQueue = m.GenerateResponseQueue[1:]
+		} else {
+			resp = m.GenerateResponse
+		}
+
+		if resp == nil {
+			return
+		}
+
+		// Convert Response to Chunks
+		if resp.Content != "" {
+			contentChan <- CompletionChunk{Content: resp.Content}
+		}
+
+		for i, tc := range resp.ToolCalls {
+			tcCopy := tc
+			tcCopy.Index = i // Ensure Index is set explicitly for streaming aggregation
+			contentChan <- CompletionChunk{
+				ToolCalls: []ToolCall{tcCopy},
+			}
+		}
+
+		if resp.Usage.TotalTokens > 0 {
+			usageCopy := resp.Usage
+			contentChan <- CompletionChunk{Usage: &usageCopy}
 		}
 	}()
 
