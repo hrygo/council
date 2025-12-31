@@ -56,9 +56,16 @@ func (h *KnowledgeHandler) GetSessionKnowledge(c *gin.Context) {
 	// We need GroupID for the session
 	var groupID string
 	// Strategy: check active engines first
+	enginesMu.RLock()
 	if engine := activeEngines[sessionID]; engine != nil {
-		groupID, _ = engine.Session.Inputs["group_id"].(string)
+		engine.Mu.RLock()
+		groupID, _ = engine.Session.Inputs["group_uuid"].(string)
+		if groupID == "" {
+			groupID, _ = engine.Session.Inputs["group_id"].(string)
+		}
+		engine.Mu.RUnlock()
 	}
+	enginesMu.RUnlock()
 	// If not found (or inactive), check DB
 	if groupID == "" && h.sessionRepo != nil {
 		sEntity, err := h.sessionRepo.Get(c.Request.Context(), sessionID)

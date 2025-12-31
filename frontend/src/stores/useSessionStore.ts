@@ -42,6 +42,7 @@ interface SessionState {
         group_uuid: string;
         nodes: Array<{ node_id: string; name: string; type: string }>;
         status?: SessionStatus;
+        node_statuses?: Record<string, NodeStatus>;
     }) => void;
 
     /**
@@ -105,15 +106,30 @@ export const useSessionStore = create<SessionState>()(
         connectionStatus: 'disconnected',
 
         // Actions
-        initSession: ({ session_uuid, workflow_uuid, group_uuid, nodes, status }) => {
+        initSession: ({ session_uuid, workflow_uuid, group_uuid, nodes, status, node_statuses }) => {
             const initialNodes = new Map();
+            const initialGroups: MessageGroup[] = [];
+
             nodes.forEach(node => {
+                const nodeStatus = node_statuses?.[node.node_id] || 'pending';
                 initialNodes.set(node.node_id, {
                     node_id: node.node_id,
                     name: node.name,
                     type: node.type,
-                    status: 'pending'
+                    status: nodeStatus
                 });
+
+                // Proactively create MessageGroups for already running nodes to avoid blank UI
+                if (nodeStatus === 'running') {
+                    initialGroups.push({
+                        node_id: node.node_id,
+                        nodeName: node.name,
+                        nodeType: node.type as MessageGroup['nodeType'],
+                        isParallel: false, // Default to false, parallelNodeMap will handle specialized cases
+                        messages: [],
+                        status: 'running'
+                    });
+                }
             });
 
             set({
@@ -123,12 +139,12 @@ export const useSessionStore = create<SessionState>()(
                     group_uuid,
                     status: status || 'idle',
                     nodes: initialNodes,
-                    active_node_ids: [],
+                    active_node_ids: initialGroups.map(g => g.node_id),
                     totalTokens: 0,
                     totalCostUsd: 0,
                     startedAt: status === 'running' ? new Date() : undefined,
                 },
-                messageGroups: [],
+                messageGroups: initialGroups,
                 parallelNodeMap: new Map(),
                 connectionStatus: 'connecting',
             });
@@ -160,7 +176,33 @@ export const useSessionStore = create<SessionState>()(
                 }
 
                 // 同时更新 MessageGroup 的状态
-                const group = state.messageGroups.find(g => g.node_id === node_id);
+                let group = state.messageGroups.find(g => g.node_id === node_id);
+
+                // Robustness: If running and no group, create one (e.g. slow start or first event)
+                if (!group && status === 'running') {
+                    const node = state.currentSession?.nodes.get(node_id);
+                    // Skip if parallel parent mapping handles it (but here we don't have mapping check easily without more logic)
+                    // Actually, if it's a parallel child, we might want to wait? 
+                    // But usually parallel start handles it. 
+                    // If this is a regular node, we definitely want it.
+                    // If it is parallel child, adding it as separate group might be duplicate if parallel parent group exists?
+                    // Strategy: Only add if NOT in parallel map?
+                    // But parallelNodeMap is keyed by child ID.
+                    const isParallelChild = state.parallelNodeMap.has(node_id);
+
+                    if (!isParallelChild) {
+                        group = {
+                            node_id,
+                            nodeName: node?.name || node_id,
+                            nodeType: (node?.type as MessageGroup['nodeType']) || 'agent',
+                            isParallel: false,
+                            messages: [],
+                            status: 'running'
+                        };
+                        state.messageGroups.push(group);
+                    }
+                }
+
                 if (group) {
                     group.status = status;
                 }

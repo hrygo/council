@@ -18,8 +18,8 @@ func NewSessionRepository(pool db.DB) workflow.SessionRepository {
 
 func (r *SessionRepository) Create(ctx context.Context, session *workflow.Session, groupID string, workflowID string) error {
 	query := `
-		INSERT INTO sessions (session_uuid, group_uuid, workflow_uuid, status, started_at)
-		VALUES ($1, $2, $3, $4, NOW())
+		INSERT INTO sessions (session_uuid, group_uuid, workflow_uuid, status, proposal, started_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
 	`
 	// Handle empty strings - PostgreSQL expects NULL for empty UUID values
 	var grpID interface{} = groupID
@@ -31,7 +31,9 @@ func (r *SessionRepository) Create(ctx context.Context, session *workflow.Sessio
 		wfID = nil
 	}
 
-	_, err := r.pool.Exec(ctx, query, session.ID, grpID, wfID, string(session.Status))
+	proposal := session.Inputs["proposal"]
+
+	_, err := r.pool.Exec(ctx, query, session.ID, grpID, wfID, string(session.Status), proposal)
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
@@ -40,24 +42,26 @@ func (r *SessionRepository) Create(ctx context.Context, session *workflow.Sessio
 
 func (r *SessionRepository) Get(ctx context.Context, id string) (*workflow.SessionEntity, error) {
 	query := `
-		SELECT session_uuid, group_uuid, workflow_uuid, status FROM sessions WHERE session_uuid = $1
+		SELECT session_uuid, COALESCE(group_uuid::text, ''), COALESCE(workflow_uuid::text, ''), 
+		       status, proposal, started_at, ended_at 
+		FROM sessions WHERE session_uuid = $1
 	`
 	var s workflow.SessionEntity
-	var wfID interface{}
-	err := r.pool.QueryRow(ctx, query, id).Scan(&s.ID, &s.GroupID, &wfID, &s.Status)
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&s.ID, &s.GroupID, &s.WorkflowID, &s.Status, &s.Proposal, &s.StartedAt, &s.EndedAt,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session: %w", err)
-	}
-	if wfID != nil {
-		s.WorkflowID = fmt.Sprintf("%v", wfID)
 	}
 	return &s, nil
 }
 
 func (r *SessionRepository) UpdateStatus(ctx context.Context, id string, status workflow.SessionStatus) error {
-	query := `
-		UPDATE sessions SET status = $2 WHERE session_uuid = $1
-	`
+	query := `UPDATE sessions SET status = $2, updated_at = NOW()`
+	if status == workflow.SessionCompleted || status == workflow.SessionFailed || status == workflow.SessionCancelled {
+		query += ", ended_at = NOW()"
+	}
+	query += " WHERE session_uuid = $1"
 	_, err := r.pool.Exec(ctx, query, id, string(status))
 	return err
 }

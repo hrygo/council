@@ -32,9 +32,7 @@ var _ LLMProvider = (*OpenAIClient)(nil)
 var _ Embedder = (*OpenAIClient)(nil)
 
 func (c *OpenAIClient) Generate(ctx context.Context, req *CompletionRequest) (*CompletionResponse, error) {
-	if req.Model == "" {
-		req.Model = openai.GPT4o
-	}
+	// Model is required. If empty, the upstream API will return an error which we handle below.
 
 	messages := make([]openai.ChatCompletionMessage, len(req.Messages))
 	for i, msg := range req.Messages {
@@ -81,9 +79,9 @@ func (c *OpenAIClient) Stream(ctx context.Context, req *CompletionRequest) (<-ch
 		defer close(outputChan)
 		defer close(errChan)
 
-		if req.Model == "" {
-			req.Model = openai.GPT4o
-		}
+		// Model is required for OpenAI-style APIs.
+		// If empty, the provider usually returns an error (handled below).
+		// We avoid hardcoding GPT-4o here to support compatible providers (DeepSeek, GLM, etc.).
 
 		messages := make([]openai.ChatCompletionMessage, len(req.Messages))
 		for i, msg := range req.Messages {

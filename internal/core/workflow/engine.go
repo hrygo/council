@@ -10,12 +10,14 @@ import (
 
 // Engine orchestrates the workflow execution
 type Engine struct {
-	Graph         *GraphDefinition
-	Status        map[string]NodeStatus
-	NodeFactory   func(node *Node) (NodeProcessor, error)
+	Graph  *GraphDefinition
+	Status map[string]NodeStatus
+	// NodeFactory creates processors for graph nodes
+	NodeFactory   NodeFactory
 	StreamChannel chan StreamEvent
-	mu            sync.RWMutex
-	inputs        map[string]interface{}
+	// Public Mutex for state access
+	Mu     sync.RWMutex
+	inputs map[string]interface{}
 
 	// Middleware hooks
 	Middlewares []Middleware
@@ -38,28 +40,31 @@ func NewEngine(session *Session) *Engine {
 		Session:       session,
 		pendingInputs: make(map[string][]map[string]interface{}),
 		MergeStrategy: &DefaultMergeStrategy{}, // Default strategy, can be overridden
-		// Default Factory (can be overridden)
-		NodeFactory: func(n *Node) (NodeProcessor, error) {
-			return nil, fmt.Errorf("no factory configured for node type %s", n.Type)
-		},
+		NodeFactory:   &DefaultNodeFactory{},   // Default Factory
 	}
 	e.computeInDegrees()
 	return e
 }
 
 // Run executes the workflow from the start node
-func (e *Engine) Run(ctx context.Context) {
+func (e *Engine) Run(ctx context.Context) error {
 	// 1. Basic Validation
 	if err := e.Graph.Validate(); err != nil {
 		e.emitError("validation_failed", err)
-		return
+		return err
 	}
 
-	// 2. Start Execution
-	e.executeNode(ctx, e.Graph.StartNodeID, e.inputs)
+	startNodeID := e.Graph.StartNodeID
+	if startNodeID == "" {
+		return fmt.Errorf("no start node defined")
+	}
+
+	// Start from the defined start node
+	return e.executeNode(ctx, startNodeID, e.inputs)
 }
 
-func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[string]interface{}) {
+// executeNode runs a single node and recursively its children
+func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[string]interface{}) error {
 	// Check for Pause
 	if e.Session.Status == SessionPaused {
 		e.StreamChannel <- StreamEvent{
@@ -73,45 +78,26 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 	if err := e.Session.WaitIfPaused(ctx); err != nil {
 		// Context cancelled or other error
 		e.emitError(nodeID, err)
-		return
+		return err
 	}
 
-	e.mu.Lock()
+	e.Mu.RLock()
 	node, exists := e.Graph.Nodes[nodeID]
+	e.Mu.RUnlock()
+
 	if !exists {
-		e.mu.Unlock()
 		e.emitError(nodeID, fmt.Errorf("node not found"))
-		return
-	}
-	e.Status[nodeID] = StatusRunning
-	e.mu.Unlock()
-
-	// Notify frontend immediately that node is running
-	e.StreamChannel <- StreamEvent{
-		Type:      "node_state_change",
-		Timestamp: time.Now(),
-		NodeID:    nodeID,
-		Data:      map[string]interface{}{"status": "running"},
+		return fmt.Errorf("node %s not found", nodeID)
 	}
 
-	// Special Handling for Control Flow Nodes
-	if node.Type == NodeTypeParallel {
-		e.handleParallel(ctx, node, input)
-		return
-	}
+	// Update status
+	e.updateStatus(nodeID, StatusRunning)
 
-	// Standard Processing
-	processor, err := e.NodeFactory(node)
-	if err != nil {
-		e.emitError(nodeID, err)
-		return
-	}
-
-	// Middleware: Before Execution
+	// Middleware: Before
 	for _, mw := range e.Middlewares {
 		if err := mw.BeforeNodeExecution(ctx, e.Session, node); err != nil {
 			e.emitError(nodeID, fmt.Errorf("middleware %s blocked execution: %w", mw.Name(), err))
-			return
+			return err
 		}
 	}
 
@@ -121,32 +107,61 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 	}
 	input["session_id"] = e.Session.ID
 
-	// Execute Processor
-	output, err := processor.Process(ctx, input, e.StreamChannel)
+	var output map[string]interface{}
+	var err error
+
+	// Special Handling for Control Flow Nodes
+	if node.Type == NodeTypeParallel {
+		e.handleParallel(ctx, node, input)
+		return nil
+	}
+
+	// Standard Processing using Factory
+	processor, err := e.NodeFactory.CreateNode(node, FactoryDeps{Session: e.Session})
+	if err != nil {
+		e.emitError(nodeID, err)
+		e.updateStatus(nodeID, StatusFailed)
+		return err
+	}
+
+	output, err = processor.Process(ctx, input, e.StreamChannel)
 	if err != nil {
 		if err == ErrSuspended {
 			e.updateStatus(nodeID, StatusSuspended)
-			return // Suspended execution
+			return nil // Suspended execution
 		}
 		e.updateStatus(nodeID, StatusFailed)
 		e.emitError(nodeID, err)
-		return
+		return err
 	}
 
 	// Middleware: After Execution
-	for _, mw := range e.Middlewares { // Execute in order (or reverse? usually order is fine for transform)
+	for _, mw := range e.Middlewares {
 		var mwErr error
 		output, mwErr = mw.AfterNodeExecution(ctx, e.Session, node, output)
 		if mwErr != nil {
 			e.emitError(nodeID, fmt.Errorf("middleware %s failed post-processing: %w", mw.Name(), mwErr))
-			return
+			return mwErr
 		}
 	}
 
 	e.updateStatus(nodeID, StatusCompleted)
 
+	// Determine Routing
+	var nextIDs []string
+	if router, ok := processor.(ConditionalRouter); ok {
+		nextIDs, err = router.GetNextNodes(ctx, output, node.NextIDs)
+		if err != nil {
+			e.emitError(nodeID, fmt.Errorf("routing failed: %w", err))
+			return err
+		}
+	} else {
+		nextIDs = node.NextIDs
+	}
+
 	// Deliver output to downstream nodes using Join mechanism (SPEC-1206)
-	e.deliverToDownstream(ctx, nodeID, output)
+	e.deliverToDownstream(ctx, nodeID, output, nextIDs)
+	return nil
 }
 
 func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[string]interface{}) {
@@ -162,7 +177,16 @@ func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[strin
 		wg.Add(1)
 		go func(cid string) {
 			defer wg.Done()
-			e.executeNode(ctx, cid, input) // Pass same input to all branches
+
+			// 1. Clone input map to avoid Data Race on concurrent writes (e.g. session_id)
+			clonedInput := make(map[string]interface{}, len(input))
+			for k, v := range input {
+				clonedInput[k] = v
+			}
+
+			if err := e.executeNode(ctx, cid, clonedInput); err != nil {
+				log.Printf("[Engine] Parallel branch %s failed: %v", cid, err)
+			}
 		}(nextID)
 	}
 	wg.Wait()
@@ -170,9 +194,9 @@ func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[strin
 }
 
 func (e *Engine) updateStatus(nodeID string, status NodeStatus) {
-	e.mu.Lock()
+	e.Mu.Lock()
 	e.Status[nodeID] = status
-	e.mu.Unlock()
+	e.Mu.Unlock()
 
 	e.StreamChannel <- StreamEvent{
 		Type:      "node_state_change",
@@ -183,8 +207,8 @@ func (e *Engine) updateStatus(nodeID string, status NodeStatus) {
 }
 
 func (e *Engine) GetStatus(nodeID string) NodeStatus {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
+	e.Mu.RLock()
+	defer e.Mu.RUnlock()
 	return e.Status[nodeID]
 }
 
@@ -201,12 +225,16 @@ func (e *Engine) emitError(nodeID string, err error) {
 
 // ResumeNode resumes execution of a suspended node with provided output
 func (e *Engine) ResumeNode(ctx context.Context, nodeID string, output map[string]interface{}) error {
-	e.mu.Lock()
+	e.Mu.Lock()
 	status, exists := e.Status[nodeID]
-	e.mu.Unlock()
+	node, nodeExists := e.Graph.Nodes[nodeID]
+	e.Mu.Unlock()
 
 	if !exists {
 		return fmt.Errorf("node %s not found in execution status", nodeID)
+	}
+	if !nodeExists {
+		return fmt.Errorf("node %s not found in graph", nodeID)
 	}
 	if status != StatusSuspended {
 		return fmt.Errorf("node %s is not suspended (status: %s)", nodeID, status)
@@ -223,23 +251,39 @@ func (e *Engine) ResumeNode(ctx context.Context, nodeID string, output map[strin
 	}
 
 	// Use Session's context for long-running workflow execution (Fix-A4)
-	// The passed ctx is typically a short-lived HTTP request context
-	// Using Session.Context() ensures workflow continues after request ends
 	workflowCtx := e.Session.Context()
 	if workflowCtx == nil {
 		workflowCtx = context.Background()
 	}
 
+	// Determine Routing logic (SPEC-1304)
+	var nextIDs []string
+	processor, err := e.NodeFactory.CreateNode(node, FactoryDeps{Session: e.Session})
+	if err != nil {
+		// If factory failed, we fallback to default nextIDs? Or return error?
+		// Suspended node implies it WAS created before.
+		// Fallback to default check:
+		nextIDs = node.NextIDs
+	} else {
+		if router, ok := processor.(ConditionalRouter); ok {
+			var errRoute error
+			nextIDs, errRoute = router.GetNextNodes(workflowCtx, output, node.NextIDs)
+			if errRoute != nil {
+				e.emitError(nodeID, fmt.Errorf("routing failed on resume: %w", errRoute))
+				return errRoute
+			}
+		} else {
+			nextIDs = node.NextIDs
+		}
+	}
+
 	// Use deliverToDownstream for consistency with Join mechanism (SPEC-1206)
-	go e.deliverToDownstream(workflowCtx, nodeID, output)
+	go e.deliverToDownstream(workflowCtx, nodeID, output, nextIDs)
 
 	return nil
 }
 
 // computeInDegrees calculates the in-degree for each node in the graph.
-// This is called during Engine initialization to prepare for join operations.
-// Loop nodes' back-edges (first next_id) are excluded from in-degree count
-// to prevent deadlock on first execution.
 func (e *Engine) computeInDegrees() {
 	e.inDegree = make(map[string]int)
 	if e.Graph == nil || e.Graph.Nodes == nil {
@@ -248,7 +292,6 @@ func (e *Engine) computeInDegrees() {
 	for _, node := range e.Graph.Nodes {
 		for i, nextID := range node.NextIDs {
 			// Skip Loop node's back-edge (first next_id is the continue/loop path)
-			// This edge is conditionally triggered and bypasses in-degree check anyway
 			if node.Type == NodeTypeLoop && i == 0 {
 				continue
 			}
@@ -258,31 +301,13 @@ func (e *Engine) computeInDegrees() {
 }
 
 // deliverToDownstream delivers output to downstream nodes.
-// For nodes with in-degree > 1, it waits for all upstream nodes to complete
-// before executing (join/barrier pattern).
-// For Loop nodes, it implements conditional routing based on should_exit.
-func (e *Engine) deliverToDownstream(ctx context.Context, nodeID string, output map[string]interface{}) {
+func (e *Engine) deliverToDownstream(ctx context.Context, nodeID string, output map[string]interface{}, targetNextIDs []string) {
 	node := e.Graph.Nodes[nodeID]
 	if node == nil {
 		return
 	}
 
-	// Determine which downstream nodes to trigger
-	targetNextIDs := node.NextIDs
-
-	// Special handling for Loop nodes: conditional routing (SPEC-1206)
-	// Loop nodes have 2 next_ids: [continue_path, exit_path]
-	// Route based on should_exit flag in output
-	if node.Type == NodeTypeLoop && len(node.NextIDs) >= 2 {
-		shouldExit, _ := output["should_exit"].(bool)
-		if shouldExit {
-			// Exit path: only trigger the second next_id (typically "end")
-			targetNextIDs = []string{node.NextIDs[1]}
-		} else {
-			// Continue path: only trigger the first next_id (loop back)
-			targetNextIDs = []string{node.NextIDs[0]}
-		}
-	}
+	// Logic routed via targetNextIDs passed from executeNode/ResumeNode
 
 	// Check if this is a loop-back delivery (from Loop node to continue path)
 	// Loop-back deliveries should bypass in-degree waiting to avoid deadlock
@@ -321,7 +346,9 @@ func (e *Engine) deliverToDownstream(ctx context.Context, nodeID string, output 
 
 		if ready {
 			// Execute downstream node with merged input
-			e.executeNode(ctx, nextID, mergedInput)
+			if err := e.executeNode(ctx, nextID, mergedInput); err != nil {
+				log.Printf("[Engine] Downstream node %s failed: %v", nextID, err)
+			}
 		}
 	}
 }

@@ -44,7 +44,7 @@ describe('SessionStarter', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (useTemplates as any).mockReturnValue({
             data: [{
-                id: 't1',
+                template_uuid: 't1',
                 name: 'Council Debate',
                 description: 'Test template',
                 is_system: true,
@@ -124,7 +124,7 @@ describe('SessionStarter', () => {
     it('should navigate back and forth between steps', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (useTemplates as any).mockReturnValue({
-            data: [{ id: 't1', name: 'Test', is_system: true, graph: {} }],
+            data: [{ template_uuid: 't1', name: 'Test', is_system: true, graph: {} }],
             isLoading: false
         });
 

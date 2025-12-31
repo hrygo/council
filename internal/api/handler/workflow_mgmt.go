@@ -119,9 +119,9 @@ func (h *WorkflowMgmtHandler) Generate(c *gin.Context) {
 
 	systemPrompt := `You are an expert Workflow Designer.
 Your goal is to generate a valid JSON GraphDefinition based on the user's request.
-Ref:
+ref:
 type GraphDefinition struct {
-    ID          string              json:"workflow_id"
+    ID          string              json:"workflow_uuid"
     Name        string              json:"name"
     Description string              json:"description"
     StartNodeID string              json:"start_node_id"

@@ -82,50 +82,50 @@ export const MeetingRoom: FC = () => {
     useWebSocketRouter();
     useFullscreenShortcuts();
 
-    // Auto-restore session from URL if missing in store
+    // Auto-restore session from URL if missing in store (Senior Review: Fixed to support state sync)
     useEffect(() => {
         const current = useSessionStore.getState().currentSession;
         if (!current && session_uuid) {
-            fetch(`/api/v1/sessions/${session_uuid}`)
-                .then(res => {
-                    if (!res.ok) throw new Error("Session not found");
-                    return res.json();
-                })
-                .then(async data => {
-                    useSessionStore.setState(state => {
-                        state.currentSession = {
-                            session_uuid: data.session_uuid,
-                            workflow_uuid: data.workflow_uuid,
-                            group_uuid: data.group_uuid,
-                            status: data.status,
-                            startedAt: data.started_at ? new Date(data.started_at) : undefined,
-                            nodes: new Map(), // Nodes are not in this API yet
-                            active_node_ids: [],
-                            totalTokens: 0,
-                            totalCostUsd: 0
-                        };
+            const fetchData = async () => {
+                try {
+                    // 1. Fetch Session (includes live node_statuses)
+                    const sessionRes = await fetch(`/api/v1/sessions/${session_uuid}`);
+                    if (!sessionRes.ok) throw new Error("Session not found");
+                    const sessionData = await sessionRes.json();
+
+                    // 2. Fetch Workflow Graph to get node definitions
+                    if (!sessionData.workflow_uuid) return;
+                    const wfRes = await fetch(`/api/v1/workflows/${sessionData.workflow_uuid}`);
+                    if (!wfRes.ok) throw new Error("Workflow not found");
+                    const wfData = await wfRes.json();
+
+                    const graph = wfData.graph || wfData; // Handle different API response shapes
+                    if (!graph) return;
+
+                    // Sync Graph Definition for Canvas
+                    useWorkflowRunStore.getState().setGraphDefinition(graph);
+
+                    // 3. Initialize Session Store with all data
+                    const nodes = (Object.values(graph.nodes || {}) as { node_id: string; name: string; type: string }[]).map((n) => ({
+                        node_id: n.node_id,
+                        name: n.name,
+                        type: n.type
+                    }));
+
+                    useSessionStore.getState().initSession({
+                        session_uuid: sessionData.session_uuid,
+                        workflow_uuid: sessionData.workflow_uuid,
+                        group_uuid: sessionData.group_uuid,
+                        status: sessionData.status,
+                        node_statuses: sessionData.node_statuses,
+                        nodes: nodes
                     });
 
-                    // Restore Graph Definition if missing
-                    if (data.workflow_uuid && !useWorkflowRunStore.getState().graphDefinition) {
-                        try {
-                            const wfRes = await fetch(`/api/v1/workflows/${data.workflow_uuid}`);
-                            if (wfRes.ok) {
-                                const wfData = await wfRes.json();
-                                if (wfData.graph) {
-                                    useWorkflowRunStore.getState().setGraphDefinition(wfData.graph);
-                                } else if (wfData.nodes) {
-                                    // Fallback if the endpoint returns the graph directly (GraphDefinition struct)
-                                    // Based on WorkflowMgmtHandler.Get, it returns Schema.GraphDefinition directly which HAS nodes
-                                    useWorkflowRunStore.getState().setGraphDefinition(wfData);
-                                }
-                            }
-                        } catch (err) {
-                            console.error("Failed to restore workflow graph:", err);
-                        }
-                    }
-                })
-                .catch(console.error);
+                } catch (err) {
+                    console.error("Failed to restore session state:", err);
+                }
+            };
+            fetchData();
         }
     }, [session_uuid]);
 
@@ -252,6 +252,7 @@ export const MeetingRoom: FC = () => {
                             readOnly={isRunning}
                             workflowId={currentSession?.workflow_uuid}
                             graph={graphDefinition}
+                            layoutOptions={{ direction: 'vertical', spacingX: 180 }}
                         />
                     </div>
                 </Panel>

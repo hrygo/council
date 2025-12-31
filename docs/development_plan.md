@@ -2,7 +2,7 @@
 
 > **策略**: 前端优先，API Contract First  
 > **质量内建**: 每个 Spec 必须通过 CI (Lint/Test) 和验收标准方可标记 Done  
-> **文档版本**: v2.1 (2025-12-30)
+> **文档版本**: v2.2 (2025-12-31)
 
 ---
 
@@ -10,17 +10,18 @@
 
 ### 1.1 Sprint 状态
 
-| Sprint | 名称                   |  状态  | 完成度 |
-| :----: | :--------------------- | :----: | :----: |
-| S1-S4  | MVP 核心功能           | ✅ Done |  100%  |
-|   S5   | Post-MVP (i18n, E2E)   | ✅ Done |  100%  |
-|   S6   | Default Experience     | ✅ Done |  100%  |
-|   S7   | UX Polish              | ✅ Done |  100%  |
-|   S8   | Meeting Room Fix       | ✅ Done |  100%  |
-|   S9   | Quality Base           | ✅ Done |  100%  |
-|  S10   | System Hardening       | ✅ Done |  100%  |
-|  S11   | Dialecta 2.0 Evolution | ✅ Done |  100%  |
-|  S12   | Integrated Visibility  | ✅ Done |  100%  |
+| Sprint | 名称                    |  状态  | 完成度 |
+| :----: | :---------------------- | :----: | :----: |
+| S1-S4  | MVP 核心功能            | ✅ Done |  100%  |
+|   S5   | Post-MVP (i18n, E2E)    | ✅ Done |  100%  |
+|   S6   | Default Experience      | ✅ Done |  100%  |
+|   S7   | UX Polish               | ✅ Done |  100%  |
+|   S8   | Meeting Room Fix        | ✅ Done |  100%  |
+|   S9   | Quality Base            | ✅ Done |  100%  |
+|  S10   | System Hardening        | ✅ Done |  100%  |
+|  S11   | Dialecta 2.0 Evolution  | ✅ Done |  100%  |
+|  S12   | Integrated Visibility   | ✅ Done |  100%  |
+|  S13   | Architecture Decoupling | ✅ Done |  100%  |
 
 ### 1.2 里程碑达成
 
@@ -51,7 +52,25 @@
 
 > 以下为历史 Sprint 的精简记录，详细规格请参阅对应目录。
 
-### 2.1 Sprint 12: Integrated Visibility ✅
+---
+
+### 2.1 Sprint 13: Architecture Decoupling (In Progress) 🚧
+
+**目标**: 将工作流引擎骨架层与 Council 业务层彻底解耦，实现配置驱动和可插拔架构。
+
+| ID   | 任务                            | Spec      | 状态  |
+| :--- | :------------------------------ | :-------- | :---: |
+| 13.1 | 应用层目录结构 (Layer Split)    | SPEC-1301 |   ✅   |
+| 13.2 | 配置驱动透传 (Config Driven)    | SPEC-1302 |   ✅   |
+| 13.3 | NodeFactory 接口 (Pluggable)    | SPEC-1303 |   ✅   |
+| 13.4 | 条件路由抽象 (Router Interface) | SPEC-1304 |   ✅   |
+
+**规格目录**: [specs/sprint13/](./specs/sprint13/)
+
+---
+
+### 2.2 Sprint 12: Integrated Visibility ✅
+
 
 **目标**: 将 Backend 的自主进化引擎可视化，提供 VFS 文件浏览器、Diff 审查和实时循环分析图表。
 

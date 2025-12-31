@@ -2,17 +2,19 @@ package workflow
 
 import (
 	"context"
+	"time"
 )
 
 // SessionEntity represents the persistent state of a session.
 type SessionEntity struct {
-	ID         string                 `json:"session_uuid" db:"session_uuid"`
-	GroupID    string                 `json:"group_uuid" db:"group_uuid"`
-	WorkflowID string                 `json:"workflow_uuid" db:"workflow_uuid"`
-	Status     SessionStatus          `json:"status"`
-	Proposal   map[string]interface{} `json:"proposal"`
-	StartedAt  *interface{}           `json:"started_at"` // Simplified for now
-	EndedAt    *interface{}           `json:"ended_at"`
+	ID           string                 `json:"session_uuid" db:"session_uuid"`
+	GroupID      string                 `json:"group_uuid" db:"group_uuid"`
+	WorkflowID   string                 `json:"workflow_uuid" db:"workflow_uuid"`
+	Status       SessionStatus          `json:"status"`
+	Proposal     map[string]interface{} `json:"proposal"`
+	NodeStatuses map[string]NodeStatus  `json:"node_statuses,omitempty"`
+	StartedAt    *time.Time             `json:"started_at"`
+	EndedAt      *time.Time             `json:"ended_at"`
 }
 
 // SessionRepository defines the interface for session persistence.

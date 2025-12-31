@@ -42,13 +42,48 @@ export interface NodeCostEstimate {
 export interface Engine {
   Graph?: GraphDefinition;
   Status: { [key: string]: NodeStatus};
-  NodeFactory: any;
+  /**
+   * NodeFactory creates processors for graph nodes
+   */
+  NodeFactory: NodeFactory;
   StreamChannel: any;
+  /**
+   * Public Mutex for state access
+   */
+  Mu: any /* sync.RWMutex */;
   /**
    * Middleware hooks
    */
   Middlewares: Middleware[];
   Session?: Session; // Reference to the session state
+  MergeStrategy: MergeStrategy; // Pluggable merge strategy
+}
+
+//////////
+// source: factory.go
+
+/**
+ * ConditionalRouter extends NodeProcessor for dynamic routing.
+ * Nodes that implement this interface can decide which next nodes to execute
+ * based on their execution output.
+ */
+export type ConditionalRouter = any;
+/**
+ * FactoryDeps holds dependencies injected into nodes during creation.
+ */
+export interface FactoryDeps {
+  Session?: Session;
+}
+/**
+ * NodeFactory defines the interface for creating node processors.
+ * Applications should implement this to provide specific node implementations.
+ */
+export type NodeFactory = any;
+/**
+ * DefaultNodeFactory is a base implementation of NodeFactory.
+ * It can be embedded in application-specific factories or used for testing.
+ */
+export interface DefaultNodeFactory {
 }
 
 //////////
@@ -71,6 +106,44 @@ export interface FileEntity {
  * SessionFileRepository defines the interface for VFS persistence.
  */
 export type SessionFileRepository = any;
+
+//////////
+// source: merge.go
+
+/**
+ * MergeStrategy defines how to merge outputs from multiple upstream nodes
+ * when a node has in-degree > 1 (e.g., after parallel branches converge).
+ * This is a framework-level interface - implementations can be application-specific.
+ */
+export type MergeStrategy = any;
+/**
+ * DefaultMergeStrategy is the basic merge strategy that:
+ * 1. Preserves each branch's full output keyed by "branch_N"
+ * 2. Passes through the first occurrence of any field (first-come-first-served)
+ */
+export interface DefaultMergeStrategy {
+}
+
+//////////
+// source: passthrough.go
+
+/**
+ * PassthroughConfig 定义透传配置。
+ * 这是一个通用结构，不包含任何业务字段名。
+ */
+export interface PassthroughConfig {
+  /**
+   * Keys 需要从 input 透传到 output 的字段名列表
+   */
+  Keys: string[];
+}
+/**
+ * PromptSection defines a section in the user prompt constructed from input.
+ */
+export interface PromptSection {
+  Key: string;
+  Label: string;
+}
 
 //////////
 // source: processor.go
@@ -137,8 +210,9 @@ export interface SessionEntity {
   workflow_uuid: string;
   status: SessionStatus;
   proposal: { [key: string]: any};
-  started_at?: any; // Simplified for now
-  ended_at?: any;
+  node_statuses?: { [key: string]: NodeStatus};
+  started_at?: string;
+  ended_at?: string;
 }
 /**
  * SessionRepository defines the interface for session persistence.

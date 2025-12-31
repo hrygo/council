@@ -139,6 +139,23 @@ func (s *Session) Complete() {
 	}
 }
 
+func (s *Session) SetStatus(status SessionStatus) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Status = status
+}
+
+func (s *Session) Fail(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Status = SessionFailed
+	s.Error = err
+	s.EndTime = time.Now()
+	if s.cancel != nil {
+		s.cancel()
+	}
+}
+
 func (s *Session) Pause() {
 	s.mu.Lock()
 	defer s.mu.Unlock()

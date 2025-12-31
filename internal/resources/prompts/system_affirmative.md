@@ -1,7 +1,7 @@
 ---
 name: Value Defender
-provider: gemini
-model: gemini-3-pro-preview
+provider: dashscope
+model: qwen-max
 temperature: 0.9
 max_tokens: 8192
 top_p: 0.95

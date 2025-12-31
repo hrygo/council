@@ -137,7 +137,7 @@ func (r *Registry) GetDefaultModel() string {
 	// Fallback based on provider
 	switch r.cfg.LLM.Provider {
 	case "gemini", "google":
-		return "gemini-2.0-flash"
+		return "gemini-1.5-flash"
 	case "openai":
 		if r.cfg.LLM.Model != "" {
 			return r.cfg.LLM.Model
@@ -179,4 +179,23 @@ func (r *Registry) NewEmbedder(config EmbeddingConfig) (Embedder, error) {
 	default:
 		return nil, fmt.Errorf("unknown embedding provider type: %s", config.Type)
 	}
+}
+
+// GetProviderByModel attempts to resolve a provider based on the model name.
+func (r *Registry) GetProviderByModel(model string) (LLMProvider, error) {
+	providerName := ""
+	model = strings.ToLower(model)
+	if strings.HasPrefix(model, "gpt") {
+		providerName = "openai"
+	} else if strings.HasPrefix(model, "gemini") {
+		providerName = "gemini"
+	} else if strings.HasPrefix(model, "deepseek") {
+		providerName = "deepseek"
+	} else if strings.HasPrefix(model, "qwen") {
+		providerName = "dashscope"
+	} else {
+		// Fallback to default
+		return r.GetLLMProvider("default")
+	}
+	return r.GetLLMProvider(providerName)
 }

@@ -20,6 +20,13 @@ func (m *MockProcessor) Process(ctx context.Context, input map[string]interface{
 	return m.Output, nil
 }
 
+// SimpleFuncNodeFactory adapts a simple function to the NodeFactory interface
+type SimpleFuncNodeFactory func(node *Node) (NodeProcessor, error)
+
+func (f SimpleFuncNodeFactory) CreateNode(node *Node, deps FactoryDeps) (NodeProcessor, error) {
+	return f(node)
+}
+
 func TestEngine_Run_Linear(t *testing.T) {
 	// Define Graph
 	graph := &GraphDefinition{
@@ -39,18 +46,18 @@ func TestEngine_Run_Linear(t *testing.T) {
 	mu := sync.Mutex{}
 	executed := make(map[string]bool)
 
-	engine.NodeFactory = func(n *Node) (NodeProcessor, error) {
+	engine.NodeFactory = SimpleFuncNodeFactory(func(n *Node) (NodeProcessor, error) {
 		mu.Lock()
 		executed[n.ID] = true
 		mu.Unlock()
 		return &MockProcessor{Output: map[string]interface{}{"val": n.ID}}, nil
-	}
+	})
 
 	// Run
 	ctx := context.Background()
 	done := make(chan bool)
 	go func() {
-		engine.Run(ctx)
+		_ = engine.Run(ctx)
 		done <- true
 	}()
 
@@ -83,17 +90,17 @@ func TestEngine_ResumeNode(t *testing.T) {
 	session := NewSession(graph, nil)
 	engine := NewEngine(session)
 
-	engine.NodeFactory = func(n *Node) (NodeProcessor, error) {
+	engine.NodeFactory = SimpleFuncNodeFactory(func(n *Node) (NodeProcessor, error) {
 		if n.Type == "suspending_node" {
 			return &suspendingProcessor{}, nil
 		}
 		return &MockProcessor{Output: map[string]interface{}{"val": n.ID}}, nil
-	}
+	})
 
 	// 1. Run until suspended
 	ctx := context.Background()
 	session.Start(ctx)
-	engine.Run(ctx)
+	_ = engine.Run(ctx)
 
 	if engine.GetStatus("node1") != StatusSuspended {
 		t.Errorf("expected node1 to be suspended, got %s", engine.GetStatus("node1"))
@@ -138,15 +145,15 @@ func TestEngine_Parallel(t *testing.T) {
 
 	executed := make(map[string]int)
 	mu := sync.Mutex{}
-	engine.NodeFactory = func(n *Node) (NodeProcessor, error) {
+	engine.NodeFactory = SimpleFuncNodeFactory(func(n *Node) (NodeProcessor, error) {
 		mu.Lock()
 		executed[n.ID]++
 		mu.Unlock()
 		return &MockProcessor{}, nil
-	}
+	})
 
 	session.Start(context.Background())
-	engine.Run(context.Background())
+	_ = engine.Run(context.Background())
 
 	if executed["b1"] != 1 || executed["b2"] != 1 {
 		t.Errorf("expected branches to execute exactly once, got b1:%d, b2:%d", executed["b1"], executed["b2"])
@@ -179,18 +186,18 @@ func TestEngine_JoinMechanism(t *testing.T) {
 	receivedInputs := make(map[string][]map[string]interface{})
 	mu := sync.Mutex{}
 
-	engine.NodeFactory = func(n *Node) (NodeProcessor, error) {
+	engine.NodeFactory = SimpleFuncNodeFactory(func(n *Node) (NodeProcessor, error) {
 		return &MockProcessor{
 			Output: map[string]interface{}{
 				"source":       n.ID,
 				"agent_output": "Output from " + n.ID,
 			},
 		}, nil
-	}
+	})
 
 	// Override with a tracking processor for join_node
 	originalFactory := engine.NodeFactory
-	engine.NodeFactory = func(n *Node) (NodeProcessor, error) {
+	engine.NodeFactory = SimpleFuncNodeFactory(func(n *Node) (NodeProcessor, error) {
 		mu.Lock()
 		executed[n.ID]++
 		mu.Unlock()
@@ -204,11 +211,11 @@ func TestEngine_JoinMechanism(t *testing.T) {
 				},
 			}, nil
 		}
-		return originalFactory(n)
-	}
+		return originalFactory.CreateNode(n, FactoryDeps{})
+	})
 
 	session.Start(context.Background())
-	engine.Run(context.Background())
+	_ = engine.Run(context.Background())
 
 	// Verify join_node executed exactly once
 	if executed["join_node"] != 1 {

@@ -17,7 +17,22 @@ export interface BackendGraph {
     start_node_id: string;
 }
 
-export const transformToReactFlow = (graph: BackendGraph): { nodes: Node[]; edges: Edge[] } => {
+interface LayoutOptions {
+    direction?: 'vertical' | 'horizontal';
+    spacingX?: number; // Spacing between nodes horizontally
+    spacingY?: number; // Spacing between nodes vertically
+}
+
+export const transformToReactFlow = (
+    graph: BackendGraph,
+    options: LayoutOptions = {}
+): { nodes: Node[]; edges: Edge[] } => {
+    const {
+        direction = 'vertical', // Default to vertical layout
+        spacingX = direction === 'vertical' ? 250 : 180, // Default spacing for X based on direction
+        spacingY = direction === 'vertical' ? 180 : 250  // Default spacing for Y based on direction
+    } = options;
+
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     const visited = new Set<string>();
@@ -79,7 +94,6 @@ export const transformToReactFlow = (graph: BackendGraph): { nodes: Node[]; edge
     });
 
     // Create React Flow Nodes with calculated positions
-    // Simple layout: x = level * 250, y = indexInLevel * 100
     const levelCounts: Record<number, number> = {};
 
     nodeIds.forEach(id => {
@@ -89,13 +103,23 @@ export const transformToReactFlow = (graph: BackendGraph): { nodes: Node[]; edge
         if (!levelCounts[level]) levelCounts[level] = 0;
         const indexInLevel = levelCounts[level]++;
 
+        let posX = 0;
+        let posY = 0;
+
+        if (direction === 'horizontal') {
+            // Horizontal layout: Level determines X position, index within level determines Y position
+            posX = level * spacingX + 50;
+            posY = indexInLevel * spacingY + 50;
+        } else {
+            // Vertical layout (default): Level determines Y position, index within level determines X position
+            posX = indexInLevel * spacingX + 50;
+            posY = level * spacingY + 50;
+        }
+
         nodes.push({
             id: node.node_id,
             type: mapNodeType(node.type), // Map backend type to RF type
-            position: { x: indexInLevel * 250 + 100, y: level * 180 + 50 }, // Vertical layout? Or horizontal?
-            // Vertical Layout:
-            // x: indexInLevel * 200
-            // y: level * 150
+            position: { x: posX, y: posY },
             data: { label: node.name, ...node.properties },
             // 'input' type for start, 'output' for end?
             // Actually React Flow 'input'/'output' logic is about handles. 

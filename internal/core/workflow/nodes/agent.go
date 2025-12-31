@@ -15,35 +15,21 @@ import (
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
-// agentPassthroughKeys defines context fields that AgentProcessor should pass through.
-// This is a private configuration for AgentProcessor, not polluting the Engine layer.
-// SPEC-1206: Processor self-governance for context passthrough.
-var agentPassthroughKeys = []string{
-	"document_content",
-	"proposal",
-	"optimization_objective",
-	"attachments",
-	"combined_context",
-	"session_id",
-	"aggregated_outputs", // Receives merged data from Join
-}
-
 type AgentProcessor struct {
-	NodeID    string // Graph node ID (e.g., "agent_affirmative")
-	AgentID   string // Agent UUID from database
-	AgentRepo agent.Repository
-	Registry  *llm.Registry
-	Tools     []tools.Tool      // Injected tools
-	Session   *workflow.Session // Injected Session
+	NodeID          string // Graph node ID (e.g., "agent_affirmative")
+	AgentID         string // Agent UUID from database
+	AgentRepo       agent.Repository
+	Registry        *llm.Registry
+	Tools           []tools.Tool             // Injected tools
+	Session         *workflow.Session        // Injected Session
+	PassthroughKeys []string                 // Configuration: Keys to pass to output
+	PromptSections  []workflow.PromptSection // Configuration: Input keys to build prompt
+	OutputKey       string                   // Configuration: Key for response content (e.g. "agent_output")
 }
 
 func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface{}, stream chan<- workflow.StreamEvent) (map[string]interface{}, error) {
-	// 1. Notify Start
-	stream <- workflow.StreamEvent{
-		Type:      "node_state_change",
-		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"node_id": a.NodeID, "status": "running"},
-	}
+	// 1. Fetch Agent Persona
+	_ = stream // usage in tool/tokens below
 
 	// 2. Fetch Agent Persona
 	ag, err := a.AgentRepo.GetByID(ctx, parseUUID(a.AgentID))
@@ -52,7 +38,7 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 	}
 
 	// 3. Construct Context from Input
-	history := constructHistory(ag.PersonaPrompt, input)
+	history := constructHistory(ag.PersonaPrompt, input, a.PromptSections)
 
 	// Prepare Tools
 	var llmTools []llm.Tool
@@ -163,10 +149,11 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 					Type:      "tool_execution",
 					Timestamp: time.Now(),
 					Data: map[string]interface{}{
-						"node_id": a.NodeID,
-						"tool":    toolName,
-						"input":   toolArgs,
-						"output":  result,
+						"node_id":  a.NodeID,
+						"agent_id": a.AgentID,
+						"tool":     toolName,
+						"input":    toolArgs,
+						"output":   result,
 					},
 				}
 			}
@@ -193,25 +180,23 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 		}
 	}
 
-	// 6. Output with context passthrough (SPEC-1206)
+	// 6. Output with context passthrough (Config Driven)
+	outputKey := a.OutputKey
+	if outputKey == "" {
+		outputKey = "agent_output"
+	}
 	output := map[string]interface{}{
-		"agent_output": finalResponse,
-		"agent_id":     a.AgentID,
-		"timestamp":    time.Now(),
+		outputKey:   finalResponse,
+		"agent_id":  a.AgentID,
+		"timestamp": time.Now(),
 	}
 
-	// Passthrough context fields (Processor self-governance)
-	for _, key := range agentPassthroughKeys {
-		if val, ok := input[key]; ok {
-			output[key] = val
-		}
-	}
+	workflow.ApplyPassthrough(input, output, workflow.PassthroughConfig{
+		Keys: a.PassthroughKeys,
+	})
 
-	stream <- workflow.StreamEvent{
-		Type:      "node_state_change",
-		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"node_id": a.NodeID, "status": "completed"},
-	}
+	finalOutputKeys := a.OutputKey
+	_ = finalOutputKeys // end logic complete
 
 	return output, nil
 }
@@ -294,25 +279,13 @@ func (a *AgentProcessor) streamResponse(ctx context.Context, provider llm.LLMPro
 	}, nil
 }
 
-func constructHistory(systemPrompt string, input map[string]interface{}) []llm.Message {
+func constructHistory(systemPrompt string, input map[string]interface{}, sections []workflow.PromptSection) []llm.Message {
 	var contextBuilder strings.Builder
 
-	// Build structured context with prioritized sections (SPEC-1206)
-	// Order: document -> proposal -> previous analyses -> optimization objective
-	sections := []struct {
-		key   string
-		label string
-	}{
-		{"document_content", "document_content"},
-		{"proposal", "proposal"},
-		{"combined_context", "combined_context"},
-		{"aggregated_outputs", "previous_analyses"}, // From upstream agents via Join
-		{"optimization_objective", "optimization_objective"},
-	}
-
+	// Build structured context with configured sections
 	for _, sec := range sections {
-		if val, ok := input[sec.key].(string); ok && val != "" {
-			contextBuilder.WriteString(fmt.Sprintf("<%s>\n%s\n</%s>\n\n", sec.label, val, sec.label))
+		if val, ok := input[sec.Key].(string); ok && val != "" {
+			contextBuilder.WriteString(fmt.Sprintf("<%s>\n%s\n</%s>\n\n", sec.Label, val, sec.Label))
 		}
 	}
 

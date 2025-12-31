@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,7 @@ import (
 	"github.com/hrygo/council/internal/core/memory"
 	"github.com/hrygo/council/internal/core/middleware"
 	"github.com/hrygo/council/internal/core/workflow"
-	"github.com/hrygo/council/internal/core/workflow/nodes"
+	"github.com/hrygo/council/internal/council"
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
@@ -25,6 +26,11 @@ type WorkflowHandler struct {
 	FileRepo      workflow.SessionFileRepository
 	WorkflowRepo  workflow.Repository
 }
+
+var (
+	activeEngines = make(map[string]*workflow.Engine)
+	enginesMu     sync.RWMutex
+)
 
 func NewWorkflowHandler(hub *ws.Hub, agentRepo agent.Repository, registry *llm.Registry, memManager memory.MemoryManager, sessionRepo workflow.SessionRepository, fileRepo workflow.SessionFileRepository, workflowRepo workflow.Repository) *WorkflowHandler {
 	return &WorkflowHandler{
@@ -96,19 +102,16 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Create Engine
 	engine := workflow.NewEngine(session)
+	enginesMu.Lock()
 	activeEngines[session.ID] = engine
+	enginesMu.Unlock()
 
 	// Inject CouncilMergeStrategy for Council workflows (SPEC-1206)
 	// This aggregates agent_output from parallel branches into aggregated_outputs
-	engine.MergeStrategy = &workflow.CouncilMergeStrategy{}
+	engine.MergeStrategy = &council.CouncilMergeStrategy{}
 
-	// Configure Factory
-	engine.NodeFactory = nodes.NewNodeFactory(nodes.NodeDependencies{
-		Registry:      h.Registry,
-		AgentRepo:     h.AgentRepo,
-		MemoryManager: h.MemoryManager,
-		Session:       session,
-	})
+	// Configure Factory for Council Application Logic (SPEC-1303)
+	engine.NodeFactory = council.NewCouncilNodeFactory(h.AgentRepo, h.Registry, h.MemoryManager)
 
 	// First, create memService as it's a dependency for NodeDependencies now.
 	// Note: We use global getters here for simplicity, but ideally these would be in WorkflowHandler
@@ -126,7 +129,13 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 				log.Printf("[Workflow] PANIC in session %s: %v", session.ID, r)
 			}
 			session.Complete()
-			log.Printf("[Workflow] Session %s completed", session.ID)
+
+			// Cleanup active engine
+			enginesMu.Lock()
+			delete(activeEngines, session.ID)
+			enginesMu.Unlock()
+
+			log.Printf("[Workflow] Session %s completed and removed from active list", session.ID)
 		}()
 
 		// Bridge Engine Stream -> WS Hub
@@ -141,13 +150,34 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 			}
 		}()
 
-		engine.Run(session.Context())
+		err := engine.Run(session.Context())
 
-		// Emit completion event
+		status := "completed"
+		if err != nil {
+			log.Printf("[Workflow] Execution error for session %s: %v", session.ID, err)
+			session.SetStatus(workflow.SessionFailed)
+			status = "failed"
+
+			// Emit error event
+			engine.StreamChannel <- workflow.StreamEvent{
+				Type:      "execution:error",
+				Timestamp: time.Now(),
+				Data:      map[string]interface{}{"error": err.Error()},
+			}
+		}
+
+		// Emit completion/final event
 		engine.StreamChannel <- workflow.StreamEvent{
 			Type:      "execution:completed",
 			Timestamp: time.Now(),
-			Data:      map[string]interface{}{"status": "completed"},
+			Data:      map[string]interface{}{"status": status},
+		}
+
+		// Persist final status to DB
+		if h.SessionRepo != nil {
+			if err := h.SessionRepo.UpdateStatus(context.Background(), session.ID, session.Status); err != nil {
+				log.Printf("[WorkflowHandler] Failed to update status: %v", err)
+			}
 		}
 
 		close(engine.StreamChannel)
@@ -202,10 +232,9 @@ func (h *WorkflowHandler) Control(c *gin.Context) {
 	})
 }
 
-// Global active engine map (Protected by mutex in real impl)
-var activeEngines = map[string]*workflow.Engine{}
-
 func (h *WorkflowHandler) getEngine(sessionID string) *workflow.Engine {
+	enginesMu.RLock()
+	defer enginesMu.RUnlock()
 	return activeEngines[sessionID]
 }
 
@@ -283,6 +312,50 @@ func (h *WorkflowHandler) Review(c *gin.Context) {
 
 func (h *WorkflowHandler) GetSession(c *gin.Context) {
 	id := c.Param("id")
+
+	// 1. Prefer Active Engine State (Live Source of Truth)
+	if engine := h.getEngine(id); engine != nil {
+		engine.Mu.RLock()
+		status := engine.Session.Status
+		startTime := engine.Session.StartTime
+
+		// Copy node statuses
+		nodeStatuses := make(map[string]workflow.NodeStatus)
+		for k, v := range engine.Status {
+			nodeStatuses[k] = v
+		}
+
+		// Clone proposal if needed, or just access safely
+		proposal := make(map[string]interface{})
+		if p, ok := engine.Session.Inputs["proposal"].(map[string]interface{}); ok {
+			proposal = p
+		}
+		groupID := ""
+		if g, ok := engine.Session.Inputs["group_uuid"].(string); ok {
+			groupID = g
+		}
+		workflowID := ""
+		if engine.Session.Graph != nil {
+			workflowID = engine.Session.Graph.ID
+		}
+		engine.Mu.RUnlock()
+
+		// Construct entity from live state
+		entity := &workflow.SessionEntity{
+			ID:           id,
+			Status:       status,
+			GroupID:      groupID,
+			WorkflowID:   workflowID,
+			Proposal:     proposal,
+			NodeStatuses: nodeStatuses,
+			StartedAt:    &startTime,
+		}
+
+		c.JSON(http.StatusOK, entity)
+		return
+	}
+
+	// 2. Fallback to Persistence
 	session, err := h.SessionRepo.Get(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})

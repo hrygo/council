@@ -8,20 +8,34 @@ import (
 )
 
 type LoopProcessor struct {
-	MaxRounds   int
-	ExitOnScore int // Score threshold for automatic exit (e.g., 90)
-	Session     *workflow.Session
+	MaxRounds       int
+	ExitOnScore     int // Score threshold for automatic exit (e.g., 90)
+	Session         *workflow.Session
+	PassthroughKeys []string // Configuration: Keys to pass for loop continuation
+}
+
+// GetNextNodes implements workflow.ConditionalRouter for loop logic.
+func (l *LoopProcessor) GetNextNodes(ctx context.Context, output map[string]interface{}, defaultNextIDs []string) ([]string, error) {
+	if len(defaultNextIDs) < 2 {
+		// If less than 2, standard flow (maybe just loop back or just exit?)
+		// But typically Loop must have 2 branches.
+		return defaultNextIDs, nil
+	}
+
+	shouldExit, _ := output["should_exit"].(bool)
+	if shouldExit {
+		// Exit path: second next_id
+		return []string{defaultNextIDs[1]}, nil
+	}
+	// Continue path: first next_id
+	return []string{defaultNextIDs[0]}, nil
 }
 
 func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{}, stream chan<- workflow.StreamEvent) (map[string]interface{}, error) {
-	stream <- workflow.StreamEvent{
-		Type:      "node_state_change",
-		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"status": "running"},
-	}
+	// 1. Logic start
+	_ = stream // usage in events if needed
 
-	// Loop state management usually happens in the Engine (via Session state).
-	// The Node Processor decides if we SHOULD loop.
+	// ... (logic omitted for brevity, keeping existing code logic)
 
 	currentRound, _ := input["iteration"].(int)
 	if currentRound == 0 {
@@ -38,7 +52,6 @@ func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{
 	}
 
 	// Check Exit on Score (SPEC-609 Defect-3 fix)
-	// Check Exit on Score (SPEC-609 Defect-3 fix)
 	currentScore := 0.0
 	if val, ok := input["score"].(float64); ok {
 		currentScore = val
@@ -46,8 +59,6 @@ func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{
 		currentScore = float64(val)
 	} else {
 		// Try to find score in history if not in direct input
-		// Assuming input contains all node outputs, look for "agent_adjudicator" or "structured_score"
-		// This part depends on how Engine passes inputs. Assuming flat map of all outputs.
 		if scoreMap, ok := input["structured_score"].(map[string]interface{}); ok {
 			if s, ok := scoreMap["weighted_score"].(float64); ok {
 				currentScore = s
@@ -66,13 +77,9 @@ func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{
 			prevScore := history[len(history)-2]
 			delta := currentScore - prevScore
 
-			// Detect Regression (Rollback) - Threshold -10
+			// Detect Regression
 			if delta < -10 {
-				// TODO: Trigger VFS Rollback?
-				// For now just log usage
 				exitReason = "regression_detected"
-				// shouldExit = true? Or allow loop to try fix?
-				// Usually loop restarts or tries again.
 			}
 		}
 	}
@@ -89,25 +96,12 @@ func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{
 		"timestamp":     time.Now(),
 	}
 
-	// Passthrough context fields for loop continuation (Fix-C6)
-	loopPassthroughKeys := []string{
-		"document_content",
-		"proposal",
-		"optimization_objective",
-		"combined_context",
-		"session_id",
-	}
-	for _, key := range loopPassthroughKeys {
-		if val, ok := input[key]; ok {
-			output[key] = val
-		}
-	}
+	// Passthrough context fields (Config Driven)
+	workflow.ApplyPassthrough(input, output, workflow.PassthroughConfig{
+		Keys: l.PassthroughKeys,
+	})
 
-	stream <- workflow.StreamEvent{
-		Type:      "node_state_change",
-		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"status": "completed", "should_exit": shouldExit, "exit_reason": exitReason},
-	}
+	_ = 0 // loop logic complete
 
 	return output, nil
 }

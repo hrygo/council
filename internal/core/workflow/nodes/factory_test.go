@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewNodeFactory(t *testing.T) {
+func TestGenericNodeFactory(t *testing.T) {
 	cfg := &config.Config{}
 	registry := llm.NewRegistry(cfg)
 
@@ -21,13 +21,7 @@ func TestNewNodeFactory(t *testing.T) {
 	agentRepo := mocks.NewAgentMockRepository()
 	memoryManager := &mocks.MemoryMockManager{}
 
-	deps := NodeDependencies{
-		Registry:      registry,
-		AgentRepo:     agentRepo,
-		MemoryManager: memoryManager,
-	}
-
-	factory := NewNodeFactory(deps)
+	factory := NewGenericNodeFactory(registry, agentRepo, memoryManager)
 
 	testCases := []struct {
 		nodeType workflow.NodeType
@@ -54,7 +48,7 @@ func TestNewNodeFactory(t *testing.T) {
 				Type:       tc.nodeType,
 				Properties: tc.props,
 			}
-			processor, err := factory(node)
+			processor, err := factory.CreateNode(node, workflow.FactoryDeps{})
 			if tc.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, processor)

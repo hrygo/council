@@ -11,55 +11,30 @@ import (
 )
 
 type EndProcessor struct {
-	LLM    llm.LLMProvider
-	Model  string
-	Prompt string
+	NodeID         string // Dynamic Node ID
+	LLM            llm.LLMProvider
+	Model          string
+	Prompt         string
+	PromptSections []workflow.PromptSection // Configuration
+	OutputKey      string                   // Configuration: Key for summary (e.g. "final_report")
 }
 
 func (e *EndProcessor) Process(ctx context.Context, input map[string]interface{}, stream chan<- workflow.StreamEvent) (map[string]interface{}, error) {
-	// 1. Notify Start
-	stream <- workflow.StreamEvent{
-		Type:      "node_state_change",
-		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"node_id": "end", "status": "running"},
-	}
+	// 1. Logic start
+	_ = stream // for now use stream for tokens below
 
 	// 2. Aggregate Content - Build structured context for report generation
 	var contentBuilder strings.Builder
 
-	// Original document
-	if val, ok := input["document_content"].(string); ok && val != "" {
-		contentBuilder.WriteString("## Original Document\n")
-		contentBuilder.WriteString(val)
-		contentBuilder.WriteString("\n\n")
-	}
-
-	// Combined context from attachments
-	if val, ok := input["combined_context"].(string); ok && val != "" {
-		contentBuilder.WriteString("## Context\n")
-		contentBuilder.WriteString(val)
-		contentBuilder.WriteString("\n\n")
-	}
-
-	// Proposal
-	if val, ok := input["proposal"].(string); ok && val != "" {
-		contentBuilder.WriteString("## Proposal\n")
-		contentBuilder.WriteString(val)
-		contentBuilder.WriteString("\n\n")
-	}
-
-	// Aggregated outputs from debate (affirmative + negative analyses)
-	if val, ok := input["aggregated_outputs"].(string); ok && val != "" {
-		contentBuilder.WriteString("## Analysis Results\n")
-		contentBuilder.WriteString(val)
-		contentBuilder.WriteString("\n\n")
-	}
-
-	// Final agent output (e.g., adjudicator verdict)
-	if val, ok := input["agent_output"].(string); ok && val != "" {
-		contentBuilder.WriteString("## Final Verdict\n")
-		contentBuilder.WriteString(val)
-		contentBuilder.WriteString("\n\n")
+	for _, section := range e.PromptSections {
+		if val, ok := input[section.Key]; ok {
+			strVal := fmt.Sprintf("%v", val)
+			if strVal != "" {
+				contentBuilder.WriteString("## " + section.Label + "\n")
+				contentBuilder.WriteString(strVal)
+				contentBuilder.WriteString("\n\n")
+			}
+		}
 	}
 
 	fullContent := contentBuilder.String()
@@ -102,7 +77,7 @@ Loop:
 					stream <- workflow.StreamEvent{
 						Type:      "token_stream",
 						Timestamp: time.Now(),
-						Data:      map[string]interface{}{"node_id": "end", "chunk": chunk.Content},
+						Data:      map[string]interface{}{"node_id": e.NodeID, "chunk": chunk.Content},
 					}
 				}
 			}
@@ -122,16 +97,16 @@ Loop:
 	}
 
 	// 5. Output
+	outputKey := e.OutputKey
+	if outputKey == "" {
+		outputKey = "final_report"
+	}
 	output := map[string]interface{}{
-		"final_report": finalSummary.String(),
-		"ended_at":     time.Now(),
+		outputKey:  finalSummary.String(),
+		"ended_at": time.Now(),
 	}
 
-	stream <- workflow.StreamEvent{
-		Type:      "node_state_change",
-		Timestamp: time.Now(),
-		Data:      map[string]interface{}{"node_id": "end", "status": "completed"},
-	}
+	_ = 0 // end logic complete
 
 	return output, nil
 }
