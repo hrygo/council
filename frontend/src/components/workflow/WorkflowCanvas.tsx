@@ -20,7 +20,6 @@ import { useConfigStore } from '../../stores/useConfigStore';
 import { useWorkflow } from '../../hooks/useWorkflow';
 import { transformToReactFlow, type BackendGraph } from '../../utils/graphUtils';
 import { useWorkflowRunStore } from '../../stores/useWorkflowRunStore';
-import { useLayoutStore } from '../../stores/useLayoutStore';
 import {
     AgentNode,
     VoteNode,
@@ -74,6 +73,7 @@ function WorkflowCanvasInner({
     const { fitView } = useReactFlow();
     const nodesInitialized = useNodesInitialized();
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const hasFittedViewRef = useRef(false); // Track if initial fitView has been done
     const readOnly = propReadOnly || mode === 'run';
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -115,20 +115,63 @@ function WorkflowCanvasInner({
 
     const displayedNodes = readOnly ? storeNodes : nodes;
 
-    // Debug Log
+
+
+    // Track previous node count to detect first load
+    const prevNodeCountRef = useRef(0);
+
+    // Track the last container size used for fitView to detect significant changes
+    const lastFitSizeRef = useRef<{ width: number; height: number } | null>(null);
+    const fitViewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // CRITICAL: When nodes are first loaded (0 -> N), schedule fitView
+    // This handles the case where onInit fires before nodes are loaded
     useEffect(() => {
-        console.log('[WorkflowCanvas] Render:', {
-            readOnly,
-            localNodes: nodes.length,
-            storeNodes: storeNodes.length,
-            displayedNodes: displayedNodes.length,
-            layout: { direction, spacingX, spacingY }
-        });
-    }, [readOnly, nodes.length, storeNodes.length, displayedNodes.length, direction, spacingX, spacingY]);
+        const prevCount = prevNodeCountRef.current;
+        const currCount = displayedNodes.length;
+        prevNodeCountRef.current = currCount;
 
-    const panelSizes = useLayoutStore(state => state.panelSizes);
+        // First load: nodes went from 0 to > 0
+        if (prevCount === 0 && currCount > 0) {
+            // Wait a bit for ReactFlow to measure the nodes
+            const timeoutId = setTimeout(() => {
+                fitView({ padding: 0.2, duration: 200 });
+                hasFittedViewRef.current = true;
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [displayedNodes.length, fitView]);
 
-    // Observer for container resize to trigger fitView
+    // Reset fit state when nodes change (e.g., new workflow loaded)
+    useEffect(() => {
+        hasFittedViewRef.current = false;
+        lastFitSizeRef.current = null;
+    }, [displayedNodes.length]);
+
+    // Debounced fitView that waits for layout to stabilize
+    // Using 500ms delay to ensure ReactFlow has time to measure nodes internally
+    const debouncedFitView = useCallback((width: number, height: number) => {
+        // Clear any pending fitView
+        if (fitViewTimeoutRef.current) {
+            clearTimeout(fitViewTimeoutRef.current);
+        }
+
+        // Schedule fitView after layout stabilizes (500ms debounce - longer to ensure nodes are measured)
+        fitViewTimeoutRef.current = setTimeout(() => {
+            const lastSize = lastFitSizeRef.current;
+            const sizeChanged = !lastSize ||
+                Math.abs(lastSize.width - width) > 50 ||
+                Math.abs(lastSize.height - height) > 50;
+
+            if (sizeChanged) {
+                fitView({ padding: 0.2, duration: 200 });
+                lastFitSizeRef.current = { width, height };
+                hasFittedViewRef.current = true;
+            }
+        }, 500);
+    }, [fitView]);
+
+    // Observer for container resize
     useEffect(() => {
         if (!wrapperRef.current || displayedNodes.length === 0) return;
 
@@ -136,50 +179,37 @@ function WorkflowCanvasInner({
             const entry = entries[0];
             const { width, height } = entry.contentRect;
 
-            console.log('[WorkflowCanvas] Resize:', width, height);
-
             if (width > 0 && height > 0) {
-                // Debounce fitView for resize events
-                window.requestAnimationFrame(() => {
-                    fitView({ padding: 0.2, duration: 200 });
-                });
+                debouncedFitView(width, height);
             }
         });
 
         resizeObserver.observe(wrapperRef.current);
-        return () => resizeObserver.disconnect();
-    }, [displayedNodes.length, fitView]);
+        return () => {
+            resizeObserver.disconnect();
+            if (fitViewTimeoutRef.current) {
+                clearTimeout(fitViewTimeoutRef.current);
+            }
+        };
+    }, [displayedNodes.length, debouncedFitView]);
 
-    // Aggressive FitView Strategy:
-    // When nodes are initialized, we poll fitView for a short duration to ensure 
-    // it catches any layout settlements (panel expansion, animations, etc).
+    // CRITICAL: When nodesInitialized becomes true, ALWAYS fitView (regardless of hasFittedViewRef)
+    // because the initial fitView while nodesInitialized=false is ineffective
     useEffect(() => {
         if (nodesInitialized && displayedNodes.length > 0) {
-            console.log('[WorkflowCanvas] Nodes Initialized -> Starting FitView Poller');
-
-            // Immediate attempt
-            fitView({ padding: 0.2, duration: 0 });
-
-            // Poll every 250ms for 2 seconds
-            const interval = setInterval(() => {
-                if (wrapperRef.current && wrapperRef.current.clientWidth > 0) {
-                    console.log('[WorkflowCanvas] Polling FitView...');
-                    fitView({ padding: 0.2, duration: 300 }); // Simpler duration
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+                if (wrapperRef.current) {
+                    const { clientWidth, clientHeight } = wrapperRef.current;
+                    if (clientWidth > 0 && clientHeight > 0) {
+                        fitView({ padding: 0.2, duration: 200 });
+                        lastFitSizeRef.current = { width: clientWidth, height: clientHeight };
+                        hasFittedViewRef.current = true;
+                    }
                 }
-            }, 250);
-
-            // Cleanup after 2 seconds
-            const timeout = setTimeout(() => {
-                clearInterval(interval);
-                console.log('[WorkflowCanvas] Stopped FitView Poller');
-            }, 2000);
-
-            return () => {
-                clearInterval(interval);
-                clearTimeout(timeout);
-            };
+            });
         }
-    }, [nodesInitialized, displayedNodes.length, fitView, panelSizes, fullscreen]);
+    }, [nodesInitialized, displayedNodes.length, fitView]);
 
     const displayedNodesWithStyle = displayedNodes.map((node) => ({
         ...node,
@@ -211,6 +241,8 @@ function WorkflowCanvasInner({
                 </div>
             )}
             <ReactFlow
+                // Force remount when nodes first become available to ensure proper initialization
+                key={displayedNodes.length > 0 ? 'has-nodes' : 'empty'}
                 nodes={displayedNodesWithStyle}
                 edges={displayedEdges}
                 nodeTypes={nodeTypes}
@@ -219,11 +251,24 @@ function WorkflowCanvasInner({
                 onConnect={readOnly ? undefined : onConnect}
                 nodesDraggable={!readOnly}
                 nodesConnectable={!readOnly}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onInit={onInit as any}
+                onInit={(instance) => {
+                    // Call user-provided onInit if any
+                    if (onInit) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (onInit as any)(instance);
+                    }
+                    // Schedule fitView after a delay to ensure nodes are measured
+                    setTimeout(() => {
+                        instance.fitView({ padding: 0.2 });
+                    }, 100);
+                }}
                 onNodeClick={onNodeClick}
                 onPaneClick={onPaneClick}
+                minZoom={0.1}
+                defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
+                onlyRenderVisibleElements={false}
                 fitView
+                fitViewOptions={{ padding: 0.2 }}
             >
                 <Background color={gridColor} gap={20} />
                 <Controls showInteractive={!readOnly} />
