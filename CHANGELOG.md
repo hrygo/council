@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.1] - 2025-12-31
+
+### Fixed
+- **Workflow Canvas Display**: Fixed ReactFlow canvas not displaying nodes by default in Meeting Room.
+  - **Root Cause**: ReactFlow's `onInit` fired before node data was loaded, causing `nodesInitialized` to stay false and `fitView` to be ineffective.
+  - **Solution**: Added dynamic `key` prop to force ReactFlow remount when nodes first become available, ensuring proper initialization.
+  - Added debounced `fitView` with layout stabilization detection.
+  - Configured `minZoom`, `defaultViewport`, and `onlyRenderVisibleElements` for robustness.
+
+### Changed
+- **LLM Config**: Updated adjudicator to use `deepseek-chat` provider.
+
 ## [0.16.0] - 2025-12-26
 
 ### Added
