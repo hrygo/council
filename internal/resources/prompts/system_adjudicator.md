@@ -1,7 +1,7 @@
 ---
 name: Chief Justice
-provider: siliconflow
-model: zai-org/GLM-4.6
+provider: deepseek
+model: deepseek-chat
 temperature: 0.2
 max_tokens: 8192
 top_p: 0.8
