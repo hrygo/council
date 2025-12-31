@@ -98,6 +98,10 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 	engine := workflow.NewEngine(session)
 	activeEngines[session.ID] = engine
 
+	// Inject CouncilMergeStrategy for Council workflows (SPEC-1206)
+	// This aggregates agent_output from parallel branches into aggregated_outputs
+	engine.MergeStrategy = &workflow.CouncilMergeStrategy{}
+
 	// Configure Factory
 	engine.NodeFactory = nodes.NewNodeFactory(nodes.NodeDependencies{
 		Registry:      h.Registry,

@@ -15,6 +15,19 @@ import (
 	"github.com/hrygo/council/internal/infrastructure/llm"
 )
 
+// agentPassthroughKeys defines context fields that AgentProcessor should pass through.
+// This is a private configuration for AgentProcessor, not polluting the Engine layer.
+// SPEC-1206: Processor self-governance for context passthrough.
+var agentPassthroughKeys = []string{
+	"document_content",
+	"proposal",
+	"optimization_objective",
+	"attachments",
+	"combined_context",
+	"session_id",
+	"aggregated_outputs", // Receives merged data from Join
+}
+
 type AgentProcessor struct {
 	NodeID    string // Graph node ID (e.g., "agent_affirmative")
 	AgentID   string // Agent UUID from database
@@ -180,11 +193,18 @@ func (a *AgentProcessor) Process(ctx context.Context, input map[string]interface
 		}
 	}
 
-	// 6. Output
+	// 6. Output with context passthrough (SPEC-1206)
 	output := map[string]interface{}{
 		"agent_output": finalResponse,
 		"agent_id":     a.AgentID,
 		"timestamp":    time.Now(),
+	}
+
+	// Passthrough context fields (Processor self-governance)
+	for _, key := range agentPassthroughKeys {
+		if val, ok := input[key]; ok {
+			output[key] = val
+		}
 	}
 
 	stream <- workflow.StreamEvent{
@@ -275,19 +295,44 @@ func (a *AgentProcessor) streamResponse(ctx context.Context, provider llm.LLMPro
 }
 
 func constructHistory(systemPrompt string, input map[string]interface{}) []llm.Message {
-	keys := make([]string, 0, len(input))
-	for k := range input {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
 	var contextBuilder strings.Builder
-	for _, k := range keys {
-		if str, ok := input[k].(string); ok {
-			contextBuilder.WriteString(fmt.Sprintf("%s: %s\n", k, str))
+
+	// Build structured context with prioritized sections (SPEC-1206)
+	// Order: document -> proposal -> previous analyses -> optimization objective
+	sections := []struct {
+		key   string
+		label string
+	}{
+		{"document_content", "document_content"},
+		{"proposal", "proposal"},
+		{"combined_context", "combined_context"},
+		{"aggregated_outputs", "previous_analyses"}, // From upstream agents via Join
+		{"optimization_objective", "optimization_objective"},
+	}
+
+	for _, sec := range sections {
+		if val, ok := input[sec.key].(string); ok && val != "" {
+			contextBuilder.WriteString(fmt.Sprintf("<%s>\n%s\n</%s>\n\n", sec.label, val, sec.label))
 		}
 	}
+
 	userContent := contextBuilder.String()
+	if userContent == "" {
+		// Fallback: dump all string values if no structured content found
+		keys := make([]string, 0, len(input))
+		for k := range input {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			if str, ok := input[k].(string); ok {
+				contextBuilder.WriteString(fmt.Sprintf("%s: %s\n", k, str))
+			}
+		}
+		userContent = contextBuilder.String()
+	}
+
 	if userContent == "" {
 		userContent = "Begin task."
 	}

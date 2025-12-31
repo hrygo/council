@@ -91,7 +91,7 @@ export const MeetingRoom: FC = () => {
                     if (!res.ok) throw new Error("Session not found");
                     return res.json();
                 })
-                .then(data => {
+                .then(async data => {
                     useSessionStore.setState(state => {
                         state.currentSession = {
                             session_uuid: data.session_uuid,
@@ -105,6 +105,25 @@ export const MeetingRoom: FC = () => {
                             totalCostUsd: 0
                         };
                     });
+
+                    // Restore Graph Definition if missing
+                    if (data.workflow_uuid && !useWorkflowRunStore.getState().graphDefinition) {
+                        try {
+                            const wfRes = await fetch(`/api/v1/workflows/${data.workflow_uuid}`);
+                            if (wfRes.ok) {
+                                const wfData = await wfRes.json();
+                                if (wfData.graph) {
+                                    useWorkflowRunStore.getState().setGraphDefinition(wfData.graph);
+                                } else if (wfData.nodes) {
+                                    // Fallback if the endpoint returns the graph directly (GraphDefinition struct)
+                                    // Based on WorkflowMgmtHandler.Get, it returns Schema.GraphDefinition directly which HAS nodes
+                                    useWorkflowRunStore.getState().setGraphDefinition(wfData);
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Failed to restore workflow graph:", err);
+                        }
+                    }
                 })
                 .catch(console.error);
         }

@@ -152,3 +152,95 @@ func TestEngine_Parallel(t *testing.T) {
 		t.Errorf("expected branches to execute exactly once, got b1:%d, b2:%d", executed["b1"], executed["b2"])
 	}
 }
+
+// TestEngine_JoinMechanism tests the fan-in/join behavior (SPEC-1206)
+// When multiple upstream nodes point to the same downstream node,
+// the downstream should execute only once with merged inputs.
+func TestEngine_JoinMechanism(t *testing.T) {
+	// Graph: start -> parallel -> [branch1, branch2] -> join_node -> end
+	// join_node has in-degree=2, should wait for both branches
+	graph := &GraphDefinition{
+		ID:          "join-test-graph",
+		StartNodeID: "start",
+		Nodes: map[string]*Node{
+			"start":     {ID: "start", Type: NodeTypeStart, NextIDs: []string{"parallel"}},
+			"parallel":  {ID: "parallel", Type: NodeTypeParallel, NextIDs: []string{"branch1", "branch2"}},
+			"branch1":   {ID: "branch1", Type: "test", NextIDs: []string{"join_node"}},
+			"branch2":   {ID: "branch2", Type: "test", NextIDs: []string{"join_node"}},
+			"join_node": {ID: "join_node", Type: "test", NextIDs: []string{"end"}},
+			"end":       {ID: "end", Type: "test"},
+		},
+	}
+
+	session := NewSession(graph, nil)
+	engine := NewEngine(session)
+
+	executed := make(map[string]int)
+	receivedInputs := make(map[string][]map[string]interface{})
+	mu := sync.Mutex{}
+
+	engine.NodeFactory = func(n *Node) (NodeProcessor, error) {
+		return &MockProcessor{
+			Output: map[string]interface{}{
+				"source":       n.ID,
+				"agent_output": "Output from " + n.ID,
+			},
+		}, nil
+	}
+
+	// Override with a tracking processor for join_node
+	originalFactory := engine.NodeFactory
+	engine.NodeFactory = func(n *Node) (NodeProcessor, error) {
+		mu.Lock()
+		executed[n.ID]++
+		mu.Unlock()
+
+		if n.ID == "join_node" {
+			return &InputCapturingProcessor{
+				OnProcess: func(input map[string]interface{}) {
+					mu.Lock()
+					receivedInputs[n.ID] = append(receivedInputs[n.ID], input)
+					mu.Unlock()
+				},
+			}, nil
+		}
+		return originalFactory(n)
+	}
+
+	session.Start(context.Background())
+	engine.Run(context.Background())
+
+	// Verify join_node executed exactly once
+	if executed["join_node"] != 1 {
+		t.Errorf("expected join_node to execute exactly once, got %d", executed["join_node"])
+	}
+
+	// Verify join_node received merged input with branch data
+	if len(receivedInputs["join_node"]) != 1 {
+		t.Errorf("expected join_node to receive 1 merged input, got %d", len(receivedInputs["join_node"]))
+	}
+
+	if len(receivedInputs["join_node"]) > 0 {
+		mergedInput := receivedInputs["join_node"][0]
+		// Should have branch_0 and branch_1 from merge
+		if _, hasBranch0 := mergedInput["branch_0"]; !hasBranch0 {
+			t.Error("expected merged input to have branch_0")
+		}
+		if _, hasBranch1 := mergedInput["branch_1"]; !hasBranch1 {
+			t.Error("expected merged input to have branch_1")
+		}
+	}
+}
+
+// InputCapturingProcessor captures input for testing
+type InputCapturingProcessor struct {
+	OnProcess func(input map[string]interface{})
+}
+
+func (p *InputCapturingProcessor) Process(ctx context.Context, input map[string]interface{}, stream chan<- StreamEvent) (map[string]interface{}, error) {
+	if p.OnProcess != nil {
+		p.OnProcess(input)
+	}
+	stream <- StreamEvent{Type: "mock_event", NodeID: "capture", Timestamp: time.Now()}
+	return map[string]interface{}{"captured": true}, nil
+}

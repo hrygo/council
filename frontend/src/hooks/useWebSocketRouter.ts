@@ -31,11 +31,18 @@ export const useWebSocketRouter = () => {
 
             case 'node_state_change': {
                 const data = msg.data as NodeStateChangeData;
-                workflowStore.updateNodeStatus(data.node_id, data.status);
-                sessionStore.updateNodeStatus(data.node_id, data.status);
+                // node_id may be at top level (msg.node_id) or in data (data.node_id)
+                const nodeId = msg.node_id || data.node_id;
+                if (!nodeId) {
+                    console.warn('node_state_change event missing node_id');
+                    break;
+                }
+
+                workflowStore.updateNodeStatus(nodeId, data.status);
+                sessionStore.updateNodeStatus(nodeId, data.status);
 
                 if (data.status === 'running') {
-                    workflowStore.addActiveNode(data.node_id);
+                    workflowStore.addActiveNode(nodeId);
                     // Auto-update session status to running when first node starts
                     sessionStore.updateSessionStatus('running');
                     // Start timer if not already running
@@ -44,16 +51,19 @@ export const useWebSocketRouter = () => {
                         workflowStore.startTimer();
                     }
                 } else if (data.status === 'completed' || data.status === 'failed') {
-                    workflowStore.removeActiveNode(data.node_id);
-                    sessionStore.finalizeMessage(data.node_id);
+                    workflowStore.removeActiveNode(nodeId);
+                    sessionStore.finalizeMessage(nodeId);
                 }
                 break;
             }
 
             case 'node:parallel_start': {
                 const data = msg.data as ParallelStartData;
+                const nodeId = msg.node_id || data.node_id;
                 workflowStore.setActiveNodes(data.branches);
-                sessionStore.handleParallelStart(data.node_id, data.branches);
+                if (nodeId) {
+                    sessionStore.handleParallelStart(nodeId, data.branches);
+                }
                 break;
             }
 
@@ -104,7 +114,7 @@ export const useWebSocketRouter = () => {
             case 'error': {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const data = msg.data as any;
-                const nodeId = data.node_id;
+                const nodeId = msg.node_id || data.node_id;
                 const error = data.error || 'Unknown error';
 
                 if (nodeId) {

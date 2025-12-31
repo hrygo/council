@@ -62,6 +62,7 @@ interface WorkflowRunState {
     // === Actions ===
 
     loadWorkflow: (nodes: Node[], edges: Edge[]) => void;
+    setGraphDefinition: (graph: BackendGraph) => void;
     setGraphFromTemplate: (template: Template) => void;
     clearWorkflow: () => void;
     updateNodeStatus: (node_id: string, status: NodeStatus, error?: string) => void;
@@ -117,12 +118,16 @@ export const useWorkflowRunStore = create<WorkflowRunState>()(
                 });
             },
 
-            setGraphFromTemplate: (template) => {
+            setGraphDefinition: (graph) => {
                 set((state) => {
-                    state.graphDefinition = template.graph;
+                    state.graphDefinition = graph;
                 });
-                const { nodes, edges } = transformToReactFlow(template.graph);
+                const { nodes, edges } = transformToReactFlow(graph);
                 get().loadWorkflow(nodes, edges);
+            },
+
+            setGraphFromTemplate: (template) => {
+                get().setGraphDefinition(template.graph);
             },
 
             clearWorkflow: () => {

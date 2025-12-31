@@ -92,7 +92,7 @@ export const transformToReactFlow = (graph: BackendGraph): { nodes: Node[]; edge
         nodes.push({
             id: node.node_id,
             type: mapNodeType(node.type), // Map backend type to RF type
-            position: { x: indexInLevel * 200 + 100, y: level * 150 + 50 }, // Vertical layout? Or horizontal?
+            position: { x: indexInLevel * 250 + 100, y: level * 180 + 50 }, // Vertical layout? Or horizontal?
             // Vertical Layout:
             // x: indexInLevel * 200
             // y: level * 150

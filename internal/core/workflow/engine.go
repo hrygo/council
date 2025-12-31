@@ -20,21 +20,31 @@ type Engine struct {
 	// Middleware hooks
 	Middlewares []Middleware
 	Session     *Session // Reference to the session state
+
+	// Join mechanism for fan-in nodes (SPEC-1206)
+	inDegree      map[string]int                      // Node in-degree count
+	pendingInputs map[string][]map[string]interface{} // Pending inputs for join
+	joinMu        sync.Mutex                          // Mutex for join operations
+	MergeStrategy MergeStrategy                       // Pluggable merge strategy
 }
 
 // NewEngine creates a new workflow engine
 func NewEngine(session *Session) *Engine {
-	return &Engine{
+	e := &Engine{
 		Graph:         session.Graph,
 		Status:        make(map[string]NodeStatus),
 		StreamChannel: make(chan StreamEvent, 100), // Buffer for safety
 		inputs:        session.Inputs,
 		Session:       session,
+		pendingInputs: make(map[string][]map[string]interface{}),
+		MergeStrategy: &DefaultMergeStrategy{}, // Default strategy, can be overridden
 		// Default Factory (can be overridden)
 		NodeFactory: func(n *Node) (NodeProcessor, error) {
 			return nil, fmt.Errorf("no factory configured for node type %s", n.Type)
 		},
 	}
+	e.computeInDegrees()
+	return e
 }
 
 // Run executes the workflow from the start node
@@ -135,21 +145,8 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 
 	e.updateStatus(nodeID, StatusCompleted)
 
-	// Propagate to Next Nodes
-	// For simple graphs, input -> output flow
-	// If multiple next nodes, we execute them concurrently or sequentially?
-	// TDD said: "for _, nextID := range node.NextIDs { e.executeNode... }"
-	// This implies parallel execution for branching.
-
-	var wg sync.WaitGroup
-	for _, nextID := range node.NextIDs {
-		wg.Add(1)
-		go func(nid string) {
-			defer wg.Done()
-			e.executeNode(ctx, nid, output)
-		}(nextID)
-	}
-	wg.Wait()
+	// Deliver output to downstream nodes using Join mechanism (SPEC-1206)
+	e.deliverToDownstream(ctx, nodeID, output)
 }
 
 func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[string]interface{}) {
@@ -218,12 +215,6 @@ func (e *Engine) ResumeNode(ctx context.Context, nodeID string, output map[strin
 	// Update Status
 	e.updateStatus(nodeID, StatusCompleted)
 
-	// Propagate to Next Nodes (similar to executeNode logic)
-	// We need to fetch the node definition
-	e.mu.Lock()
-	node := e.Graph.Nodes[nodeID]
-	e.mu.Unlock()
-
 	e.StreamChannel <- StreamEvent{
 		Type:      "node_resumed",
 		Timestamp: time.Now(),
@@ -231,36 +222,106 @@ func (e *Engine) ResumeNode(ctx context.Context, nodeID string, output map[strin
 		Data:      output,
 	}
 
-	// Launch next nodes
-	var wg sync.WaitGroup
-	for _, nextID := range node.NextIDs {
-		wg.Add(1)
-		go func(nid string) {
-			defer wg.Done()
-			e.executeNode(ctx, nid, output)
-		}(nextID)
+	// Use Session's context for long-running workflow execution (Fix-A4)
+	// The passed ctx is typically a short-lived HTTP request context
+	// Using Session.Context() ensures workflow continues after request ends
+	workflowCtx := e.Session.Context()
+	if workflowCtx == nil {
+		workflowCtx = context.Background()
 	}
-	// Note: We don't Wait here because ResumeNode is called from API handler and we want to return immediately.
-	// But executeNode launches goroutines anyway?
-	// executeNode logic:
-	// "var wg sync.WaitGroup ... wg.Wait()"
-	// executeNode Waits for its children.
-	// If we don't wait here, the background process for "Resuming" will define the lifecycle.
-	// Since we are likely in a handler, we shouldn't block the request until entire workflow finishes.
-	// So we should run the traversal in a goroutine.
 
-	// BUT, if we spawn a new root goroutine, we need to ensure it's tracked or contexts are valid.
-	// The original Engine.Run might have finished if it hit the suspension point (assuming sequential tail).
-	// If it was parallel, other branches might be running.
-	// The Context `ctx` passed here should probably be the Request context, which is short-lived.
-	// We should use the Session's context or a persistent context.
-	// Session has a Context().
-
-	// FIX: Use e.Session.Context() or background if that's invalid.
-
-	go func() {
-		wg.Wait()
-	}()
+	// Use deliverToDownstream for consistency with Join mechanism (SPEC-1206)
+	go e.deliverToDownstream(workflowCtx, nodeID, output)
 
 	return nil
+}
+
+// computeInDegrees calculates the in-degree for each node in the graph.
+// This is called during Engine initialization to prepare for join operations.
+// Loop nodes' back-edges (first next_id) are excluded from in-degree count
+// to prevent deadlock on first execution.
+func (e *Engine) computeInDegrees() {
+	e.inDegree = make(map[string]int)
+	if e.Graph == nil || e.Graph.Nodes == nil {
+		return
+	}
+	for _, node := range e.Graph.Nodes {
+		for i, nextID := range node.NextIDs {
+			// Skip Loop node's back-edge (first next_id is the continue/loop path)
+			// This edge is conditionally triggered and bypasses in-degree check anyway
+			if node.Type == NodeTypeLoop && i == 0 {
+				continue
+			}
+			e.inDegree[nextID]++
+		}
+	}
+}
+
+// deliverToDownstream delivers output to downstream nodes.
+// For nodes with in-degree > 1, it waits for all upstream nodes to complete
+// before executing (join/barrier pattern).
+// For Loop nodes, it implements conditional routing based on should_exit.
+func (e *Engine) deliverToDownstream(ctx context.Context, nodeID string, output map[string]interface{}) {
+	node := e.Graph.Nodes[nodeID]
+	if node == nil {
+		return
+	}
+
+	// Determine which downstream nodes to trigger
+	targetNextIDs := node.NextIDs
+
+	// Special handling for Loop nodes: conditional routing (SPEC-1206)
+	// Loop nodes have 2 next_ids: [continue_path, exit_path]
+	// Route based on should_exit flag in output
+	if node.Type == NodeTypeLoop && len(node.NextIDs) >= 2 {
+		shouldExit, _ := output["should_exit"].(bool)
+		if shouldExit {
+			// Exit path: only trigger the second next_id (typically "end")
+			targetNextIDs = []string{node.NextIDs[1]}
+		} else {
+			// Continue path: only trigger the first next_id (loop back)
+			targetNextIDs = []string{node.NextIDs[0]}
+		}
+	}
+
+	// Check if this is a loop-back delivery (from Loop node to continue path)
+	// Loop-back deliveries should bypass in-degree waiting to avoid deadlock
+	isLoopBack := node.Type == NodeTypeLoop && len(targetNextIDs) == 1 && targetNextIDs[0] == node.NextIDs[0]
+
+	for _, nextID := range targetNextIDs {
+		e.joinMu.Lock()
+
+		var mergedInput map[string]interface{}
+		var ready bool
+
+		if isLoopBack {
+			// Loop-back: bypass in-degree check, directly use output as input
+			// This prevents deadlock when looping back to a node that has multiple in-edges
+			mergedInput = output
+			ready = true
+			// Clear any pending inputs for this node to reset state
+			e.pendingInputs[nextID] = nil
+		} else {
+			// Normal path: collect and wait for all upstream nodes
+			e.pendingInputs[nextID] = append(e.pendingInputs[nextID], output)
+
+			// Check if all upstream nodes have delivered
+			expectedInputs := e.inDegree[nextID]
+			receivedInputs := len(e.pendingInputs[nextID])
+			ready = receivedInputs >= expectedInputs
+
+			if ready {
+				// All upstreams delivered, merge and clear
+				mergedInput = e.MergeStrategy.Merge(e.pendingInputs[nextID])
+				e.pendingInputs[nextID] = nil
+			}
+		}
+
+		e.joinMu.Unlock()
+
+		if ready {
+			// Execute downstream node with merged input
+			e.executeNode(ctx, nextID, mergedInput)
+		}
+	}
 }

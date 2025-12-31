@@ -24,21 +24,43 @@ func (e *EndProcessor) Process(ctx context.Context, input map[string]interface{}
 		Data:      map[string]interface{}{"node_id": "end", "status": "running"},
 	}
 
-	// 2. Aggregate Content
-	// Simplification: Try to find 'combined_context' or 'proposal' or dump everything
+	// 2. Aggregate Content - Build structured context for report generation
 	var contentBuilder strings.Builder
-	if val, ok := input["combined_context"].(string); ok {
-		contentBuilder.WriteString("Context:\n")
+
+	// Original document
+	if val, ok := input["document_content"].(string); ok && val != "" {
+		contentBuilder.WriteString("## Original Document\n")
 		contentBuilder.WriteString(val)
 		contentBuilder.WriteString("\n\n")
 	}
-	if val, ok := input["proposal"].(string); ok {
-		contentBuilder.WriteString("Proposal:\n")
+
+	// Combined context from attachments
+	if val, ok := input["combined_context"].(string); ok && val != "" {
+		contentBuilder.WriteString("## Context\n")
 		contentBuilder.WriteString(val)
 		contentBuilder.WriteString("\n\n")
 	}
-	// Fallback/Supplement: Check for agent outputs in input map?
-	// For now, assuming input carries the necessary context string.
+
+	// Proposal
+	if val, ok := input["proposal"].(string); ok && val != "" {
+		contentBuilder.WriteString("## Proposal\n")
+		contentBuilder.WriteString(val)
+		contentBuilder.WriteString("\n\n")
+	}
+
+	// Aggregated outputs from debate (affirmative + negative analyses)
+	if val, ok := input["aggregated_outputs"].(string); ok && val != "" {
+		contentBuilder.WriteString("## Analysis Results\n")
+		contentBuilder.WriteString(val)
+		contentBuilder.WriteString("\n\n")
+	}
+
+	// Final agent output (e.g., adjudicator verdict)
+	if val, ok := input["agent_output"].(string); ok && val != "" {
+		contentBuilder.WriteString("## Final Verdict\n")
+		contentBuilder.WriteString(val)
+		contentBuilder.WriteString("\n\n")
+	}
 
 	fullContent := contentBuilder.String()
 	if fullContent == "" {

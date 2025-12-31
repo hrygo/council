@@ -20,6 +20,8 @@ func (s *StartProcessor) Process(ctx context.Context, input map[string]interface
 
 	// 2. Parse Inputs
 	proposal, _ := input["proposal"].(string)
+	documentContent, _ := input["document_content"].(string)
+	optimizationObjective, _ := input["optimization_objective"].(string)
 	attachments, _ := input["attachments"].([]map[string]interface{})
 
 	var parsedContents []string
@@ -30,11 +32,13 @@ func (s *StartProcessor) Process(ctx context.Context, input map[string]interface
 		}
 	}
 
-	// 3. Construct Output
+	// 3. Construct Output with full context passthrough (SPEC-1206)
 	output := map[string]interface{}{
-		"proposal":         proposal,
-		"attachments":      attachments,
-		"combined_context": strings.Join(parsedContents, "\n\n---\n\n"),
+		"proposal":               proposal,
+		"document_content":       documentContent,
+		"optimization_objective": optimizationObjective,
+		"attachments":            attachments,
+		"combined_context":       strings.Join(parsedContents, "\n\n---\n\n"),
 		"metadata": map[string]interface{}{
 			"started_at":       time.Now(),
 			"attachment_count": len(attachments),

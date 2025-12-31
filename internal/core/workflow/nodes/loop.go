@@ -89,6 +89,20 @@ func (l *LoopProcessor) Process(ctx context.Context, input map[string]interface{
 		"timestamp":     time.Now(),
 	}
 
+	// Passthrough context fields for loop continuation (Fix-C6)
+	loopPassthroughKeys := []string{
+		"document_content",
+		"proposal",
+		"optimization_objective",
+		"combined_context",
+		"session_id",
+	}
+	for _, key := range loopPassthroughKeys {
+		if val, ok := input[key]; ok {
+			output[key] = val
+		}
+	}
+
 	stream <- workflow.StreamEvent{
 		Type:      "node_state_change",
 		Timestamp: time.Now(),
