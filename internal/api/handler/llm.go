@@ -22,7 +22,7 @@ func NewLLMHandler(cfg *config.Config, db *pgxpool.Pool) *LLMHandler { // Modifi
 }
 
 type ProviderOption struct {
-	ID     string   `json:"id"`
+	ID     string   `json:"provider_id"`
 	Name   string   `json:"name"`
 	Icon   string   `json:"icon"`
 	Models []string `json:"models"`

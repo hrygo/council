@@ -49,12 +49,13 @@ func TestAgent_ToolCall_HappyPath(t *testing.T) {
 
 	// Agent Setup
 	agentID := uuid.New()
-	mockRepo.Create(context.Background(), &agent.Agent{
+	err := mockRepo.Create(context.Background(), &agent.Agent{
 		ID:            agentID,
 		Name:          "Surgeon",
 		PersonaPrompt: "You are Surgeon.",
 		ModelConfig:   agent.ModelConfig{Model: "gpt-4", Provider: "default"},
 	})
+	assert.NoError(t, err)
 
 	registry := llm.NewRegistry(&config.Config{})
 	registry.RegisterProvider("default", mockLLM)
