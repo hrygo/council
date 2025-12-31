@@ -11,10 +11,10 @@ import type {
 } from '../types/websocket';
 
 export const useWebSocketRouter = () => {
-    const sessionStore = useSessionStore();
-    const workflowStore = useWorkflowRunStore();
-
     const routeMessage = useCallback((msg: WSMessage) => {
+        const sessionStore = useSessionStore.getState();
+        const workflowStore = useWorkflowRunStore.getState();
+
         switch (msg.event) {
             case 'token_stream': {
                 const data = msg.data as TokenStreamData;
@@ -114,8 +114,47 @@ export const useWebSocketRouter = () => {
                 console.error('WS Error:', error);
                 break;
             }
+
+            case 'tool_execution': {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const data = msg.data as any;
+                // data: { node_id, tool, input, output }
+                // We want to show "Executing tool: X"
+                // Append as a system-like message or agent thought?
+                // Let's format it as a thought block for now since we don't have a distinct 'tool' role UI.
+                // Or better, just append to content if streaming.
+
+                const toolInfo = `\n\n> 🛠 **Executing Tool**: \`${data.tool}\`\n\n`;
+
+                sessionStore.appendMessage({
+                    node_id: data.node_id,
+                    // If we don't have agent_id in data, we might need it. 
+                    // AgentProcessor.Process sends: map[string]interface{ "node_id": a.NodeID, "tool": ..., "input": ..., "output": ... }
+                    // Wait, Step 201 code shows: "node_id": a.NodeID, "tool": toolName, ...
+                    // It does NOT send agent_id explicitly in Data, but 'token_stream' DOES.
+                    // Ideally we need agent_id to route to the correct bubble if parallel.
+
+                    // Let's check AgentProcessor in Step 168.
+                    // map[string]interface{}{ "node_id": a.NodeID, "tool": toolName, ... }
+                    // It is missing "agent_id". 
+                    // However, 'token_stream' uses "agent_id".
+                    // If we don't have agent_id, we can't find the exact parallel column easily if multiple agents share a node (unlikely in this design).
+                    // In this design, 1 node = 1 agent usually.
+                    // But `appendMessage` uses `agent_uuid` to find `lastMsg`.
+                    // If we assume node_id <-> agent_id 1:1, we might get away with it, OR we fix backend to send agent_id.
+
+                    // Let's fix backend? No, I want frontend fix first.
+                    // Use node_id as agent_id fallback?
+                    agent_uuid: data.agent_id || data.node_id,
+                    role: 'agent',
+                    content: toolInfo,
+                    isStreaming: true,
+                    isChunk: true,
+                });
+                break;
+            }
         }
-    }, [sessionStore, workflowStore]);
+    }, []);
 
     useEffect(() => {
         // 订阅 WebSocket 消息

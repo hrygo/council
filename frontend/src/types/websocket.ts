@@ -7,7 +7,8 @@ export type WSEventType =
     | 'execution:completed' // 执行完成
     | 'error'               // 错误
     | 'human_interaction_required' // 人工介入请求
-    | 'node_resumed';       // 节点恢复执行
+    | 'node_resumed'        // 节点恢复执行
+    | 'tool_execution';     // 工具执行
 
 export interface WSMessage<T = unknown> {
     event: WSEventType;
@@ -40,6 +41,14 @@ export interface TokenUsageData {
 export interface ParallelStartData {
     node_id: string;
     branches: string[];
+}
+
+export interface ToolExecutionData {
+    node_id: string;
+    agent_id?: string;
+    tool: string;
+    input: string;
+    output: string;
 }
 
 // 上行命令 (Client -> Server)

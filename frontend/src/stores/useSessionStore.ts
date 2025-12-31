@@ -24,6 +24,7 @@ interface SessionState {
      * 消息列表 (按节点分组)
      */
     messageGroups: MessageGroup[];
+    parallelNodeMap: Map<string, string>; // Maps branch_node_id -> parent_parallel_node_id
 
     /**
      * 连接状态
@@ -40,6 +41,7 @@ interface SessionState {
         workflow_uuid: string;
         group_uuid: string;
         nodes: Array<{ node_id: string; name: string; type: string }>;
+        status?: SessionStatus;
     }) => void;
 
     /**
@@ -97,11 +99,13 @@ export const useSessionStore = create<SessionState>()(
     immer((set) => ({
         // Initial State
         currentSession: null,
+
         messageGroups: [],
+        parallelNodeMap: new Map(),
         connectionStatus: 'disconnected',
 
         // Actions
-        initSession: ({ session_uuid, workflow_uuid, group_uuid, nodes }) => {
+        initSession: ({ session_uuid, workflow_uuid, group_uuid, nodes, status }) => {
             const initialNodes = new Map();
             nodes.forEach(node => {
                 initialNodes.set(node.node_id, {
@@ -117,13 +121,15 @@ export const useSessionStore = create<SessionState>()(
                     session_uuid,
                     workflow_uuid,
                     group_uuid,
-                    status: 'idle',
+                    status: status || 'idle',
                     nodes: initialNodes,
                     active_node_ids: [],
                     totalTokens: 0,
                     totalCostUsd: 0,
+                    startedAt: status === 'running' ? new Date() : undefined,
                 },
                 messageGroups: [],
+                parallelNodeMap: new Map(),
                 connectionStatus: 'connecting',
             });
         },
@@ -171,21 +177,29 @@ export const useSessionStore = create<SessionState>()(
 
         appendMessage: (msg) => {
             set(state => {
-                // 1. 查找对应的消息组
-                let group = state.messageGroups.find(g => g.node_id === msg.node_id);
+                // 1.5 Check if this node is part of a parallel branch
+                const parallelParentId = state.parallelNodeMap.get(msg.node_id);
 
-                // 2. 如果不存在，创建新组
+                // 1. 查找对应的消息组 (Priority: Parallel Parent Group -> Direct Node Group)
+                let group: MessageGroup | undefined;
+
+                if (parallelParentId) {
+                    group = state.messageGroups.find(g => g.node_id === parallelParentId);
+                } else {
+                    group = state.messageGroups.find(g => g.node_id === msg.node_id);
+                }
+
+                // 2. 如果不存在，创建新组 (Only for non-parallel or if parent group missing which shouldn't happen for parallel)
                 if (!group) {
+                    // Fail-safe: if parallel parent missing, treat as normal sequential
                     // 尝试从 nodes 中获取节点信息
-                    // 注意：Immer draft Map 需要特殊处理，这里简单假定如果 session 存在则 node 存在
-                    // 这里的 Map 是 Immer 代理后的，可以直接 get
                     const node = state.currentSession?.nodes.get(msg.node_id);
 
                     group = {
                         node_id: msg.node_id,
                         nodeName: node?.name || msg.node_id || 'Unknown Node',
                         nodeType: (node?.type as MessageGroup['nodeType']) || 'agent',
-                        isParallel: false, // 默认为非并行
+                        isParallel: false,
                         messages: [],
                         status: 'running',
                     };
@@ -224,11 +238,21 @@ export const useSessionStore = create<SessionState>()(
 
         finalizeMessage: (node_id, agent_uuid) => {
             set(state => {
-                const group = state.messageGroups.find(g => g.node_id === node_id);
-                if (group) {
+                // Check parallel parent first
+                const parallelParentId = state.parallelNodeMap.get(node_id);
+                const targetGroupId = parallelParentId || node_id;
 
-                    const msgs = group.messages.filter((m: Message) => m.agent_uuid === agent_uuid && m.isStreaming);
-                    msgs.forEach((m: Message) => { m.isStreaming = false; });
+                const group = state.messageGroups.find(g => g.node_id === targetGroupId);
+                if (group) {
+                    if (agent_uuid) {
+                        const msgs = group.messages.filter((m: Message) => m.agent_uuid === agent_uuid && m.isStreaming);
+                        msgs.forEach((m: Message) => { m.isStreaming = false; });
+                    } else {
+                        // If no agent_uuid provided, finalize ALL streaming messages in this group
+                        group.messages.forEach((m: Message) => {
+                            if (m.isStreaming) m.isStreaming = false;
+                        });
+                    }
                 }
             });
         },
@@ -251,8 +275,12 @@ export const useSessionStore = create<SessionState>()(
                     }
                 }
 
-                // 更新单条消息或最近一条消息的 token usage (Optional, not specified in detail but good to have)
-                const group = state.messageGroups.find(g => g.node_id === node_id);
+                // 更新单条消息或最近一条消息的 token usage
+                // Check parallel parent first
+                const parallelParentId = state.parallelNodeMap.get(node_id);
+                const targetGroupId = parallelParentId || node_id;
+
+                const group = state.messageGroups.find(g => g.node_id === targetGroupId);
                 if (group) {
                     const lastMsg = group.messages.findLast((m: Message) => m.agent_uuid === agent_uuid);
                     if (lastMsg) {
@@ -269,6 +297,7 @@ export const useSessionStore = create<SessionState>()(
             set({
                 currentSession: null,
                 messageGroups: [],
+                parallelNodeMap: new Map(),
                 connectionStatus: 'disconnected',
             });
         },
@@ -279,23 +308,22 @@ export const useSessionStore = create<SessionState>()(
 
         handleParallelStart: (node_id, branchIds) => {
             set(state => {
-                // 创建并行消息组
-                state.messageGroups.push({
-                    node_id,
-                    nodeName: 'Parallel Execution',
-                    nodeType: 'parallel', // 这里需要根据 node_id 对应类型来定，简化处理
-                    isParallel: true,
-                    messages: [], // 并行消息将被收集到这里 (或者是其子节点各自有 group? 这是一个设计点，Spec 似乎暗示并行组是一个容器)
-                    // 根据 SPEC-001 4.2: state.messageGroups.push({ ... messages: [] })
-                    // 实际上并行执行时，消息可能分散在各个并行的子节点 Group 中，或者聚合在这里。
-                    // Spec 4.2 代码片段显示创建一个并行组。
-                    status: 'running',
+                // Register branch mappings
+                branchIds.forEach(bid => {
+                    state.parallelNodeMap.set(bid, node_id);
                 });
 
-                // 标记分支节点为活跃
-                if (state.currentSession) {
-                    state.currentSession.active_node_ids = branchIds;
-                }
+                // check if group already exists to avoid duplicates
+                if (state.messageGroups.find(g => g.node_id === node_id)) return;
+
+                state.messageGroups.push({
+                    node_id,
+                    nodeName: 'Parallel Execution', // Could fetch proper name
+                    nodeType: 'parallel',
+                    isParallel: true,
+                    messages: [],
+                    status: 'running',
+                });
             });
         }
 

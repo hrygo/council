@@ -90,7 +90,8 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                 session_uuid: data.session_uuid,
                 workflow_uuid: selectedTemplate.template_uuid, // Use template ID as workflow ID for now
                 group_uuid: 'default',
-                nodes: nodes
+                nodes: nodes,
+                status: 'running'
             });
 
             // 4. Establish WebSocket connection
