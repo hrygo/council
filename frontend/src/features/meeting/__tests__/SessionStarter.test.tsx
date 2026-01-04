@@ -22,7 +22,7 @@ vi.mock('../../../stores/useSessionStore', () => ({
 
 vi.mock('../../../stores/useConnectStore', () => ({
     useConnectStore: {
-        getState: () => ({ connect: mockConnect }),
+        getState: () => ({ connect: mockConnect, status: 'connected' }),
     },
 }));
 
