@@ -57,6 +57,7 @@ export interface Engine {
   Middlewares: Middleware[];
   Session?: Session; // Reference to the session state
   MergeStrategy: MergeStrategy; // Pluggable merge strategy
+  SessionRepo: SessionRepository; // Injected persistence
 }
 
 //////////
@@ -194,6 +195,7 @@ export interface Session {
   Inputs: { [key: string]: any};
   Outputs: { [key: string]: any};
   Error: any;
+  node_statuses: { [key: string]: NodeStatus};
   signal_channels?: { [key: string]: any};
   context_data: { [key: string]: any}; // Runtime context for Loop variables, etc.
 }
