@@ -85,16 +85,13 @@ func (m *MockSessionFileRepository) GetLatest(ctx context.Context, sessionID, pa
 	return nil, nil // Or error not found
 }
 
-func (m *MockSessionFileRepository) ListFiles(ctx context.Context, sessionID string) (map[string]*workflow.FileEntity, error) {
+func (m *MockSessionFileRepository) ListFiles(ctx context.Context, sessionID string) ([]*workflow.FileEntity, error) {
 	// Simplified: return all in mock
-	res := make(map[string]*workflow.FileEntity)
+	var res []*workflow.FileEntity
 	// Filter by sessionID logic skipped for simplicity if we assume unique sessions in tests or handle carefully
 	// But let's do it rightish
-	for k, v := range m.Files {
-		// key is sessionID:path
-		// check prefix
-		// implementation detail hidden
-		res[k] = v
+	for _, v := range m.Files {
+		res = append(res, v)
 	}
 	return res, nil
 }

@@ -27,7 +27,7 @@ type SessionFileRepository interface {
 	GetLatest(ctx context.Context, sessionID, path string) (*FileEntity, error)
 
 	// ListFiles returns the latest version of all files in the session.
-	ListFiles(ctx context.Context, sessionID string) (map[string]*FileEntity, error)
+	ListFiles(ctx context.Context, sessionID string) ([]*FileEntity, error)
 
 	// ListVersions returns all versions of a specific file.
 	ListVersions(ctx context.Context, sessionID, path string) ([]*FileEntity, error)

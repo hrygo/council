@@ -89,8 +89,19 @@ func TestListFiles(t *testing.T) {
 	files, err := repo.ListFiles(ctx, sessionID)
 	assert.NoError(t, err)
 	assert.Len(t, files, 2)
-	assert.Equal(t, 2, files["main.go"].Version)
-	assert.Equal(t, 1, files["README.md"].Version)
+	foundMain := false
+	foundReadme := false
+	for _, f := range files {
+		if f.Path == "main.go" {
+			assert.Equal(t, 2, f.Version)
+			foundMain = true
+		} else if f.Path == "README.md" {
+			assert.Equal(t, 1, f.Version)
+			foundReadme = true
+		}
+	}
+	assert.True(t, foundMain, "main.go not found")
+	assert.True(t, foundReadme, "README.md not found")
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %v", err)

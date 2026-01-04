@@ -1,6 +1,12 @@
 # Changelog
 
-## [0.16.2] - 2026-01-04
+## [0.16.3] - 2026-01-04
+
+### Fixed
+- **VFS Explorer Crash**: Resolved "White Screen" issue in Meeting Room > Codebase tab.
+  - **Root Cause**: Backend API `/files` returned a JSON Object (Map) while Frontend `VFSExplorer` expected an Array for iteration.
+  - **Fix**: Refactored `SessionFileRepository.ListFiles` (Interface & Implementation) to return `[]*FileEntity` instead of map, ensuring correct JSON serialization and frontend compatibility.
+
 
 ### Fixed
 - **Parallel Execution Integrity (Backend)**:

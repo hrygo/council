@@ -52,7 +52,7 @@ func (r *SessionFileRepository) GetLatest(ctx context.Context, sessionID, path s
 	return &f, nil
 }
 
-func (r *SessionFileRepository) ListFiles(ctx context.Context, sessionID string) (map[string]*workflow.FileEntity, error) {
+func (r *SessionFileRepository) ListFiles(ctx context.Context, sessionID string) ([]*workflow.FileEntity, error) {
 	// We want the latest version for EACH path in the session.
 	// DISTINCT ON (path) ORDER BY path, version DESC is the Postgres way.
 	query := `
@@ -67,13 +67,13 @@ func (r *SessionFileRepository) ListFiles(ctx context.Context, sessionID string)
 	}
 	defer rows.Close()
 
-	files := make(map[string]*workflow.FileEntity)
+	var files []*workflow.FileEntity
 	for rows.Next() {
 		var f workflow.FileEntity
 		if err := rows.Scan(&f.ID, &f.SessionID, &f.Path, &f.Version, &f.Content, &f.Author, &f.Reason, &f.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan file row: %w", err)
 		}
-		files[f.Path] = &f
+		files = append(files, &f)
 	}
 	return files, nil
 }

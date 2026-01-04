@@ -80,7 +80,7 @@ func (s *Session) GetLatestFile(path string) (*FileEntity, error) {
 	return repo.GetLatest(s.Context(), s.ID, path)
 }
 
-func (s *Session) ListFiles() (map[string]*FileEntity, error) {
+func (s *Session) ListFiles() ([]*FileEntity, error) {
 	s.mu.RLock()
 	repo := s.FileRepo
 	s.mu.RUnlock()
