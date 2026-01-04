@@ -79,6 +79,90 @@ func (e *Engine) Run(ctx context.Context) error {
 	return e.executeNode(ctx, startNodeID, e.inputs)
 }
 
+// executeNodeWithoutDownstream executes a single node without automatically triggering downstream nodes
+// Used for parallel branches where downstream execution is coordinated by the parallel node itself
+func (e *Engine) executeNodeWithoutDownstream(ctx context.Context, nodeID string, input map[string]interface{}) (map[string]interface{}, error) {
+	// Check for Pause
+	if e.Session.Status == SessionPaused {
+		e.StreamChannel <- StreamEvent{
+			Type:      "execution:paused",
+			Timestamp: time.Now(),
+			NodeID:    nodeID,
+			Data:      map[string]interface{}{"reason": "session_paused"},
+		}
+	}
+	if err := e.Session.WaitIfPaused(ctx); err != nil {
+		e.emitError(nodeID, err)
+		return nil, err
+	}
+
+	e.Mu.RLock()
+	node, exists := e.Graph.Nodes[nodeID]
+	e.Mu.RUnlock()
+
+	if !exists {
+		e.emitError(nodeID, fmt.Errorf("node not found"))
+		return nil, fmt.Errorf("node %s not found", nodeID)
+	}
+
+	// Parallel nodes should not be executed via this function
+	if node.Type == NodeTypeParallel {
+		return nil, fmt.Errorf("parallel nodes should be handled by handleParallel")
+	}
+
+	// Update status
+	e.updateStatus(nodeID, StatusRunning)
+
+	// Middleware: Before
+	for _, mw := range e.Middlewares {
+		if err := mw.BeforeNodeExecution(ctx, e.Session, node); err != nil {
+			e.emitError(nodeID, fmt.Errorf("middleware %s blocked execution: %w", mw.Name(), err))
+			return nil, err
+		}
+	}
+
+	// Inject Contextual IDs
+	if input == nil {
+		input = make(map[string]interface{})
+	}
+	input["session_id"] = e.Session.ID
+
+	// Standard Processing using Factory
+	processor, err := e.NodeFactory.CreateNode(node, FactoryDeps{Session: e.Session})
+	if err != nil {
+		e.emitError(nodeID, err)
+		e.updateStatus(nodeID, StatusFailed)
+		return nil, err
+	}
+
+	output, err := processor.Process(ctx, input, e.StreamChannel)
+	if err != nil {
+		if err == ErrSuspended {
+			e.updateStatus(nodeID, StatusSuspended)
+			return nil, nil // Suspended execution
+		}
+		e.updateStatus(nodeID, StatusFailed)
+		e.emitError(nodeID, err)
+		return nil, err
+	}
+
+	// Middleware: After Execution
+	for _, mw := range e.Middlewares {
+		var mwErr error
+		output, mwErr = mw.AfterNodeExecution(ctx, e.Session, node, output)
+		if mwErr != nil {
+			e.emitError(nodeID, fmt.Errorf("middleware %s failed post-processing: %w", mw.Name(), mwErr))
+			return nil, mwErr
+		}
+	}
+
+	e.updateStatus(nodeID, StatusCompleted)
+
+	// NOTE: Unlike executeNode, we DON'T call deliverToDownstream here
+	// The caller is responsible for handling downstream execution
+	return output, nil
+}
+
 // executeNode runs a single node and recursively its children
 func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[string]interface{}) error {
 	// e.Mu.RLock()
@@ -191,6 +275,10 @@ func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[strin
 }
 
 func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[string]interface{}) {
+	// Set parallel node status to running
+	log.Printf("[Engine] Setting parallel node %s to RUNNING", node.ID)
+	e.updateStatus(node.ID, StatusRunning)
+
 	e.StreamChannel <- StreamEvent{
 		Type:      "node:parallel_start",
 		Timestamp: time.Now(),
@@ -198,31 +286,90 @@ func (e *Engine) handleParallel(ctx context.Context, node *Node, input map[strin
 		Data:      map[string]interface{}{"branches": node.NextIDs},
 	}
 
+	// Collect outputs from all branches for potential Join logic
+	type branchResult struct {
+		nodeID string
+		output map[string]interface{}
+		err    error
+	}
+	resultsChan := make(chan branchResult, len(node.NextIDs))
+
 	var wg sync.WaitGroup
 	for _, nextID := range node.NextIDs {
 		wg.Add(1)
 		go func(cid string) {
 			defer wg.Done()
 
-			// 1. Clone input map to avoid Data Race on concurrent writes (e.g. session_id)
+			// Clone input map to avoid Data Race
 			clonedInput := make(map[string]interface{}, len(input))
 			for k, v := range input {
 				clonedInput[k] = v
 			}
 
-			if err := e.executeNode(ctx, cid, clonedInput); err != nil {
+			// Execute branch node WITHOUT automatically continuing to downstream
+			// We'll handle downstream execution after all branches complete
+			output, err := e.executeNodeWithoutDownstream(ctx, cid, clonedInput)
+			resultsChan <- branchResult{nodeID: cid, output: output, err: err}
+
+			if err != nil {
 				log.Printf("[Engine] Parallel branch %s failed: %v", cid, err)
 			}
 		}(nextID)
 	}
+
+	log.Printf("[Engine] Waiting for parallel branches of %s to complete...", node.ID)
 	wg.Wait()
+	close(resultsChan)
+
+	log.Printf("[Engine] All parallel branches of %s completed. Setting to COMPLETED", node.ID)
 	e.updateStatus(node.ID, StatusCompleted)
+
+	// Now deliver to downstream nodes (Join point)
+	var successfulBranches []branchResult
+	for result := range resultsChan {
+		if result.err == nil && result.output != nil {
+			successfulBranches = append(successfulBranches, result)
+		}
+	}
+
+	// Now deliver to downstream nodes (Deferred Execution)
+	// We iterate through all branch results and deliver them individually.
+	// This ensures that:
+	// 1. The Parallel Node is already COMPLETED (User Requirement)
+	// 2. The downstream Join Node receives the correct number of inputs to satisfy InDegree (System Requirement)
+
+	// Prepare delivery tasks to avoid holding RLock during downstream execution (Deadlock prevention)
+	type deliveryTask struct {
+		nodeID  string
+		output  map[string]interface{}
+		nextIDs []string
+	}
+	var tasks []deliveryTask
+
+	e.Mu.RLock()
+	for _, res := range successfulBranches {
+		if branch, ok := e.Graph.Nodes[res.nodeID]; ok {
+			tasks = append(tasks, deliveryTask{
+				nodeID:  res.nodeID,
+				output:  res.output,
+				nextIDs: branch.NextIDs,
+			})
+		}
+	}
+	e.Mu.RUnlock()
+
+	// Execute deliveries
+	for _, task := range tasks {
+		e.deliverToDownstream(ctx, task.nodeID, task.output, task.nextIDs)
+	}
 }
 
 func (e *Engine) updateStatus(nodeID string, status NodeStatus) {
 	e.Mu.Lock()
 	e.Status[nodeID] = status
 	e.Mu.Unlock()
+
+	log.Printf("[Engine] updateStatus: %s -> %s", nodeID, status)
 
 	// Persist status if repo is injected
 	if e.SessionRepo != nil {
@@ -233,12 +380,14 @@ func (e *Engine) updateStatus(nodeID string, status NodeStatus) {
 		}()
 	}
 
-	e.StreamChannel <- StreamEvent{
+	event := StreamEvent{
 		Type:      "node_state_change",
 		Timestamp: time.Now(),
 		NodeID:    nodeID,
 		Data:      map[string]interface{}{"status": status},
 	}
+	log.Printf("[Engine] Sending WebSocket event: type=%s, node_id=%s, status=%s", event.Type, nodeID, status)
+	e.StreamChannel <- event
 }
 
 func (e *Engine) GetStatus(nodeID string) NodeStatus {

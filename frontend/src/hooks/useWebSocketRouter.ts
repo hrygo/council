@@ -62,7 +62,7 @@ export const useWebSocketRouter = () => {
                 const nodeId = msg.node_id || data.node_id;
                 workflowStore.setActiveNodes(data.branches);
                 if (nodeId) {
-                    sessionStore.handleParallelStart(nodeId, data.branches);
+                    sessionStore.handleParallelStart();
                 }
                 break;
             }

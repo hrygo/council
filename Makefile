@@ -100,24 +100,48 @@ reset-db: ## ⚠️ Reset database (DELETE ALL DATA)
 
 start-backend: ## 🔧 Start Go backend
 	@echo "$(CYAN)🔧 Starting Backend on :8080...$(RESET)"
-	@lsof -ti:8080 >/dev/null 2>&1 && { echo "$(YELLOW)⚠️ Port 8080 already in use. Stopping...$(RESET)"; make stop-backend; sleep 1; } || true
+	@if lsof -ti:8080 >/dev/null 2>&1; then \
+		echo "$(RED)❌ Port 8080 is already in use!$(RESET)"; \
+		echo "$(YELLOW)Occupied by:$(RESET)"; \
+		lsof -nP -iTCP:8080; \
+		echo "$(YELLOW)💡 Run 'make stop-backend' first, or use 'make restart'$(RESET)"; \
+		exit 1; \
+	fi
 	@env DATABASE_URL="$(DATABASE_URL)" \
 		LLM_PROVIDER="$(LLM_PROVIDER)" \
 		LLM_MODEL="$(LLM_MODEL)" \
 		GEMINI_API_KEY="$(GEMINI_API_KEY)" \
-		go run cmd/council/main.go &
+		go run cmd/council/main.go > backend.log 2>&1 &
 	@sleep 3
-	@lsof -ti:8080 >/dev/null 2>&1 && echo "$(GREEN)✅ Backend started$(RESET)" || echo "$(RED)❌ Backend failed to start. Check: make logs-backend$(RESET)"
+	@lsof -ti:8080 >/dev/null 2>&1 && echo "$(GREEN)✅ Backend started (logs: backend.log)$(RESET)" || echo "$(RED)❌ Backend failed to start. Check: make logs-backend$(RESET)"
 
 stop-backend: ## 🛑 Stop Go backend
 	@echo "$(YELLOW)🛑 Stopping Backend...$(RESET)"
-	@lsof -ti:8080 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
+	@# Kill processes listening on port 8080 (most reliable method)
+	@-lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+	@# Also kill go run process if it exists (belt and suspenders approach)
+	@# Using exact match to avoid killing unrelated processes
+	@-pgrep -f "cmd/council/main.go" | xargs -r kill -9 2>/dev/null || true
+	@# Wait for port to become completely free (including TIME_WAIT states)
+	@while lsof -ti:8080 >/dev/null 2>&1; do sleep 0.1; done
+	@# Extra buffer to ensure OS fully releases the port
+	@sleep 0.5
+	@# Final verification
+	@if lsof -ti:8080 >/dev/null 2>&1; then \
+		echo "$(RED)⚠️ WARNING: Port 8080 still occupied after cleanup!$(RESET)"; \
+		lsof -nP -iTCP:8080; \
+	fi
 	@echo "$(GREEN)✅ Backend stopped$(RESET)"
 
 restart-backend: stop-backend start-backend ## 🔄 Restart backend
 
 logs-backend: ## 📜 Tail backend logs (if using file logging)
-	@echo "$(YELLOW)Backend logs are in terminal output$(RESET)"
+	@if [ -f backend.log ]; then \
+		echo "$(CYAN)📜 Tailing backend.log (Ctrl+C to stop)$(RESET)"; \
+		tail -f backend.log; \
+	else \
+		echo "$(YELLOW)⚠️ backend.log not found. Backend might not be running.$(RESET)"; \
+	fi
 
 # ============================================================================
 # 🎨 FRONTEND
@@ -133,6 +157,9 @@ stop-frontend: ## 🛑 Stop React frontend
 	@echo "$(YELLOW)🛑 Stopping Frontend...$(RESET)"
 	@lsof -ti:5173 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
 	@lsof -ti:5174 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
+	@# Wait for ports to become available
+	@while lsof -ti:5173 -sTCP:LISTEN >/dev/null 2>&1; do sleep 0.1; done
+	@while lsof -ti:5174 -sTCP:LISTEN >/dev/null 2>&1; do sleep 0.1; done
 	@echo "$(GREEN)✅ Frontend stopped$(RESET)"
 
 restart-frontend: stop-frontend start-frontend ## 🔄 Restart frontend
@@ -143,11 +170,14 @@ restart-frontend: stop-frontend start-frontend ## 🔄 Restart frontend
 
 start-all: ## 🚀 Start all services
 	@echo "$(GREEN)$(BOLD)🚀 Starting The Council...$(RESET)"
+	@echo "$(GREEN)$(BOLD)════════════════════════════════════════$(RESET)"
 	@echo ""
 	@make start-db
 	@echo ""
+	@echo "$(GREEN)$(BOLD)────────────────────────────────────────$(RESET)"
 	@make start-backend
 	@echo ""
+	@echo "$(GREEN)$(BOLD)────────────────────────────────────────$(RESET)"
 	@make start-frontend
 	@echo ""
 	@echo "$(GREEN)$(BOLD)════════════════════════════════════════$(RESET)"
@@ -373,7 +403,6 @@ help: ## ❓ Show this help
 	@echo "  $(CYAN)make validate-plan$(RESET)   验证开发计划"
 	@echo "  $(CYAN)make check-docs$(RESET)      检查文档格式"
 	@echo ""
-
 	@echo "$(BOLD)📦 Setup:$(RESET)"
 	@echo "  $(CYAN)make install$(RESET)        Install dependencies"
 	@echo "  $(CYAN)make clean$(RESET)          Clean everything"

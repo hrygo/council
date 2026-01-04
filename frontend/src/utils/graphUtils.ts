@@ -1,4 +1,5 @@
 import { type Node, type Edge, MarkerType } from '@xyflow/react';
+import dagre from 'dagre';
 
 // Types mirroring Backend GraphDefinition
 export interface BackendNode {
@@ -19,112 +20,91 @@ export interface BackendGraph {
 
 interface LayoutOptions {
     direction?: 'vertical' | 'horizontal';
-    spacingX?: number; // Spacing between nodes horizontally
-    spacingY?: number; // Spacing between nodes vertically
+    spacingX?: number; // Spacing between nodes horizontally (nodesep)
+    spacingY?: number; // Spacing between nodes vertically (ranksep)
 }
 
 export const transformToReactFlow = (
     graph: BackendGraph,
     options: LayoutOptions = {}
 ): { nodes: Node[]; edges: Edge[] } => {
-    const {
-        direction = 'vertical', // Default to vertical layout
-        spacingX = direction === 'vertical' ? 250 : 180, // Default spacing for X based on direction
-        spacingY = direction === 'vertical' ? 180 : 250  // Default spacing for Y based on direction
-    } = options;
-
-    const nodes: Node[] = [];
-    const edges: Edge[] = [];
-    const visited = new Set<string>();
-
-    // Simple BFS/Level-based layout calculation
-    const levels: Record<string, number> = {};
-    const queue: { id: string; level: number }[] = [];
-
-    if (graph.start_node_id) {
-        queue.push({ id: graph.start_node_id, level: 0 });
-        visited.add(graph.start_node_id);
-    }
-
-    // Nodes processing & Edge creation
-    // We do a first pass to traverse and establish edges and levels
-    // Note: This assumes a DAG. Cycles might need special handling but for now BFS works for levels.
-
     // Safety check for nodes
     if (!graph.nodes) {
         return { nodes: [], edges: [] };
     }
 
-    const nodeIds = Object.keys(graph.nodes);
-    // If start_node_id is missing or invalid, just map all nodes linearly or loosely?
-    // Let's assume start_node_id gives us the entry.
+    const {
+        direction = 'vertical',
+        spacingX = 120, // Horizontal separation
+        spacingY = 150  // Vertical separation
+    } = options;
 
-    let head = 0;
-    while (head < queue.length) {
-        const { id, level } = queue[head++];
-        levels[id] = level;
+    const dagreGraph = new dagre.graphlib.Graph();
+    dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-        const node = graph.nodes[id];
-        if (node && node.next_ids) {
-            node.next_ids.forEach(nextId => {
-                // Create Edge
-                edges.push({
-                    id: `e-${id}-${nextId}`,
-                    source: id,
-                    target: nextId,
-                    type: 'smoothstep',
-                    markerEnd: { type: MarkerType.ArrowClosed },
-                    animated: false,
-                });
+    const isHorizontal = direction === 'horizontal';
+    dagreGraph.setGraph({
+        rankdir: isHorizontal ? 'LR' : 'TB',
+        // align: 'UL', // Removed to allow center alignment
+        nodesep: spacingX,
+        ranksep: spacingY,
+    });
 
-                if (!visited.has(nextId)) {
-                    visited.add(nextId);
-                    queue.push({ id: nextId, level: level + 1 });
+    const nodeWidth = 250;
+    const nodeHeight = 150; // Approximate height of our cards
+
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+
+    // Add nodes to dagre
+    Object.values(graph.nodes).forEach((node) => {
+        dagreGraph.setNode(node.node_id, { width: nodeWidth, height: nodeHeight });
+    });
+
+    // Add edges to dagre
+    Object.values(graph.nodes).forEach((node) => {
+        if (node.next_ids) {
+            node.next_ids.forEach((nextId) => {
+                // Ensure target exists
+                if (graph.nodes[nextId]) {
+                    dagreGraph.setEdge(node.node_id, nextId);
+
+                    edges.push({
+                        id: `e-${node.node_id}-${nextId}`,
+                        source: node.node_id,
+                        target: nextId,
+                        type: 'default', // Bezier curves for smoother look
+                        markerEnd: { type: MarkerType.ArrowClosed },
+                        animated: false,
+                        style: { strokeWidth: 2, stroke: '#94a3b8' } // Slate-400
+                    });
                 }
             });
         }
-    }
-
-    // Handle disconnected nodes (if any)
-    nodeIds.forEach(id => {
-        if (!visited.has(id)) {
-            levels[id] = 0; // Default to level 0 for disconnected
-            // We might want to add them to nodes list
-        }
     });
 
-    // Create React Flow Nodes with calculated positions
-    const levelCounts: Record<number, number> = {};
+    // Calculate layout
+    dagre.layout(dagreGraph);
 
-    nodeIds.forEach(id => {
-        const node = graph.nodes[id];
-        const level = levels[id] || 0;
+    // Create React Flow Nodes
+    Object.values(graph.nodes).forEach((node) => {
+        const nodeWithPosition = dagreGraph.node(node.node_id);
 
-        if (!levelCounts[level]) levelCounts[level] = 0;
-        const indexInLevel = levelCounts[level]++;
-
-        let posX = 0;
-        let posY = 0;
-
-        if (direction === 'horizontal') {
-            // Horizontal layout: Level determines X position, index within level determines Y position
-            posX = level * spacingX + 50;
-            posY = indexInLevel * spacingY + 50;
-        } else {
-            // Vertical layout (default): Level determines Y position, index within level determines X position
-            posX = indexInLevel * spacingX + 50;
-            posY = level * spacingY + 50;
-        }
+        // We need to pass a slightly different position in order to notify react flow about the center of the node
+        // Dagre layout is based on the center of the node, but RF uses top-left.
+        // Wait, Dagre uses Center-Center by default for calculations, but returns Top-Left `x,y`?
+        // No, Dagre returns Center x,y.
+        // React Flow positions are Top-Left.
+        // So: x = center_x - width / 2
 
         nodes.push({
             id: node.node_id,
-            type: mapNodeType(node.type), // Map backend type to RF type
-            position: { x: posX, y: posY },
+            type: mapNodeType(node.type),
+            position: {
+                x: nodeWithPosition.x - nodeWidth / 2,
+                y: nodeWithPosition.y - nodeHeight / 2,
+            },
             data: { label: node.name, ...node.properties },
-            // 'input' type for start, 'output' for end?
-            // Actually React Flow 'input'/'output' logic is about handles. 
-            // We can use default for all or customize.
-            // Let's stick to default for now, or 'input' for start.
         });
     });
 

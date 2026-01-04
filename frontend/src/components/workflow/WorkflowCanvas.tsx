@@ -27,7 +27,8 @@ import {
     FactCheckNode,
     HumanReviewNode,
     StartNode,
-    EndNode
+    EndNode,
+    ParallelNode
 } from './nodes/CustomNodes';
 import { ExitFullscreenButton } from '../ui/ExitFullscreenButton';
 
@@ -39,6 +40,7 @@ const nodeTypes: NodeTypes = {
     human_review: HumanReviewNode,
     start: StartNode,
     end: EndNode,
+    parallel: ParallelNode,
 };
 
 interface WorkflowCanvasProps {
@@ -210,6 +212,11 @@ function WorkflowCanvasInner({
             });
         }
     }, [nodesInitialized, displayedNodes.length, fitView]);
+
+    // Debug active nodes
+    useEffect(() => {
+        console.log('[Canvas] Active node IDs:', Array.from(activeIds));
+    }, [activeIds]);
 
     const displayedNodesWithStyle = displayedNodes.map((node) => ({
         ...node,

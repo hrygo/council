@@ -1,4 +1,4 @@
-import { type FC, useRef, useEffect } from 'react';
+import { type FC, useRef, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
 import { Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -82,30 +82,17 @@ export const MeetingRoom: FC = () => {
     useWebSocketRouter();
     useFullscreenShortcuts();
 
-    // Auto-restore session from URL if missing in store (Senior Review: Fixed to support state sync)
+    // Auto-restore session from URL and Sync Status (Fix: Always sync status)
     useEffect(() => {
-        const current = useSessionStore.getState().currentSession;
-        if (!current && session_uuid) {
+        if (session_uuid) {
             const fetchData = async () => {
                 try {
-                    // 1. Fetch Session (includes live node_statuses)
+                    // 1. Always Fetch Session to get latest Node Statuses
                     const sessionRes = await fetch(`/api/v1/sessions/${session_uuid}`);
                     if (!sessionRes.ok) throw new Error("Session not found");
                     const sessionData = await sessionRes.json();
 
-                    // 2. Fetch Workflow Graph to get node definitions
-                    if (!sessionData.workflow_uuid) return;
-                    const wfRes = await fetch(`/api/v1/workflows/${sessionData.workflow_uuid}`);
-                    if (!wfRes.ok) throw new Error("Workflow not found");
-                    const wfData = await wfRes.json();
-
-                    const graph = wfData.graph || wfData; // Handle different API response shapes
-                    if (!graph) return;
-
-                    // Sync Graph Definition for Canvas
-                    useWorkflowRunStore.getState().setGraphDefinition(graph);
-
-                    // Sync initial node statuses if restoring session
+                    // Sync initial node statuses (Always apply latest from DB)
                     if (sessionData.node_statuses) {
                         Object.entries(sessionData.node_statuses).forEach(([nodeId, status]) => {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,22 +100,38 @@ export const MeetingRoom: FC = () => {
                         });
                     }
 
-                    // 3. Initialize Session Store with all data
-                    const nodes = (Object.values(graph.nodes || {}) as { node_id: string; name: string; type: string }[]).map((n) => ({
-                        node_id: n.node_id,
-                        name: n.name,
-                        type: n.type
-                    }));
+                    // 2. Check if we need to full-init (fresh load or different session)
+                    const current = useSessionStore.getState().currentSession;
+                    if (!current || current.session_uuid !== session_uuid) {
 
-                    useSessionStore.getState().initSession({
-                        session_uuid: sessionData.session_uuid,
-                        workflow_uuid: sessionData.workflow_uuid,
-                        group_uuid: sessionData.group_uuid,
-                        status: sessionData.status,
-                        node_statuses: sessionData.node_statuses,
-                        nodes: nodes
-                    });
+                        // Fetch Workflow Graph
+                        if (!sessionData.workflow_uuid) return;
+                        const wfRes = await fetch(`/api/v1/workflows/${sessionData.workflow_uuid}`);
+                        if (!wfRes.ok) throw new Error("Workflow not found");
+                        const wfData = await wfRes.json();
 
+                        const graph = wfData.graph || wfData;
+                        if (!graph) return;
+
+                        // Sync Graph Definition
+                        useWorkflowRunStore.getState().setGraphDefinition(graph);
+
+                        // Initialize Session Store
+                        const nodes = (Object.values(graph.nodes || {}) as { node_id: string; name: string; type: string }[]).map((n) => ({
+                            node_id: n.node_id,
+                            name: n.name,
+                            type: n.type
+                        }));
+
+                        useSessionStore.getState().initSession({
+                            session_uuid: sessionData.session_uuid,
+                            workflow_uuid: sessionData.workflow_uuid,
+                            group_uuid: sessionData.group_uuid,
+                            status: sessionData.status,
+                            node_statuses: sessionData.node_statuses,
+                            nodes: nodes
+                        });
+                    }
                 } catch (err) {
                     console.error("Failed to restore session state:", err);
                 }
@@ -175,6 +178,7 @@ export const MeetingRoom: FC = () => {
     const leftPanelRef = useRef<ImperativePanelHandle>(null);
     const centerPanelRef = useRef<ImperativePanelHandle>(null);
     const rightPanelRef = useRef<ImperativePanelHandle>(null);
+    const canvasLayoutOptions = useMemo(() => ({ direction: 'vertical' as const, spacingX: 180 }), []);
 
     const handleToggleLeft = () => {
         const panel = leftPanelRef.current;
@@ -260,7 +264,7 @@ export const MeetingRoom: FC = () => {
                             readOnly={isRunning}
                             workflowId={currentSession?.workflow_uuid}
                             graph={graphDefinition}
-                            layoutOptions={{ direction: 'vertical', spacingX: 180 }}
+                            layoutOptions={canvasLayoutOptions}
                         />
                     </div>
                 </Panel>

@@ -52,7 +52,35 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
         setError(null);
 
         try {
-            // 1. Prepare Payload
+            // 1. Establish WebSocket connection FIRST (before execute)
+            const wsHost = window.location.host;
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${wsHost}/ws`;
+
+            console.log('[SessionStarter] Establishing WebSocket connection before execute...');
+            useConnectStore.getState().connect(wsUrl);
+
+            // 2. Wait for WebSocket to be connected (max 3 seconds)
+            const wsConnected = await new Promise<boolean>((resolve) => {
+                const timeout = setTimeout(() => resolve(false), 3000);
+
+                const checkInterval = setInterval(() => {
+                    const status = useConnectStore.getState().status;
+                    if (status === 'connected') {
+                        clearTimeout(timeout);
+                        clearInterval(checkInterval);
+                        resolve(true);
+                    }
+                }, 100);
+            });
+
+            if (!wsConnected) {
+                console.warn('[SessionStarter] WebSocket not connected after 3s, proceeding anyway (may lose early events)');
+            } else {
+                console.log('[SessionStarter] WebSocket connected, executing workflow...');
+            }
+
+            // 3. Prepare Payload
             const payload = {
                 graph: selectedTemplate.graph,
                 input: {
@@ -61,7 +89,7 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                 }
             };
 
-            // 2. Call API
+            // 4. Call API (WebSocket is now ready to receive events)
             const res = await fetch('/api/v1/workflows/execute', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -75,7 +103,7 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
 
             const data = await res.json(); // { session_id, status }
 
-            // 3. Initialize Store
+            // 5. Initialize Store
             useWorkflowRunStore.getState().setGraphFromTemplate(selectedTemplate);
 
             const rawNodes = selectedTemplate.graph?.nodes || {};
@@ -94,13 +122,7 @@ export const SessionStarter: FC<SessionStarterProps> = ({ onStarted }) => {
                 status: 'running'
             });
 
-            // 4. Establish WebSocket connection
-            const wsHost = window.location.host;
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${wsHost}/ws`;
-            useConnectStore.getState().connect(wsUrl);
-
-            // 5. Navigate
+            // 6. Navigate
             onStarted();
             navigate('/meeting');
 

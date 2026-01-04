@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.2] - 2026-01-04
+
+### Fixed
+- **Parallel Execution Integrity (Backend)**:
+  - **Logic Repair**: Completely rewrote `handleParallel` to execute branches in isolation (`executeNodeWithoutDownstream`) and aggregate results before proceeding.
+  - **Deadlock Prevention**: Fixed a critical RLock/WriteLock deadlock in `deliverToDownstream` during branch output aggregation.
+  - **Join Mechanism**: Ensured downstream Join nodes receive correct inputs from parallel branches, satisfying in-degree requirements.
+- **Session State Stability (Frontend)**:
+  - **UI Stability**: Removed `parallelNodeMap` logic that caused parallel agents to overwrite each other's streaming status (fixing the "flickering" and "ghost state" issues).
+  - **Message Grouping**: Enforced strict 1:1 mapping between Nodes and MessageGroups, ensuring Agent messages are always correctly isolated.
+  - **Type Safety**: Removed deprecated `branchIds` parameters from `handleParallelStart` actions.
+
 ## [0.16.1] - 2025-12-31
 
 ### Fixed

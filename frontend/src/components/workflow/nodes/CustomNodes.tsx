@@ -7,7 +7,8 @@ import {
     UserCheck,
     Bot,
     Play,
-    Square
+    Square,
+    GitBranch
 } from 'lucide-react';
 import type {
     AgentNodeData,
@@ -145,6 +146,22 @@ export const EndNode = (props: NodeProps) => {
             handles={['top']}
         >
             <div className="text-center text-red-700 dark:text-red-400 font-medium">Completion</div>
+        </BaseNode>
+    );
+};
+
+export const ParallelNode = (props: NodeProps) => {
+    const data = getData<BaseNodeData>(props.data);
+    return (
+        <BaseNode
+            label={data.label || 'Parallel Analysis'}
+            icon={GitBranch}
+            selected={props.selected}
+            status={data.status as NodeStatus}
+            headerColor="bg-purple-50 dark:bg-purple-900/30"
+        >
+            <div className="text-xs text-gray-500 dark:text-gray-400">Agent Task</div>
+            <div className="text-xs text-gray-400">Model Execution</div>
         </BaseNode>
     );
 };

@@ -24,7 +24,7 @@ interface SessionState {
      * 消息列表 (按节点分组)
      */
     messageGroups: MessageGroup[];
-    parallelNodeMap: Map<string, string>; // Maps branch_node_id -> parent_parallel_node_id
+
 
     /**
      * 连接状态
@@ -93,7 +93,7 @@ interface SessionState {
     /**
      * 处理并行开始 (helper action)
      */
-    handleParallelStart: (node_id: string, branchIds: string[]) => void;
+    handleParallelStart: () => void;
 }
 
 export const useSessionStore = create<SessionState>()(
@@ -102,7 +102,7 @@ export const useSessionStore = create<SessionState>()(
         currentSession: null,
 
         messageGroups: [],
-        parallelNodeMap: new Map(),
+
         connectionStatus: 'disconnected',
 
         // Actions
@@ -145,7 +145,7 @@ export const useSessionStore = create<SessionState>()(
                     startedAt: status === 'running' ? new Date() : undefined,
                 },
                 messageGroups: initialGroups,
-                parallelNodeMap: new Map(),
+
                 connectionStatus: 'connecting',
             });
         },
@@ -178,29 +178,19 @@ export const useSessionStore = create<SessionState>()(
                 // 同时更新 MessageGroup 的状态
                 let group = state.messageGroups.find(g => g.node_id === node_id);
 
-                // Robustness: If running and no group, create one (e.g. slow start or first event)
+                // Robustness: If running and no group, create one
                 if (!group && status === 'running') {
                     const node = state.currentSession?.nodes.get(node_id);
-                    // Skip if parallel parent mapping handles it (but here we don't have mapping check easily without more logic)
-                    // Actually, if it's a parallel child, we might want to wait? 
-                    // But usually parallel start handles it. 
-                    // If this is a regular node, we definitely want it.
-                    // If it is parallel child, adding it as separate group might be duplicate if parallel parent group exists?
-                    // Strategy: Only add if NOT in parallel map?
-                    // But parallelNodeMap is keyed by child ID.
-                    const isParallelChild = state.parallelNodeMap.has(node_id);
 
-                    if (!isParallelChild) {
-                        group = {
-                            node_id,
-                            nodeName: node?.name || node_id,
-                            nodeType: (node?.type as MessageGroup['nodeType']) || 'agent',
-                            isParallel: false,
-                            messages: [],
-                            status: 'running'
-                        };
-                        state.messageGroups.push(group);
-                    }
+                    group = {
+                        node_id,
+                        nodeName: node?.name || node_id,
+                        nodeType: (node?.type as MessageGroup['nodeType']) || 'agent',
+                        isParallel: false,
+                        messages: [],
+                        status: 'running'
+                    };
+                    state.messageGroups.push(group);
                 }
 
                 if (group) {
@@ -219,17 +209,8 @@ export const useSessionStore = create<SessionState>()(
 
         appendMessage: (msg) => {
             set(state => {
-                // 1.5 Check if this node is part of a parallel branch
-                const parallelParentId = state.parallelNodeMap.get(msg.node_id);
-
-                // 1. 查找对应的消息组 (Priority: Parallel Parent Group -> Direct Node Group)
-                let group: MessageGroup | undefined;
-
-                if (parallelParentId) {
-                    group = state.messageGroups.find(g => g.node_id === parallelParentId);
-                } else {
-                    group = state.messageGroups.find(g => g.node_id === msg.node_id);
-                }
+                // 1. 查找对应的消息组
+                let group = state.messageGroups.find(g => g.node_id === msg.node_id);
 
                 // 2. 如果不存在，创建新组 (Only for non-parallel or if parent group missing which shouldn't happen for parallel)
                 if (!group) {
@@ -280,11 +261,7 @@ export const useSessionStore = create<SessionState>()(
 
         finalizeMessage: (node_id, agent_uuid) => {
             set(state => {
-                // Check parallel parent first
-                const parallelParentId = state.parallelNodeMap.get(node_id);
-                const targetGroupId = parallelParentId || node_id;
-
-                const group = state.messageGroups.find(g => g.node_id === targetGroupId);
+                const group = state.messageGroups.find(g => g.node_id === node_id);
                 if (group) {
                     if (agent_uuid) {
                         const msgs = group.messages.filter((m: Message) => m.agent_uuid === agent_uuid && m.isStreaming);
@@ -318,11 +295,7 @@ export const useSessionStore = create<SessionState>()(
                 }
 
                 // 更新单条消息或最近一条消息的 token usage
-                // Check parallel parent first
-                const parallelParentId = state.parallelNodeMap.get(node_id);
-                const targetGroupId = parallelParentId || node_id;
-
-                const group = state.messageGroups.find(g => g.node_id === targetGroupId);
+                const group = state.messageGroups.find(g => g.node_id === node_id);
                 if (group) {
                     const lastMsg = group.messages.findLast((m: Message) => m.agent_uuid === agent_uuid);
                     if (lastMsg) {
@@ -339,7 +312,6 @@ export const useSessionStore = create<SessionState>()(
             set({
                 currentSession: null,
                 messageGroups: [],
-                parallelNodeMap: new Map(),
                 connectionStatus: 'disconnected',
             });
         },
@@ -348,25 +320,9 @@ export const useSessionStore = create<SessionState>()(
             set({ connectionStatus: status });
         },
 
-        handleParallelStart: (node_id, branchIds) => {
-            set(state => {
-                // Register branch mappings
-                branchIds.forEach(bid => {
-                    state.parallelNodeMap.set(bid, node_id);
-                });
-
-                // check if group already exists to avoid duplicates
-                if (state.messageGroups.find(g => g.node_id === node_id)) return;
-
-                state.messageGroups.push({
-                    node_id,
-                    nodeName: 'Parallel Execution', // Could fetch proper name
-                    nodeType: 'parallel',
-                    isParallel: true,
-                    messages: [],
-                    status: 'running',
-                });
-            });
+        handleParallelStart: () => {
+            // No-op: We don't need a message group for the parallel parent.
+            // Its status is shown in the workflow graph, and children have their own message groups.
         }
 
     }))
