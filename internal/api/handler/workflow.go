@@ -102,6 +102,7 @@ func (h *WorkflowHandler) Execute(c *gin.Context) {
 
 	// Create Engine
 	engine := workflow.NewEngine(session)
+	engine.SetSessionRepository(h.SessionRepo)
 	enginesMu.Lock()
 	activeEngines[session.ID] = engine
 	enginesMu.Unlock()

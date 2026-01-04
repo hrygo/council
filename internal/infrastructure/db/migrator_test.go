@@ -38,6 +38,21 @@ func TestMigrate(t *testing.T) {
 		WithArgs(migrationName).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
+	// 5. Check 002_add_node_statuses
+	migrationName2 := "002_add_node_statuses.up.sql"
+	mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM schema_migrations WHERE version=\\$1\\)").
+		WithArgs(migrationName2).
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+
+	// 6. Apply 002_add_node_statuses
+	mock.ExpectExec("(?s).*").
+		WillReturnResult(pgxmock.NewResult("ALTER", 1))
+
+	// 7. Record 002_add_node_statuses
+	mock.ExpectExec("INSERT INTO schema_migrations").
+		WithArgs(migrationName2).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
 	err = Migrate(context.Background(), mock)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

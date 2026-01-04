@@ -28,6 +28,7 @@ type Engine struct {
 	pendingInputs map[string][]map[string]interface{} // Pending inputs for join
 	joinMu        sync.Mutex                          // Mutex for join operations
 	MergeStrategy MergeStrategy                       // Pluggable merge strategy
+	SessionRepo   SessionRepository                   // Injected persistence
 }
 
 // NewEngine creates a new workflow engine
@@ -42,8 +43,18 @@ func NewEngine(session *Session) *Engine {
 		MergeStrategy: &DefaultMergeStrategy{}, // Default strategy, can be overridden
 		NodeFactory:   &DefaultNodeFactory{},   // Default Factory
 	}
+	// Resume status from session if available
+	if session.NodeStatuses != nil {
+		for k, v := range session.NodeStatuses {
+			e.Status[k] = v
+		}
+	}
 	e.computeInDegrees()
 	return e
+}
+
+func (e *Engine) SetSessionRepository(repo SessionRepository) {
+	e.SessionRepo = repo
 }
 
 // Run executes the workflow from the start node
@@ -60,11 +71,26 @@ func (e *Engine) Run(ctx context.Context) error {
 	}
 
 	// Start from the defined start node
+	// If resuming (some nodes completed), we might need logic?
+	// Run() usually implies fresh start. Resume() is manual?
+	// If we have statuses, we don't re-run completed nodes?
+	// Current Run() just starts at StartNode.
+	// Assuming idempotent execution or fresh start.
 	return e.executeNode(ctx, startNodeID, e.inputs)
 }
 
 // executeNode runs a single node and recursively its children
 func (e *Engine) executeNode(ctx context.Context, nodeID string, input map[string]interface{}) error {
+	// e.Mu.RLock()
+	// status, known := e.Status[nodeID]
+	// e.Mu.RUnlock()
+
+	// If node is already completed, skip execution (Idempotency)
+	// if known && status == StatusCompleted {
+	// 	// Logic to propel downstream?
+	// 	// ...
+	// }
+
 	// Check for Pause
 	if e.Session.Status == SessionPaused {
 		e.StreamChannel <- StreamEvent{
@@ -197,6 +223,15 @@ func (e *Engine) updateStatus(nodeID string, status NodeStatus) {
 	e.Mu.Lock()
 	e.Status[nodeID] = status
 	e.Mu.Unlock()
+
+	// Persist status if repo is injected
+	if e.SessionRepo != nil {
+		go func() {
+			if err := e.SessionRepo.UpdateNodeStatus(context.Background(), e.Session.ID, nodeID, status); err != nil {
+				log.Printf("Failed to persist status for node %s: %v", nodeID, err)
+			}
+		}()
+	}
 
 	e.StreamChannel <- StreamEvent{
 		Type:      "node_state_change",

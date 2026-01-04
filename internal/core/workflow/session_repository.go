@@ -22,4 +22,5 @@ type SessionRepository interface {
 	Create(ctx context.Context, session *Session, groupID string, workflowID string) error
 	Get(ctx context.Context, id string) (*SessionEntity, error)
 	UpdateStatus(ctx context.Context, id string, status SessionStatus) error
+	UpdateNodeStatus(ctx context.Context, sessionID string, nodeID string, status NodeStatus) error
 }

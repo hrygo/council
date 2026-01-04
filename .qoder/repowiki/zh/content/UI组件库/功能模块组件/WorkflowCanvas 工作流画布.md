@@ -15,6 +15,12 @@
 - [validation.go](file://internal/core/workflow/validation.go)
 </cite>
 
+## 更新摘要
+**已做更改**  
+- 更新了“简介”、“项目结构”和“WorkflowCanvas 分析”部分，以反映节点渲染修复和 `fitView` 策略的改进。
+- 增加了关于重新挂载机制和防抖 `fitView` 策略的技术细节。
+- 更新了相关代码文件的引用，确保与当前实现一致。
+
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -27,7 +33,10 @@
 9. [结论](#结论)
 
 ## 简介
-WorkflowCanvas 是一个可视化工作流编辑器的核心组件，它基于 React Flow 库构建，为用户提供了一个直观的界面来设计和管理复杂的工作流。该画布支持多种节点类型（如 Start、Agent、Vote、Loop 等）的注册与渲染，并实现了边（Edge）的连接逻辑。通过拖拽交互、缩放控制以及 DAG 布局算法，用户可以轻松地创建和调整工作流。此外，系统还集成了错误校验机制，例如循环检测，以确保工作流的正确性。结合 WorkflowEditor 和 PropertyPanel，实现了状态同步，并能够序列化/反序列化工作流 JSON 结构，以匹配后端 engine.go 的执行模型。
+WorkflowCanvas 是一个可视化工作流编辑器的核心组件，它基于 React Flow 库构建，为用户提供了一个直观的界面来设计和管理复杂的工作流。该画布支持多种节点类型（如 Start、Agent、Vote、Loop 等）的注册与渲染，并实现了边（Edge）的连接逻辑。通过拖拽交互、缩放控制以及 DAG 布局算法，用户可以轻松地创建和调整工作流。此外，系统还集成了错误校验机制，例如循环检测，以确保工作流的正确性。结合 WorkflowEditor 和 PropertyPanel，实现了状态同步，并能够序列化/反序列化工作流 JSON 结构，以匹配后端 engine.go 的执行模型。最近，WorkflowCanvas 组件已修复，现在默认能正确显示。通过复杂的重新挂载和防抖 fitView 策略解决了节点无法渲染的问题，提升了画布的稳定性和用户体验。
+
+**Section sources**
+- [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 
 ## 项目结构
 项目结构清晰地划分了前端和后端代码，其中前端部分位于 `frontend/` 目录下，而后端逻辑则在 `internal/` 目录中实现。前端主要由 React 组件构成，包括工作流画布、属性面板等；后端则负责处理业务逻辑、数据存储及 API 接口。
@@ -59,7 +68,7 @@ WorkflowCanvas --> useWorkflowRunStore
 engine --> validation
 ```
 
-**图源**
+**Diagram sources**
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 - [WorkflowEditor.tsx](file://frontend/src/features/editor/WorkflowEditor.tsx)
 - [PropertyPanel.tsx](file://frontend/src/features/editor/components/PropertyPanel/PropertyPanel.tsx)
@@ -71,14 +80,14 @@ engine --> validation
 - [engine.go](file://internal/core/workflow/engine.go)
 - [validation.go](file://internal/core/workflow/validation.go)
 
-**本节来源**
+**Section sources**
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 - [WorkflowEditor.tsx](file://frontend/src/features/editor/WorkflowEditor.tsx)
 
 ## 核心组件
 WorkflowCanvas 的核心在于其对 React Flow 的集成，以及对各种节点类型的注册与渲染。每个节点都有特定的数据结构和行为，这些都通过自定义的 Node 组件来实现。例如，StartNode 和 EndNode 分别表示工作流的起点和终点，而 AgentNode、VoteNode、LoopNode 等则代表不同的任务或决策点。这些节点通过边连接起来，形成一个有向无环图（DAG），从而定义了整个工作流的执行顺序。
 
-**本节来源**
+**Section sources**
 - [CustomNodes.tsx](file://frontend/src/components/workflow/nodes/CustomNodes.tsx)
 - [BaseNode.tsx](file://frontend/src/components/workflow/nodes/BaseNode.tsx)
 - [workflow.ts](file://frontend/src/types/workflow.ts)
@@ -96,12 +105,12 @@ E --> F[engine.go]
 F --> G[执行结果]
 ```
 
-**图源**
+**Diagram sources**
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 - [graphUtils.ts](file://frontend/src/utils/graphUtils.ts)
 - [engine.go](file://internal/core/workflow/engine.go)
 
-**本节来源**
+**Section sources**
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 - [graphUtils.ts](file://frontend/src/utils/graphUtils.ts)
 - [engine.go](file://internal/core/workflow/engine.go)
@@ -109,7 +118,7 @@ F --> G[执行结果]
 ## 详细组件分析
 
 ### WorkflowCanvas 分析
-WorkflowCanvas 组件是整个工作流编辑器的基础，它封装了 React Flow 的所有功能，并提供了额外的配置选项，如只读模式、全屏模式等。通过 `nodeTypes` 配置，可以将不同类型的节点映射到相应的自定义组件上，从而实现多样化的视觉呈现。
+WorkflowCanvas 组件是整个工作流编辑器的基础，它封装了 React Flow 的所有功能，并提供了额外的配置选项，如只读模式、全屏模式等。通过 `nodeTypes` 配置，可以将不同类型的节点映射到相应的自定义组件上，从而实现多样化的视觉呈现。近期，该组件进行了重要修复，解决了节点无法正确渲染的问题。具体来说，通过引入复杂的重新挂载机制和防抖 `fitView` 策略，确保了画布在加载时能够正确显示所有节点。`key` 属性根据节点数量动态变化，强制 React Flow 重新挂载，避免了初始化时节点未完全加载的问题。同时，使用 `useNodesInitialized` 钩子和 `ResizeObserver` 结合防抖技术，确保在节点初始化完成且容器尺寸稳定后才执行 `fitView`，从而提升了画布的稳定性和用户体验。
 
 #### 对于对象导向的组件：
 ```mermaid
@@ -146,10 +155,10 @@ class ReactFlow {
 WorkflowCanvas --> ReactFlow : "使用"
 ```
 
-**图源**
+**Diagram sources**
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 
-**本节来源**
+**Section sources**
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 
 ### WorkflowEditor 与 PropertyPanel 状态同步
@@ -172,11 +181,11 @@ WorkflowEditor->>WorkflowCanvas : 更新节点数据
 WorkflowCanvas->>ReactFlow : setNodes()
 ```
 
-**图源**
+**Diagram sources**
 - [WorkflowEditor.tsx](file://frontend/src/features/editor/WorkflowEditor.tsx)
 - [PropertyPanel.tsx](file://frontend/src/features/editor/components/PropertyPanel/PropertyPanel.tsx)
 
-**本节来源**
+**Section sources**
 - [WorkflowEditor.tsx](file://frontend/src/features/editor/WorkflowEditor.tsx)
 - [PropertyPanel.tsx](file://frontend/src/features/editor/components/PropertyPanel/PropertyPanel.tsx)
 
@@ -198,10 +207,10 @@ ReturnError --> End([结束])
 ReturnResult --> End
 ```
 
-**图源**
+**Diagram sources**
 - [graphUtils.ts](file://frontend/src/utils/graphUtils.ts)
 
-**本节来源**
+**Section sources**
 - [graphUtils.ts](file://frontend/src/utils/graphUtils.ts)
 
 ## 依赖分析
@@ -218,12 +227,12 @@ H[useWorkflow] --> I[fetch API]
 I --> J[backend]
 ```
 
-**图源**
+**Diagram sources**
 - [go.mod](file://go.mod)
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 - [engine.go](file://internal/core/workflow/engine.go)
 
-**本节来源**
+**Section sources**
 - [go.mod](file://go.mod)
 - [WorkflowCanvas.tsx](file://frontend/src/components/workflow/WorkflowCanvas.tsx)
 - [engine.go](file://internal/core/workflow/engine.go)
@@ -234,9 +243,9 @@ I --> J[backend]
 ## 故障排除指南
 如果遇到工作流无法正确加载或执行的问题，首先应检查 `BackendGraph` 是否符合预期格式，特别是 `start_node_id` 是否正确指向了起始节点。其次，确认所有节点的 `next_ids` 都指向了存在的节点，避免出现断开的连接。最后，查看控制台日志，寻找可能的错误信息，这有助于快速定位问题所在。
 
-**本节来源**
+**Section sources**
 - [validation.go](file://internal/core/workflow/validation.go)
 - [engine.go](file://internal/core/workflow/engine.go)
 
 ## 结论
-综上所述，WorkflowCanvas 作为一个可视化工作流编辑器，不仅提供了强大的图形化界面，还具备完善的后端支持。通过对 React Flow 的深度集成，实现了灵活的节点管理和高效的交互体验。未来的工作可以集中在进一步优化性能、增强错误校验机制以及扩展更多类型的节点上，以满足更广泛的应用场景需求。
+综上所述，WorkflowCanvas 作为一个可视化工作流编辑器，不仅提供了强大的图形化界面，还具备完善的后端支持。通过对 React Flow 的深度集成，实现了灵活的节点管理和高效的交互体验。近期通过复杂的重新挂载和防抖 `fitView` 策略解决了节点无法渲染的问题，显著提升了画布的稳定性和用户体验。未来的工作可以集中在进一步优化性能、增强错误校验机制以及扩展更多类型的节点上，以满足更广泛的应用场景需求。

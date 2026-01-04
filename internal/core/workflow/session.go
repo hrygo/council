@@ -31,6 +31,8 @@ type Session struct {
 	Outputs   map[string]interface{}
 	Error     error
 
+	NodeStatuses map[string]NodeStatus `json:"node_statuses"`
+
 	ctx      context.Context
 	cancel   context.CancelFunc
 	resumeCh chan struct{}

@@ -400,7 +400,7 @@ check-docs: ## 📚 检查所有文档格式
 generate-types: ## 🔄 Generate TypeScript types from Go structures
 	@echo "$(CYAN)🔄 Generating TypeScript types from Go...$(RESET)"
 	@tygo generate
-	@sed -i '' 's/Error: error;/Error: any;/g' frontend/src/types/workflow.generated.ts
+	@sed -i.bak 's/Error: error;/Error: any;/g' frontend/src/types/workflow.generated.ts && rm frontend/src/types/workflow.generated.ts.bak
 	@echo "$(GREEN)✅ Type generation complete$(RESET)"
 
 verify-types: generate-types ## 🔍 Verify type consistency

@@ -39,6 +39,10 @@ func (m *SessionMockRepository) UpdateStatus(ctx context.Context, id string, sta
 	return m.Err
 }
 
+func (m *SessionMockRepository) UpdateNodeStatus(ctx context.Context, sessionID string, nodeID string, status workflow.NodeStatus) error {
+	return m.Err
+}
+
 type MockSessionFileRepository struct {
 	Files    map[string]*workflow.FileEntity
 	Versions map[string][]*workflow.FileEntity
