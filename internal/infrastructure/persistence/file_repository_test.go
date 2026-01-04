@@ -92,10 +92,11 @@ func TestListFiles(t *testing.T) {
 	foundMain := false
 	foundReadme := false
 	for _, f := range files {
-		if f.Path == "main.go" {
+		switch f.Path {
+		case "main.go":
 			assert.Equal(t, 2, f.Version)
 			foundMain = true
-		} else if f.Path == "README.md" {
+		case "README.md":
 			assert.Equal(t, 1, f.Version)
 			foundReadme = true
 		}
