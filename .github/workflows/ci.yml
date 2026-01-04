@@ -25,9 +25,7 @@ jobs:
 
       - name: Verify type consistency
         run: |
-          tygo generate
-          git diff --exit-code frontend/src/types/*.generated.ts || \
-            (echo "❌ Generated types are out of sync! Run 'make generate-types'" && exit 1)
+          make verify-types
 
       - name: Get dependencies
         run: go mod download

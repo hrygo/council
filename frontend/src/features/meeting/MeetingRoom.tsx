@@ -105,6 +105,14 @@ export const MeetingRoom: FC = () => {
                     // Sync Graph Definition for Canvas
                     useWorkflowRunStore.getState().setGraphDefinition(graph);
 
+                    // Sync initial node statuses if restoring session
+                    if (sessionData.node_statuses) {
+                        Object.entries(sessionData.node_statuses).forEach(([nodeId, status]) => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            useWorkflowRunStore.getState().updateNodeStatus(nodeId, status as any);
+                        });
+                    }
+
                     // 3. Initialize Session Store with all data
                     const nodes = (Object.values(graph.nodes || {}) as { node_id: string; name: string; type: string }[]).map((n) => ({
                         node_id: n.node_id,

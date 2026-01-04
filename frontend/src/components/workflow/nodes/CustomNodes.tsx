@@ -14,8 +14,10 @@ import type {
     VoteNodeData,
     LoopNodeData,
     FactCheckNodeData,
-    HumanReviewNodeData
+    HumanReviewNodeData,
+    BaseNodeData
 } from '../../../types/workflow';
+import { type NodeStatus } from '../../../types/session';
 
 // Helper to cast data safely
 function getData<T>(data: unknown): T {
@@ -29,6 +31,7 @@ export const AgentNode = (props: NodeProps) => {
             label={data.label || 'Agent'}
             icon={Bot}
             selected={props.selected}
+            status={data.status as NodeStatus}
             headerColor="bg-blue-50 dark:bg-blue-900/30"
         >
             <div className="space-y-1">
@@ -48,6 +51,7 @@ export const VoteNode = (props: NodeProps) => {
             label={data.label || 'Vote'}
             icon={Vote}
             selected={props.selected}
+            status={data.status as NodeStatus}
             headerColor="bg-orange-50 dark:bg-orange-900/30"
         >
             <div className="text-center">
@@ -64,6 +68,7 @@ export const LoopNode = (props: NodeProps) => {
             label={data.label || 'Loop'}
             icon={RefreshCw}
             selected={props.selected}
+            status={data.status as NodeStatus}
             headerColor="bg-yellow-50 dark:bg-yellow-900/30"
         >
             <div className="flex justify-between items-center gap-2">
@@ -81,6 +86,7 @@ export const FactCheckNode = (props: NodeProps) => {
             label={data.label || 'Fact Check'}
             icon={Search}
             selected={props.selected}
+            status={data.status as NodeStatus}
             headerColor="bg-cyan-50 dark:bg-cyan-900/30"
         >
             <div>
@@ -100,6 +106,7 @@ export const HumanReviewNode = (props: NodeProps) => {
             label={data.label || 'Human Review'}
             icon={UserCheck}
             selected={props.selected}
+            status={data.status as NodeStatus}
             headerColor="bg-purple-50 dark:bg-purple-900/30"
         >
             <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
@@ -111,11 +118,13 @@ export const HumanReviewNode = (props: NodeProps) => {
 };
 
 export const StartNode = (props: NodeProps) => {
+    const data = getData<BaseNodeData>(props.data);
     return (
         <BaseNode
             label="Start"
             icon={Play}
             selected={props.selected}
+            status={data.status as NodeStatus}
             headerColor="bg-green-100 dark:bg-green-900/30"
             handles={['bottom']}
         >
@@ -125,11 +134,13 @@ export const StartNode = (props: NodeProps) => {
 };
 
 export const EndNode = (props: NodeProps) => {
+    const data = getData<BaseNodeData>(props.data);
     return (
         <BaseNode
             label="End"
             icon={Square}
             selected={props.selected}
+            status={data.status as NodeStatus}
             headerColor="bg-red-50 dark:bg-red-900/30"
             handles={['top']}
         >
